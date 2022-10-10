@@ -1,5 +1,5 @@
 #pragma once
-#include "wx.h"
+#include "../headers/wx.h"
 
 class DialogSSHAuth : public wxDialog {
 public:

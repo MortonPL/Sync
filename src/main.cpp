@@ -1,9 +1,8 @@
-#include <libssh/libssh.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 
-#include "wx.h"
-#include "MainFrame.h"
+#include "headers/wx.h"
+#include "gui/MainFrame.h"
 
 // Main app
 class MyApp : public wxApp {

@@ -1,5 +1,5 @@
 #include "MainFrame.h"
-#include "SSHConnector.h"
+#include "../lib/SSHConnector.h"
 #include "DialogSSHAuth.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
