@@ -1,5 +1,4 @@
 #include "MainFrame.h"
-#include "enums.h"
 #include "SSHConnector.h"
 #include "DialogSSHAuth.h"
 
@@ -39,7 +38,7 @@ void MainFrame::OnHello(wxCommandEvent &event)
 
 void MainFrame::OnAbout(wxCommandEvent &event)
 {
-    wxMessageBox("This is a wxWidgets Hello World example", "About Hello World",
+    wxMessageBox("This is a message box.", "About...",
                 wxOK | wxICON_INFORMATION);
 }
 

@@ -2,8 +2,6 @@
 #include <libssh/libssh.h>
 #include <string>
 
-#include "enums.h"
-
 class SSHConnector
 {
 public:

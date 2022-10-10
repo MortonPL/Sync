@@ -2,7 +2,7 @@ mkdir -p build
 cd build
 cmake ../
 cmake --build .
-cp src/Proto Proto
+cp src/Sync Sync
 cd ..
 
 cp -r rc/ build/.

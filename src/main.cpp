@@ -23,6 +23,5 @@ bool MyApp::OnInit()
 
     MainFrame *pFrame = new MainFrame();
     pFrame->Show(true);
-    //pFrame->Destroy();
     return true;
 }
