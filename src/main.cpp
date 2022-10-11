@@ -3,17 +3,20 @@
 
 #include "headers/wx.h"
 #include "gui/MainFrame.h"
+#include "utils/Logger.h"
 
 // Main app
 class MyApp : public wxApp {
 public:
     virtual bool OnInit();
+    virtual int OnExit();
 };
 
 wxIMPLEMENT_APP(MyApp);
 
 bool MyApp::OnInit()
 {
+    Logger::Init();
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     wxString appPath(f.GetPath());
 
@@ -23,4 +26,10 @@ bool MyApp::OnInit()
     MainFrame *pFrame = new MainFrame();
     pFrame->Show(true);
     return true;
+}
+
+int MyApp::OnExit()
+{
+    Logger::Deinit();
+    return 0;
 }

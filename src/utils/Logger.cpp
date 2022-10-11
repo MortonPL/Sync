@@ -1,10 +1,24 @@
-#include <fstream>
+#include "Logger.h"
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 
-void MakeSSHConnection(std::string host, std::string &res)
+std::ofstream Logger::ofs;
+
+void Logger::Init()
 {
-    wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-    wxString appPath(f.GetPath());
-    std::ofstream out_(appPath.Append("/ssh.log").ToStdString());
+    auto f = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    auto appPath = wxString(f.GetPath());
+    Logger::ofs = std::ofstream(appPath.Append("/debug.log").ToStdString(), std::ofstream::out);
+    Logger::Log("Started logging.\n");
+}
+
+void Logger::Log(std::string text)
+{
+    Logger::ofs << text;
+    Logger::ofs.flush();
+}
+
+void Logger::Deinit()
+{
+    Logger::ofs.close();
 }

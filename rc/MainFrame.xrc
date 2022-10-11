@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<resource xmlns="http://www.wxwidgets.org/wxxrc" version="2.5.3.0">
+	<object class="wxFrame" name="MainFrame">
+		<style>wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL</style>
+		<title>Sync</title>
+		<centered>1</centered>
+		<aui_managed>0</aui_managed>
+		<object class="wxMenuBar" name="MenuBar">
+			<object class="wxMenu" name="menu_file">
+				<label>File</label>
+				<object class="wxMenuItem" name="menu_file_newc">
+					<label>New Configuration</label>
+					<help></help>
+				</object>
+				<object class="wxMenuItem" name="menu_file_openc">
+					<label>Open Configuration</label>
+					<help></help>
+				</object>
+				<object class="wxMenuItem" name="menu_file_savec">
+					<label>Save Configuration</label>
+					<help></help>
+				</object>
+				<object class="separator" />
+				<object class="wxMenuItem" name="wxID_EXIT">
+					<label>Exit\tAlt-F4</label>
+					<help></help>
+				</object>
+			</object>
+			<object class="wxMenu" name="menu_help">
+				<label>Help</label>
+				<object class="wxMenuItem" name="wxID_ABOUT">
+					<label>About...\tF1</label>
+					<help></help>
+				</object>
+			</object>
+		</object>
+		<object class="wxStatusBar" name="StatusBar">
+			<style>wxSTB_SIZEGRIP</style>
+			<fields>1</fields>
+		</object>
+		<object class="wxToolBar" name="ToolBar">
+			<style>wxTB_HORIZONTAL</style>
+			<bitmapsize></bitmapsize>
+			<margins></margins>
+			<packing>1</packing>
+			<separation>5</separation>
+			<object class="tool" name="tlb_new">
+				<label>tool</label>
+				<tooltip>New Configuration</tooltip>
+				<longhelp>Create a new configuration.</longhelp>
+				<bitmap stock_id="wxART_NEW_DIR" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="tlb_open">
+				<label>tool</label>
+				<tooltip>Open Configuration</tooltip>
+				<longhelp>Load an existing configuration.</longhelp>
+				<bitmap stock_id="wxART_FILE_OPEN" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="tlb_save">
+				<label>tool</label>
+				<tooltip>Save Configuration</tooltip>
+				<longhelp>Save an existing configuration.</longhelp>
+				<bitmap stock_id="wxART_FILE_SAVE" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="separator" />
+			<object class="tool" name="tlb_undo">
+				<label>tool</label>
+				<tooltip>Undo</tooltip>
+				<longhelp>Undo last action.</longhelp>
+				<bitmap stock_id="wxART_UNDO" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="tlb_redo">
+				<label>tool</label>
+				<tooltip>Redo</tooltip>
+				<longhelp>Redo last action.</longhelp>
+				<bitmap stock_id="wxART_REDO" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+		</object>
+		<object class="wxFlexGridSizer">
+			<rows>2</rows>
+			<cols>3</cols>
+			<minsize>800,600</minsize>
+			<vgap>0</vgap>
+			<hgap>0</hgap>
+			<growablecols>0,1,2</growablecols>
+			<growablerows>1</growablerows>
+			<object class="sizeritem">
+				<option>0</option>
+				<flag>wxALL|wxEXPAND</flag>
+				<border>5</border>
+				<object class="wxChoice" name="ddPanelLeft">
+					<selection>0</selection>
+					<content />
+				</object>
+			</object>
+			<object class="sizeritem">
+				<option>0</option>
+				<flag>wxALL|wxEXPAND</flag>
+				<border>5</border>
+				<object class="wxChoice" name="ddPanelMid">
+					<selection>0</selection>
+					<content />
+				</object>
+			</object>
+			<object class="sizeritem">
+				<option>0</option>
+				<flag>wxALL|wxEXPAND</flag>
+				<border>5</border>
+				<object class="wxChoice" name="ddPanelRight">
+					<selection>0</selection>
+					<content />
+				</object>
+			</object>
+		</object>
+	</object>
+</resource>

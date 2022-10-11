@@ -5,4 +5,4 @@ set(SRC_LIB_FILES
 )
 
 add_library(lib ${SRC_LIB_FILES})
-target_link_libraries(lib headers)
+target_link_libraries(lib utils headers)

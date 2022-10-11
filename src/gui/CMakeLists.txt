@@ -7,4 +7,4 @@ set(SRC_GUI_FILES
 )
 
 add_library(gui ${SRC_GUI_FILES})
-target_link_libraries(gui lib headers)
+target_link_libraries(gui lib utils headers)

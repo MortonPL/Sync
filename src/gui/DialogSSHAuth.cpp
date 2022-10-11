@@ -9,8 +9,8 @@ DialogSSHAuth::DialogSSHAuth(wxWindow* pParent)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "MyDialog1");
 
-    pUser = XRCCTRL(*this, "m_textCtrl1", wxTextCtrl);
-    pPass = XRCCTRL(*this, "m_textCtrl2", wxTextCtrl);
+    pUser = XRCCTRL(*this, "txtLogin", wxTextCtrl);
+    pPass = XRCCTRL(*this, "txtPass", wxTextCtrl);
 }
 
 /******************************* EVENT HANDLERS ******************************/

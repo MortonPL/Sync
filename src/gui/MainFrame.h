@@ -6,19 +6,12 @@ public:
     MainFrame(wxWindow* parent=(wxWindow*)NULL);
 
 private:
-    wxTextCtrl* pInput;
-    wxTextCtrl* pOutput;
+    std::vector<wxPanel*> allPanels;
+    wxPanel* pLeftPanel;
+    wxPanel* pRightPanel;
 
-    // event handlers
-    void OnHello(wxCommandEvent &event);
     void OnExit(wxCommandEvent &event);
     void OnAbout(wxCommandEvent &event);
-    void OnTextEnter(wxCommandEvent &event);
-    void OnButtonConnect(wxCommandEvent &event);
-
-    // other
-    void HandleSSHTest(std::string hostname);
-    bool HandleUserAuth(std::string &user, std::string &password);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();
