@@ -4,6 +4,13 @@
         "format": "cpp",
         "list": "cpp",
         "vector": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "exception": "cpp",
+        "memory": "cpp",
+        "typeinfo": "cpp",
+        "utility": "cpp",
+        "xmemory": "cpp",
+        "xtr1common": "cpp",
+        "xutility": "cpp"
     }
 }

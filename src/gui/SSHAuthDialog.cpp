@@ -1,13 +1,13 @@
-#include "DialogSSHAuth.h"
+#include "SSHAuthDialog.h"
 
-wxBEGIN_EVENT_TABLE(DialogSSHAuth, wxDialog)
-    EVT_BUTTON(wxID_OK, DialogSSHAuth::OnOK)
+wxBEGIN_EVENT_TABLE(SSHAuthDialog, wxDialog)
+    EVT_BUTTON(wxID_OK, SSHAuthDialog::OnOK)
 wxEND_EVENT_TABLE()
 
 // ctor
-DialogSSHAuth::DialogSSHAuth(wxWindow* pParent)
+SSHAuthDialog::SSHAuthDialog(wxWindow* pParent)
 {
-    wxXmlResource::Get()->LoadDialog(this, pParent, "MyDialog1");
+    wxXmlResource::Get()->LoadDialog(this, pParent, "SSHAuthDialog");
 
     pUser = XRCCTRL(*this, "txtLogin", wxTextCtrl);
     pPass = XRCCTRL(*this, "txtPass", wxTextCtrl);
@@ -15,7 +15,7 @@ DialogSSHAuth::DialogSSHAuth(wxWindow* pParent)
 
 /******************************* EVENT HANDLERS ******************************/
 
-void DialogSSHAuth::OnOK(wxCommandEvent &event)
+void SSHAuthDialog::OnOK(wxCommandEvent &event)
 {
     userValue = pUser->GetValue();
     passValue = pPass->GetValue();

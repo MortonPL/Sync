@@ -1,10 +1,10 @@
 #pragma once
 #include "../headers/wx.h"
 
-class DialogSSHAuth : public wxDialog {
+class SSHAuthDialog : public wxDialog {
 public:
-    DialogSSHAuth(wxWindow* pParent=(wxWindow*)NULL);
-    ~DialogSSHAuth(){}
+    SSHAuthDialog(wxWindow* pParent=(wxWindow*)NULL);
+    ~SSHAuthDialog(){}
 
     std::string userValue;
     std::string passValue;

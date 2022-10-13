@@ -1,9 +1,11 @@
 #include "MainFrame.h"
-#include "DialogSSHAuth.h"
-#include "../lib/SSHConnector.h"
-#include "../utils/Logger.h"
+#include "NewConfigurationDialog.h"
+#include "ChangeConfigurationDialog.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
+    EVT_MENU(XRCID("menu_file_newc"), MainFrame::OnNewConfig)
+    EVT_MENU(XRCID("menu_file_changec"), MainFrame::OnChangeConfig)
+    EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
     EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
     EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 wxEND_EVENT_TABLE()
@@ -19,20 +21,32 @@ MainFrame::MainFrame(wxWindow* pParent)
     SetStatusText("This is the status bar!");
 
     // load panels (temp)
-    auto pPanelSizer = GetSizer();
-    allPanels.push_back(wxXml->LoadPanel(this, "DirectoryViewPanel"));
-    pLeftPanel = allPanels[0];
-    pLeftPanel->Show();
-    pPanelSizer->Add(pLeftPanel);
-    pPanelSizer->Layout();
 
     // resize for menu and status bar
-    GetSizer()->SetSizeHints(this);
+    //GetSizer()->SetSizeHints(this);
 }
 
 /********************************* RESOURCES *********************************/
 
 /******************************* EVENT HANDLERS ******************************/
+
+void MainFrame::OnNewConfig(wxCommandEvent &event)
+{
+    auto dialog = NewConfigurationDialog(this);
+    if (dialog.ShowModal() != wxID_OK)
+    {
+
+    }
+}
+
+void MainFrame::OnChangeConfig(wxCommandEvent &event)
+{
+    auto dialog = ChangeConfigurationDialog(this);
+    if (dialog.ShowModal() != wxID_OK)
+    {
+
+    }
+}
 
 void MainFrame::OnAbout(wxCommandEvent &event)
 {

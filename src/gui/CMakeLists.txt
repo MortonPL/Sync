@@ -1,7 +1,13 @@
 # sources
 set(SRC_GUI_FILES
-    DialogSSHAuth.h
-    DialogSSHAuth.cpp
+    # dialogs
+    SSHAuthDialog.h
+    SSHAuthDialog.cpp
+    NewConfigurationDialog.h
+    NewConfigurationDialog.cpp
+    ChangeConfigurationDialog.h
+    ChangeConfigurationDialog.cpp
+    # frames
     MainFrame.h
     MainFrame.cpp
 )

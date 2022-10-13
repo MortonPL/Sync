@@ -10,27 +10,23 @@
 				<label>File</label>
 				<object class="wxMenuItem" name="menu_file_newc">
 					<label>New Configuration</label>
-					<help></help>
+					<help>Create a new configuration.</help>
 				</object>
-				<object class="wxMenuItem" name="menu_file_openc">
-					<label>Open Configuration</label>
-					<help></help>
-				</object>
-				<object class="wxMenuItem" name="menu_file_savec">
-					<label>Save Configuration</label>
-					<help></help>
+				<object class="wxMenuItem" name="menu_file_changec">
+					<label>Change Configuration</label>
+					<help>Change an existing configuration.</help>
 				</object>
 				<object class="separator" />
 				<object class="wxMenuItem" name="wxID_EXIT">
 					<label>Exit\tAlt-F4</label>
-					<help></help>
+					<help>Exit the application.</help>
 				</object>
 			</object>
 			<object class="wxMenu" name="menu_help">
 				<label>Help</label>
 				<object class="wxMenuItem" name="wxID_ABOUT">
 					<label>About...\tF1</label>
-					<help></help>
+					<help>Show about dialog.</help>
 				</object>
 			</object>
 		</object>
@@ -44,73 +40,17 @@
 			<margins></margins>
 			<packing>1</packing>
 			<separation>5</separation>
-			<object class="tool" name="tlb_new">
+			<object class="tool" name="tlb_changec">
 				<label>tool</label>
-				<tooltip>New Configuration</tooltip>
-				<longhelp>Create a new configuration.</longhelp>
-				<bitmap stock_id="wxART_NEW_DIR" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
-			</object>
-			<object class="tool" name="tlb_open">
-				<label>tool</label>
-				<tooltip>Open Configuration</tooltip>
-				<longhelp>Load an existing configuration.</longhelp>
+				<tooltip>Change Configuration</tooltip>
+				<longhelp>Change Configuration.</longhelp>
 				<bitmap stock_id="wxART_FILE_OPEN" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
 			</object>
-			<object class="tool" name="tlb_save">
-				<label>tool</label>
-				<tooltip>Save Configuration</tooltip>
-				<longhelp>Save an existing configuration.</longhelp>
-				<bitmap stock_id="wxART_FILE_SAVE" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
-			</object>
 			<object class="separator" />
-			<object class="tool" name="tlb_undo">
-				<label>tool</label>
-				<tooltip>Undo</tooltip>
-				<longhelp>Undo last action.</longhelp>
-				<bitmap stock_id="wxART_UNDO" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
-			</object>
-			<object class="tool" name="tlb_redo">
-				<label>tool</label>
-				<tooltip>Redo</tooltip>
-				<longhelp>Redo last action.</longhelp>
-				<bitmap stock_id="wxART_REDO" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
-			</object>
 		</object>
-		<object class="wxFlexGridSizer">
-			<rows>2</rows>
-			<cols>3</cols>
-			<minsize>800,600</minsize>
-			<vgap>0</vgap>
-			<hgap>0</hgap>
-			<growablecols>0,1,2</growablecols>
-			<growablerows>1</growablerows>
-			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxALL|wxEXPAND</flag>
-				<border>5</border>
-				<object class="wxChoice" name="ddPanelLeft">
-					<selection>0</selection>
-					<content />
-				</object>
-			</object>
-			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxALL|wxEXPAND</flag>
-				<border>5</border>
-				<object class="wxChoice" name="ddPanelMid">
-					<selection>0</selection>
-					<content />
-				</object>
-			</object>
-			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxALL|wxEXPAND</flag>
-				<border>5</border>
-				<object class="wxChoice" name="ddPanelRight">
-					<selection>0</selection>
-					<content />
-				</object>
-			</object>
+		<object class="wxListCtrl" name="m_listCtrl1">
+			<style>wxLC_ICON|wxLC_REPORT|wxLC_SINGLE_SEL</style>
+			<size>600,400</size>
 		</object>
 	</object>
 </resource>

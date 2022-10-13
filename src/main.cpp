@@ -17,6 +17,7 @@ wxIMPLEMENT_APP(MyApp);
 bool MyApp::OnInit()
 {
     Logger::Init();
+    wxImage::AddHandler(new wxPNGHandler);
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     wxString appPath(f.GetPath());
 

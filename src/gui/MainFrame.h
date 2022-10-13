@@ -6,10 +6,10 @@ public:
     MainFrame(wxWindow* parent=(wxWindow*)NULL);
 
 private:
-    std::vector<wxPanel*> allPanels;
-    wxPanel* pLeftPanel;
-    wxPanel* pRightPanel;
+    wxPanel* pViewPanel;
 
+    void OnNewConfig(wxCommandEvent &event);
+    void OnChangeConfig(wxCommandEvent &event);
     void OnExit(wxCommandEvent &event);
     void OnAbout(wxCommandEvent &event);
 
