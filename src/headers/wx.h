@@ -7,3 +7,4 @@
 #endif
 
 #include <wx/xrc/xmlres.h>
+#include <wx/filepicker.h>

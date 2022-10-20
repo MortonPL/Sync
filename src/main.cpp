@@ -10,6 +10,8 @@ class MyApp : public wxApp {
 public:
     virtual bool OnInit();
     virtual int OnExit();
+private:
+    MainFrame* pMainFrame;
 };
 
 wxIMPLEMENT_APP(MyApp);
@@ -24,13 +26,14 @@ bool MyApp::OnInit()
     wxXmlResource::Get()->InitAllHandlers();
     wxXmlResource::Get()->LoadAllFiles(appPath.Append("/rc"));
 
-    MainFrame *pFrame = new MainFrame();
-    pFrame->Show(true);
+    auto pMainFrame = new MainFrame();
+    pMainFrame->Show(true);
     return true;
 }
 
 int MyApp::OnExit()
 {
+    delete pMainFrame;
     Logger::Deinit();
     return 0;
 }

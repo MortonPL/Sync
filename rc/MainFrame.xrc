@@ -9,17 +9,24 @@
 			<object class="wxMenu" name="menu_file">
 				<label>File</label>
 				<object class="wxMenuItem" name="menu_file_newc">
-					<label>New Configuration</label>
+					<label>New Configuration\tCtrl+N</label>
 					<help>Create a new configuration.</help>
 				</object>
 				<object class="wxMenuItem" name="menu_file_changec">
-					<label>Change Configuration</label>
+					<label>Change Configuration\tCtrl+O</label>
 					<help>Change an existing configuration.</help>
 				</object>
 				<object class="separator" />
 				<object class="wxMenuItem" name="wxID_EXIT">
 					<label>Exit\tAlt-F4</label>
 					<help>Exit the application.</help>
+				</object>
+			</object>
+			<object class="wxMenu" name="menu_edit">
+				<label>Edit</label>
+				<object class="wxMenuItem" name="menu_edit_scan">
+					<label>Scan directories\tCtrl+R</label>
+					<help>Scan directories for changes.</help>
 				</object>
 			</object>
 			<object class="wxMenu" name="menu_help">
@@ -41,12 +48,18 @@
 			<packing>1</packing>
 			<separation>5</separation>
 			<object class="tool" name="tlb_changec">
-				<label>tool</label>
+				<label>Change Configuration</label>
 				<tooltip>Change Configuration</tooltip>
 				<longhelp>Change Configuration.</longhelp>
 				<bitmap stock_id="wxART_FILE_OPEN" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
 			</object>
 			<object class="separator" />
+			<object class="tool" name="tlb_scan">
+				<label>Scan directories</label>
+				<tooltip>Scan directories</tooltip>
+				<longhelp>Scan directories.</longhelp>
+				<bitmap stock_id="wxART_FIND" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
 		</object>
 		<object class="wxListCtrl" name="m_listCtrl1">
 			<style>wxLC_ICON|wxLC_REPORT|wxLC_SINGLE_SEL</style>

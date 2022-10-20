@@ -1,45 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <resource xmlns="http://www.wxwidgets.org/wxxrc" version="2.5.3.0">
-	<object class="wxDialog" name="SSHAuthDialog">
+	<object class="wxDialog" name="GenericPopup">
 		<style>wxDEFAULT_DIALOG_STYLE</style>
-		<title>SSH User Authentication</title>
+		<title></title>
 		<centered>1</centered>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALL</flag>
+				<flag>wxALIGN_CENTER|wxALL</flag>
 				<border>5</border>
-				<object class="wxStaticText" name="lblLogin">
-					<label>Username</label>
+				<object class="wxStaticText" name="lblMessage">
+					<label></label>
 					<wrap>-1</wrap>
 				</object>
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_CENTER_HORIZONTAL|wxALL</flag>
+				<flag>wxALL|wxEXPAND</flag>
 				<border>5</border>
-				<object class="wxTextCtrl" name="txtLogin">
-					<size>200,-1</size>
-					<value></value>
-				</object>
-			</object>
-			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxALL</flag>
-				<border>5</border>
-				<object class="wxStaticText" name="lblPass">
-					<label>Password</label>
-					<wrap>-1</wrap>
-				</object>
-			</object>
-			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxALIGN_CENTER_HORIZONTAL|wxALL</flag>
-				<border>5</border>
-				<object class="wxTextCtrl" name="txtPass">
-					<style>wxTE_PASSWORD</style>
-					<size>200,-1</size>
+				<object class="wxTextCtrl" name="txtInput1">
+					<hidden>1</hidden>
 					<value></value>
 				</object>
 			</object>

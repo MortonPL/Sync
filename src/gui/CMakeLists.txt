@@ -1,8 +1,9 @@
 # sources
 set(SRC_GUI_FILES
-    # dialogs
-    SSHAuthDialog.h
-    SSHAuthDialog.cpp
+    # generics
+    GenericPopup.h
+    GenericPopup.cpp
+    # custom dialogs
     NewConfigurationDialog.h
     NewConfigurationDialog.cpp
     ChangeConfigurationDialog.h

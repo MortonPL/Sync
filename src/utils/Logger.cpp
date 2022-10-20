@@ -12,9 +12,33 @@ void Logger::Init()
     Logger::Log("Started logging.\n");
 }
 
-void Logger::Log(std::string text)
+void Logger::Log(std::string value)
 {
-    Logger::ofs << text;
+    Logger::ofs << value << std::endl;
+    Logger::ofs.flush();
+}
+
+void Logger::Log(const char value[])
+{
+    Logger::ofs << value;
+    Logger::ofs.flush();
+}
+
+void Logger::Log(wxString value)
+{
+    Logger::ofs << value.ToStdString() << std::endl;
+    Logger::ofs.flush();
+}
+
+void Logger::Log(int value)
+{
+    Logger::ofs << value << std::endl;
+    Logger::ofs.flush();
+}
+
+void Logger::Log(bool value)
+{
+    Logger::ofs << (value ? "true" : "false") << std::endl;
     Logger::ofs.flush();
 }
 

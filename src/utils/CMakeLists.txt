@@ -1,8 +1,17 @@
+# dependencies
+include(FetchContent)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 9.1.0
+)
+FetchContent_MakeAvailable(fmt)
+
 # sources
-set(SRC_UTILS_FILES
+set(SRC_UTILS_FILES 
     Logger.h
     Logger.cpp
 )
 
 add_library(utils ${SRC_UTILS_FILES})
-target_link_libraries(utils headers)
+target_link_libraries(utils fmt headers)
