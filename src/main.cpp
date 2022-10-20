@@ -1,9 +1,11 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include "thirdparty/easyloggingpp/easylogging++.h"
 
 #include "headers/wx.h"
-#include "gui/MainFrame.h"
-#include "utils/Logger.h"
+#include "headers/MainFrame.h"
+
+INITIALIZE_EASYLOGGINGPP
 
 // Main app
 class MyApp : public wxApp {
@@ -16,15 +18,29 @@ private:
 
 wxIMPLEMENT_APP(MyApp);
 
+void SetUpLogger(std::string logPath)
+{
+    el::Configurations defaultConf;
+    defaultConf.setToDefault();
+    //defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
+    // To set GLOBAL configurations you may use
+    defaultConf.setGlobally(el::ConfigurationType::Format, "%datetime %level %msg");
+    defaultConf.setGlobally(el::ConfigurationType::Filename, logPath);
+    defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
+    el::Loggers::reconfigureLogger("default", defaultConf);
+}
+
 bool MyApp::OnInit()
 {
-    Logger::Init();
+    auto programPath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+
+    SetUpLogger(programPath.GetPath().Append("/Sync.log").ToStdString());
+    LOG(INFO) << "Starting.";
+
     wxImage::AddHandler(new wxPNGHandler);
-    wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-    wxString appPath(f.GetPath());
 
     wxXmlResource::Get()->InitAllHandlers();
-    wxXmlResource::Get()->LoadAllFiles(appPath.Append("/rc"));
+    wxXmlResource::Get()->LoadAllFiles(programPath.GetPath().Append("/rc"));
 
     auto pMainFrame = new MainFrame();
     pMainFrame->Show(true);
@@ -34,6 +50,6 @@ bool MyApp::OnInit()
 int MyApp::OnExit()
 {
     delete pMainFrame;
-    Logger::Deinit();
+    LOG(INFO) << "Exiting.";
     return 0;
 }

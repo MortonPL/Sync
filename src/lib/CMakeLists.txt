@@ -1,6 +1,5 @@
 # sources
 set(SRC_LIB_FILES
-    SSHConnector.h
     SSHConnector.cpp
 )
 

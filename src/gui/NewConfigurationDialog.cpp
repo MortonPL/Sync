@@ -1,8 +1,8 @@
-#include "NewConfigurationDialog.h"
 #include <fmt/core.h>
-#include "../lib/SSHConnector.h"
-#include "../gui/GenericPopup.h"
-#include "../utils/Logger.h"
+
+#include "../headers/NewConfigurationDialog.h"
+#include "../headers/SSHConnector.h"
+#include "../headers/GenericPopup.h"
 
 wxBEGIN_EVENT_TABLE(NewConfigurationDialog, wxDialog)
     EVT_BUTTON(wxID_OK, NewConfigurationDialog::OnOK)

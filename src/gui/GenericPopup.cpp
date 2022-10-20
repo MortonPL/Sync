@@ -1,5 +1,4 @@
-#include "GenericPopup.h"
-#include "../utils/Logger.h"
+#include "../headers/GenericPopup.h"
 
 wxBEGIN_EVENT_TABLE(GenericPopup, wxDialog)
     EVT_BUTTON(wxID_OK, GenericPopup::OnOK)
@@ -17,7 +16,6 @@ GenericPopup::GenericPopup(std::string message, std::string* output, bool isPass
 
     auto lblMessage = (wxStaticText*)(this->FindWindow("lblMessage"));
     lblMessage->SetLabelText(message);
-    Logger::Log(message);
     if (output)
     {
         auto txtInput1 = (wxTextCtrl*)(this->FindWindow("txtInput1"));

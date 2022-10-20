@@ -1,4 +1,4 @@
-#include "SSHConnector.h"
+#include "../headers/SSHConnector.h"
 
 SSHConnector::SSHConnector()
 {

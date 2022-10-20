@@ -4,6 +4,7 @@ include(${wxWidgets_USE_FILE})
 
 # directories
 add_subdirectory(headers)
+add_subdirectory(thirdparty)
 add_subdirectory(utils)
 add_subdirectory(lib)
 add_subdirectory(gui)

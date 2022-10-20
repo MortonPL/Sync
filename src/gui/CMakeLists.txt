@@ -1,15 +1,11 @@
 # sources
 set(SRC_GUI_FILES
     # generics
-    GenericPopup.h
     GenericPopup.cpp
-    # custom dialogs
-    NewConfigurationDialog.h
+    # custom dialog
     NewConfigurationDialog.cpp
-    ChangeConfigurationDialog.h
     ChangeConfigurationDialog.cpp
     # frames
-    MainFrame.h
     MainFrame.cpp
 )
 

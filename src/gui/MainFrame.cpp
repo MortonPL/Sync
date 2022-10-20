@@ -1,6 +1,6 @@
-#include "MainFrame.h"
-#include "NewConfigurationDialog.h"
-#include "ChangeConfigurationDialog.h"
+#include "../headers/MainFrame.h"
+#include "../headers/NewConfigurationDialog.h"
+#include "../headers/ChangeConfigurationDialog.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_file_newc"), MainFrame::OnNewConfig)
@@ -19,8 +19,6 @@ MainFrame::MainFrame(wxWindow* pParent)
 
     SetMenuBar(wxDynamicCast(wxXml->LoadObjectRecursively(this, "MenuBar", "wxMenuBar"), wxMenuBar));
     SetStatusText("This is the status bar!");
-
-    // load panels (temp)
 
     // resize for menu and status bar
     //GetSizer()->SetSizeHints(this);
