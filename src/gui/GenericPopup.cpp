@@ -1,5 +1,7 @@
 #include "../headers/GenericPopup.h"
 
+#include "../headers/Logger.h"
+
 wxBEGIN_EVENT_TABLE(GenericPopup, wxDialog)
     EVT_BUTTON(wxID_OK, GenericPopup::OnOK)
 wxEND_EVENT_TABLE()
@@ -16,31 +18,35 @@ GenericPopup::GenericPopup(std::string message, std::string* output, bool isPass
 
     auto lblMessage = (wxStaticText*)(this->FindWindow("lblMessage"));
     lblMessage->SetLabelText(message);
+
+    ctrl = Controls
+    {
+        (wxTextCtrl*)(this->FindWindow("txtInputStd")),
+        (wxTextCtrl*)(this->FindWindow("txtInputPass")),
+        (wxButton*)(this->FindWindow("wxID_OK")),
+    };
+
     if (output)
     {
-        auto txtInput1 = (wxTextCtrl*)(this->FindWindow("txtInput1"));
-        txtInput1->Show();
-        this->output = output;
         if (isPassword)
-        {
-            txtInput1->SetDefaultStyle(wxTextAttr(wxTE_PASSWORD));
-        }
+            ctrl.txtInputPass->Show();
+        else
+            ctrl.txtInputStd->Show();
+        this->output = output;
+        this->isPassword = isPassword;
     }
-}
-
-GenericPopup& GenericPopup::operator=(const GenericPopup& other)
-{
-    if (&other != this)
-    {
-        this->output = other.output;
-    }
-    return *this;
 }
 
 /******************************* EVENT HANDLERS ******************************/
 
 void GenericPopup::OnOK(wxCommandEvent &event)
 {
-    *(this->output) = ((wxTextCtrl*)(this->FindWindow("txtInput1")))->GetValue().ToStdString();
+    if (this->output)
+    {
+        if (this->isPassword)
+            *(this->output) = ctrl.txtInputPass->GetValue().ToStdString();
+        else
+            *(this->output) = ctrl.txtInputStd->GetValue().ToStdString();
+    }
     EndModal(wxID_OK);
 }

@@ -3,6 +3,7 @@
 #include "../headers/NewConfigurationDialog.h"
 #include "../headers/SSHConnector.h"
 #include "../headers/GenericPopup.h"
+#include "../headers/Logger.h"
 
 wxBEGIN_EVENT_TABLE(NewConfigurationDialog, wxDialog)
     EVT_BUTTON(wxID_OK, NewConfigurationDialog::OnOK)
@@ -19,75 +20,82 @@ wxEND_EVENT_TABLE()
 NewConfigurationDialog::NewConfigurationDialog(wxWindow* pParent)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "NewConfigurationDialog");
+
+    ctrl = Controls
+    {
+        (wxTextCtrl*)(this->FindWindow("txtConfigName")),
+        (wxDirPickerCtrl*)(this->FindWindow("dirRootA")),
+        (wxChoice*)(this->FindWindow("ddConfigType")),
+        (wxDirPickerCtrl*)(this->FindWindow("dirRootBLocal")),
+        (wxTextCtrl*)(this->FindWindow("txtAddress")),
+        (wxTextCtrl*)(this->FindWindow("txtUser")),
+        (wxTextCtrl*)(this->FindWindow("txtRootB")),
+        (wxButton*)(this->FindWindow("wxID_OK")),
+        (wxButton*)(this->FindWindow("wxID_CANCEL")),
+    };
 }
 
 void NewConfigurationDialog::CheckIfOK()
 {
-    auto txtConfigName = (wxTextCtrl*)(this->FindWindow("txtConfigName"));
-    auto dirRootA = (wxDirPickerCtrl*)(this->FindWindow("dirRootA"));
-    auto ddConfigType = (wxChoice*)(this->FindWindow("ddConfigType"));
-    auto dirRootBLocal = (wxDirPickerCtrl*)(this->FindWindow("dirRootBLocal"));
-    auto txtAddress = (wxTextCtrl*)(this->FindWindow("txtAddress"));
-    auto txtUser = (wxTextCtrl*)(this->FindWindow("txtUser"));
-    auto txtRootB = (wxTextCtrl*)(this->FindWindow("txtRootB"));
-
-    bool isOK = !txtConfigName->GetValue().IsEmpty()
-                && !dirRootA->GetPath().ToStdString().empty()
-                && ( ddConfigType->GetSelection() == 0 ?
-                    !dirRootBLocal->GetPath().ToStdString().empty()
+    bool isOK = !ctrl.txtConfigName->GetValue().IsEmpty()
+                && !ctrl.dirRootA->GetPath().ToStdString().empty()
+                && (ctrl.ddConfigType->GetSelection() == 0 ?
+                    !ctrl.dirRootBLocal->GetPath().ToStdString().empty()
                     :
                     (
-                        !txtAddress->GetValue().IsEmpty()
-                        && !txtUser->GetValue().IsEmpty()
-                        && !txtRootB->GetValue().IsEmpty()
+                        !ctrl.txtAddress->GetValue().IsEmpty()
+                        && !ctrl.txtUser->GetValue().IsEmpty()
+                        && !ctrl.txtRootB->GetValue().IsEmpty()
                     )
                 );
-    (wxButton*)(this->FindWindow("wxID_OK"))->Enable(isOK);
+    ctrl.btnOK->Enable(isOK);
 }
 
 /******************************* EVENT HANDLERS ******************************/
 
 void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    auto ddConfigType = (wxChoice*)(this->FindWindow("ddConfigType"));
-    auto txtAddress = (wxTextCtrl*)(this->FindWindow("txtAddress"));
-    auto txtUser = (wxTextCtrl*)(this->FindWindow("txtUser"));
-    auto txtRootB = (wxTextCtrl*)(this->FindWindow("txtRootB"));
-
-    if (ddConfigType->GetSelection() == 1)
+    if (ctrl.ddConfigType->GetSelection() == 1)
     {
         auto ssh = SSHConnector();
-        GenericPopup popup;
+        GenericPopup* popup;
 
-        if (!ssh.BeginSession(txtAddress->GetValue().ToStdString()))
+        if (!ssh.BeginSession(ctrl.txtAddress->GetValue().ToStdString()))
         {
-            auto popup1 = GenericPopup("Failed to connect to given address.");
-            popup1.ShowModal();
+            popup = new GenericPopup("Failed to connect to given address.");
+            popup->ShowModal();
+            delete popup;
             return;
         }
         if (!ssh.AuthenticateServer())
         {
-            popup = GenericPopup("Failed to authenticate server.");
-            popup.ShowModal();
+            popup = new GenericPopup("Failed to authenticate server.");
+            popup->ShowModal();
+            delete popup;
+            ssh.EndSession();
             return;
         }
 
         std::string password;
-        popup = GenericPopup(
-            fmt::format("Enter password for {}@{}:", txtUser->GetValue().ToStdString(), txtAddress->GetValue().ToStdString()),
-            &password);
-        popup.ShowModal();
+        popup = new GenericPopup(
+            fmt::format("Enter password for {}@{}:", ctrl.txtUser->GetValue().ToStdString(), ctrl.txtAddress->GetValue().ToStdString()),
+            &password, true);
+        popup->ShowModal();
+        delete popup;
 
-        if (!ssh.AuthenticateUserPass(txtUser->GetValue().ToStdString(), password))
+        if (!ssh.AuthenticateUserPass(ctrl.txtUser->GetValue().ToStdString(), password))
         {
-            popup = GenericPopup("Failed to authenticate user. Check user credentials.");
-            popup.ShowModal();
+            popup = new GenericPopup("Failed to authenticate user. Check user credentials.");
+            popup->ShowModal();
+            delete popup;
+            ssh.EndSession();
             return;
         }
         ssh.EndSession();
 
-        popup = GenericPopup("Test connection successful.");
-        popup.ShowModal();
+        popup = new GenericPopup("Test connection successful.");
+        popup->ShowModal();
+        delete popup;
     }
 
     EndModal(wxID_OK);
@@ -105,28 +113,23 @@ void NewConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
 
 void NewConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
 {
-    auto dirRootBLocal = (wxDirPickerCtrl*)(this->FindWindow("dirRootBLocal"));
-    auto txtAddress = (wxTextCtrl*)(this->FindWindow("txtAddress"));
-    auto txtUser = (wxTextCtrl*)(this->FindWindow("txtUser"));
-    auto txtRootB = (wxTextCtrl*)(this->FindWindow("txtRootB"));
-
     switch (event.GetSelection())
     {
     case 0:
-        dirRootBLocal->Enable();
-        txtAddress->Disable();
-        txtAddress->Clear();
-        txtUser->Disable();
-        txtUser->Clear();
-        txtRootB->Disable();
-        txtRootB->Clear();
+        ctrl.dirRootBLocal->Enable();
+        ctrl.txtAddress->Disable();
+        ctrl.txtAddress->Clear();
+        ctrl.txtUser->Disable();
+        ctrl.txtUser->Clear();
+        ctrl.txtRootB->Disable();
+        ctrl.txtRootB->Clear();
         break;
     case 1:
-        dirRootBLocal->Disable();
-        dirRootBLocal->SetPath("");
-        txtAddress->Enable();
-        txtUser->Enable();
-        txtRootB->Enable();
+        ctrl.dirRootBLocal->Disable();
+        ctrl.dirRootBLocal->SetPath("");
+        ctrl.txtAddress->Enable();
+        ctrl.txtUser->Enable();
+        ctrl.txtRootB->Enable();
         break;
     default:
         break;

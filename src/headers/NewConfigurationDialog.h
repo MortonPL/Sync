@@ -1,13 +1,31 @@
 #pragma once
 #include "../headers/wx.h"
 
-class NewConfigurationDialog : public wxDialog {
+class NewConfigurationDialog : public wxDialog
+{
 public:
     NewConfigurationDialog(wxWindow* pParent=(wxWindow*)NULL);
     ~NewConfigurationDialog(){}
 
 private:
-    // custom
+    // control struct
+    struct Controls
+    {
+        wxTextCtrl* txtConfigName;
+        wxDirPickerCtrl* dirRootA;
+        wxChoice* ddConfigType;
+        wxDirPickerCtrl* dirRootBLocal;
+        wxTextCtrl* txtAddress;
+        wxTextCtrl* txtUser;
+        wxTextCtrl* txtRootB;
+        wxButton* btnOK;
+        wxButton* btnCancel;
+    };
+
+    // properties
+    Controls ctrl;
+
+    // custom methods
     void CheckIfOK();
 
     // event handlers

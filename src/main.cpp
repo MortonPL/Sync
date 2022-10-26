@@ -1,9 +1,9 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
-#include "thirdparty/easyloggingpp/easylogging++.h"
 
 #include "headers/wx.h"
 #include "headers/MainFrame.h"
+#include "headers/Logger.h"
 
 INITIALIZE_EASYLOGGINGPP
 
