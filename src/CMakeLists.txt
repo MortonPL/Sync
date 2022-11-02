@@ -1,3 +1,4 @@
+# dependencies
 find_package(wxWidgets REQUIRED COMPONENTS net core base xrc)
 find_package(libssh REQUIRED)
 include(${wxWidgets_USE_FILE})

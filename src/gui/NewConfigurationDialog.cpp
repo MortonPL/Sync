@@ -55,7 +55,9 @@ void NewConfigurationDialog::CheckIfOK()
 
 void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    if (ctrl.ddConfigType->GetSelection() == 1)
+    #define DD_SSH 1
+    if (ctrl.ddConfigType->GetSelection() == DD_SSH)
+    #undef DD_SSH
     {
         auto ssh = SSHConnector();
         GenericPopup* popup;
@@ -91,8 +93,17 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
             ssh.EndSession();
             return;
         }
-        ssh.EndSession();
 
+        if (!ssh.ExecuteCD(ctrl.txtRootB->GetValue().ToStdString()))
+        {
+            popup = new GenericPopup("Failed to find remote directory. Check name or permissions.");
+            popup->ShowModal();
+            delete popup;
+            ssh.EndSession();
+            return;
+        }
+
+        ssh.EndSession();
         popup = new GenericPopup("Test connection successful.");
         popup->ShowModal();
         delete popup;

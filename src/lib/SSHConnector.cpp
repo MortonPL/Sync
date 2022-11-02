@@ -1,5 +1,8 @@
 #include "../headers/SSHConnector.h"
 
+#include <fmt/core.h>
+#include "../headers/Logger.h"
+
 SSHConnector::SSHConnector()
 {
 }
@@ -34,6 +37,16 @@ bool SSHConnector::AuthenticateServer()
         case SSH_KNOWN_HOSTS_NOT_FOUND:
         case SSH_KNOWN_HOSTS_UNKNOWN:
             ssh_session_update_known_hosts(this->session);
+            break;
+        case SSH_KNOWN_HOSTS_OTHER:
+            // warn
+            break;
+        case SSH_KNOWN_HOSTS_CHANGED:
+            // warn !!!
+            break;
+        case SSH_KNOWN_HOSTS_ERROR:
+            // error
+            break;
     }
     return true;
 }
@@ -84,6 +97,28 @@ bool SSHConnector::ExecuteLS(std::string &result)
             buffer[nbytes] = 0;
         result.append(buffer);
         nbytes = ssh_channel_read(pChannel, buffer, sizeof(buffer), 0);
+    }
+
+    FreeChannel(pChannel);
+    return true;
+}
+
+bool SSHConnector::ExecuteCD(std::string directory)
+{
+    std::string cmd = fmt::format("cd \"{}\"", directory);
+    auto pChannel = GetChannel();
+    char buf;
+
+    if (ssh_channel_request_exec(pChannel, cmd.c_str()) != SSH_OK)
+    {
+        FreeChannel(pChannel);
+        return false;
+    }
+
+    if (ssh_channel_read(pChannel, &buf, 1, 1))
+    {
+        FreeChannel(pChannel);
+        return false;
     }
 
     FreeChannel(pChannel);
