@@ -103,9 +103,10 @@ bool SSHConnector::ExecuteLS(std::string &result)
     return true;
 }
 
+// TODO: replace with executing remote Sync CLI that uses stat()
 bool SSHConnector::ExecuteCD(std::string directory)
 {
-    std::string cmd = fmt::format("cd \"{}\"", directory);
+    std::string cmd = fmt::format("[ ! -d \"{}\"] && echo 1", directory);
     auto pChannel = GetChannel();
     char buf;
 

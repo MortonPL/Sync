@@ -4,6 +4,10 @@
 #include "../headers/SSHConnector.h"
 #include "../headers/GenericPopup.h"
 #include "../headers/Logger.h"
+#include "../headers/Configuration.h"
+#include "../headers/DBConnector.h"
+
+#define DD_SSH 1
 
 wxBEGIN_EVENT_TABLE(NewConfigurationDialog, wxDialog)
     EVT_BUTTON(wxID_OK, NewConfigurationDialog::OnOK)
@@ -55,25 +59,25 @@ void NewConfigurationDialog::CheckIfOK()
 
 void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    #define DD_SSH 1
+    GenericPopup* popup;
+    Configuration config;
+
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
-    #undef DD_SSH
     {
         auto ssh = SSHConnector();
-        GenericPopup* popup;
 
         if (!ssh.BeginSession(ctrl.txtAddress->GetValue().ToStdString()))
         {
             popup = new GenericPopup("Failed to connect to given address.");
             popup->ShowModal();
-            delete popup;
+            popup->Destroy();
             return;
         }
         if (!ssh.AuthenticateServer())
         {
             popup = new GenericPopup("Failed to authenticate server.");
             popup->ShowModal();
-            delete popup;
+            popup->Destroy();
             ssh.EndSession();
             return;
         }
@@ -83,13 +87,13 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
             fmt::format("Enter password for {}@{}:", ctrl.txtUser->GetValue().ToStdString(), ctrl.txtAddress->GetValue().ToStdString()),
             &password, true);
         popup->ShowModal();
-        delete popup;
+        popup->Destroy();
 
         if (!ssh.AuthenticateUserPass(ctrl.txtUser->GetValue().ToStdString(), password))
         {
             popup = new GenericPopup("Failed to authenticate user. Check user credentials.");
             popup->ShowModal();
-            delete popup;
+            popup->Destroy();
             ssh.EndSession();
             return;
         }
@@ -98,7 +102,7 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         {
             popup = new GenericPopup("Failed to find remote directory. Check name or permissions.");
             popup->ShowModal();
-            delete popup;
+            popup->Destroy();
             ssh.EndSession();
             return;
         }
@@ -106,7 +110,35 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         ssh.EndSession();
         popup = new GenericPopup("Test connection successful.");
         popup->ShowModal();
-        delete popup;
+        popup->Destroy();
+
+        config = Configuration(
+            ctrl.txtConfigName->GetValue().ToStdString(),
+            ctrl.dirRootA->GetPath().ToStdString(),
+            ctrl.txtRootB->GetValue().ToStdString(),
+            ctrl.txtAddress->GetValue().ToStdString(),
+            ctrl.txtUser->GetValue().ToStdString()
+        );
+    }
+    else
+    {
+        config = Configuration(
+            ctrl.txtConfigName->GetValue().ToStdString(),
+            ctrl.dirRootA->GetPath().ToStdString(),
+            ctrl.dirRootBLocal->GetPath().ToStdString()
+        );
+    }
+
+    auto db = DBConnector();
+    if (db.Open(SQLite::OPEN_READWRITE))
+    {
+        db.InsertConfig(config);
+    }
+    else
+    {
+        popup = new GenericPopup("Failed to open configuration database.");
+        popup->ShowModal();
+        popup->Destroy();
     }
 
     EndModal(wxID_OK);
@@ -124,9 +156,16 @@ void NewConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
 
 void NewConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
 {
-    switch (event.GetSelection())
+    if (event.GetSelection() == DD_SSH)
     {
-    case 0:
+        ctrl.dirRootBLocal->Disable();
+        ctrl.dirRootBLocal->SetPath("");
+        ctrl.txtAddress->Enable();
+        ctrl.txtUser->Enable();
+        ctrl.txtRootB->Enable();
+    }
+    else
+    {
         ctrl.dirRootBLocal->Enable();
         ctrl.txtAddress->Disable();
         ctrl.txtAddress->Clear();
@@ -134,17 +173,9 @@ void NewConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
         ctrl.txtUser->Clear();
         ctrl.txtRootB->Disable();
         ctrl.txtRootB->Clear();
-        break;
-    case 1:
-        ctrl.dirRootBLocal->Disable();
-        ctrl.dirRootBLocal->SetPath("");
-        ctrl.txtAddress->Enable();
-        ctrl.txtUser->Enable();
-        ctrl.txtRootB->Enable();
-        break;
-    default:
-        break;
     }
 
     this->CheckIfOK();
 }
+
+#undef DD_SSH

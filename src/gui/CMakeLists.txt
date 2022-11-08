@@ -7,6 +7,8 @@ set(SRC_GUI_FILES
     ChangeConfigurationDialog.cpp
     # frames
     MainFrame.cpp
+    # main
+    main.cpp
 )
 
 add_library(gui ${SRC_GUI_FILES})
