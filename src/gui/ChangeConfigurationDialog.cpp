@@ -1,4 +1,4 @@
-#include "../headers/ChangeConfigurationDialog.h"
+#include "ChangeConfigurationDialog.h"
 
 wxBEGIN_EVENT_TABLE(ChangeConfigurationDialog, wxDialog)
     EVT_BUTTON(wxID_OK, ChangeConfigurationDialog::OnOK)

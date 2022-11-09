@@ -5,4 +5,5 @@ set(SRC_CLI_FILES
 )
 
 add_library(cli ${SRC_CLI_FILES})
-target_link_libraries(cli lib utils headers)
+target_include_directories(cli PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
+target_link_libraries(cli lib utils)

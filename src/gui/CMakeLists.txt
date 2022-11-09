@@ -1,3 +1,7 @@
+# dependencies
+find_package(wxWidgets REQUIRED COMPONENTS net core base xrc)
+include(${wxWidgets_USE_FILE})
+
 # sources
 set(SRC_GUI_FILES
     # generics
@@ -12,4 +16,5 @@ set(SRC_GUI_FILES
 )
 
 add_library(gui ${SRC_GUI_FILES})
-target_link_libraries(gui lib utils headers)
+target_include_directories(gui PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
+target_link_libraries(gui ${wxWidgets_LIBRARIES} lib utils)

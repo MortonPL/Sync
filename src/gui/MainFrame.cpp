@@ -1,6 +1,6 @@
-#include "../headers/MainFrame.h"
-#include "../headers/NewConfigurationDialog.h"
-#include "../headers/ChangeConfigurationDialog.h"
+#include "MainFrame.h"
+#include "NewConfigurationDialog.h"
+#include "ChangeConfigurationDialog.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_file_newc"), MainFrame::OnNewConfig)

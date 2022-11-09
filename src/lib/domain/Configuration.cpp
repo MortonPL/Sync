@@ -1,4 +1,4 @@
-#include "../headers/Configuration.h"
+#include "Domain/Configuration.h"
 
 Configuration::Configuration()
 {

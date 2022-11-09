@@ -1,6 +1,6 @@
-#include "../headers/GenericPopup.h"
+#include "GenericPopup.h"
 
-#include "../headers/Logger.h"
+#include "Logger.h"
 
 wxBEGIN_EVENT_TABLE(GenericPopup, wxDialog)
     EVT_BUTTON(wxID_OK, GenericPopup::OnOK)

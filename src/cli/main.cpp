@@ -2,8 +2,8 @@
 #include <unistd.h>
 #include <linux/limits.h>
 
-#include "../headers/Logger.h"
-#include "../headers/DBConnector.h"
+#include "Logger.h"
+#include "DBConnector.h"
 
 INITIALIZE_EASYLOGGINGPP
 

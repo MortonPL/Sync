@@ -3,7 +3,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <string>
 
-#include "Configuration.h"
+#include "Domain/Configuration.h"
 
 #define DATABASE_NAME "Sync.db3"
 

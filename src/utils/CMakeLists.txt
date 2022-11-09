@@ -9,8 +9,9 @@ FetchContent_MakeAvailable(fmt)
 
 # sources
 set(SRC_UTILS_FILES 
-    vacant.cpp
+    dummy.cpp
 )
 
 add_library(utils ${SRC_UTILS_FILES})
-target_link_libraries(utils easyloggingpp fmt headers)
+target_include_directories(utils PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
+target_link_libraries(utils easyloggingpp fmt)

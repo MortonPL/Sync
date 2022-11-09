@@ -6,13 +6,15 @@ FetchContent_Declare(
   GIT_TAG 3.2.0
 )
 FetchContent_MakeAvailable(SQLiteCpp)
+find_package(libssh REQUIRED)
 
 # sources
 set(SRC_LIB_FILES
-    Configuration.cpp
+    domain/Configuration.cpp
     DBConnector.cpp
     SSHConnector.cpp
 )
 
 add_library(lib ${SRC_LIB_FILES})
-target_link_libraries(lib SQLiteCpp utils headers)
+target_include_directories(lib PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
+target_link_libraries(lib ssh SQLiteCpp utils)

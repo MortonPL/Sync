@@ -1,7 +1,7 @@
-#include "../headers/DBConnector.h"
+#include "DBConnector.h"
 
 #include <fmt/core.h>
-#include "../headers/Logger.h"
+#include "Logger.h"
 
 DBConnector::DBConnector()
 {

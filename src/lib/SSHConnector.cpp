@@ -1,7 +1,7 @@
-#include "../headers/SSHConnector.h"
+#include "SSHConnector.h"
 
 #include <fmt/core.h>
-#include "../headers/Logger.h"
+#include "Logger.h"
 
 SSHConnector::SSHConnector()
 {

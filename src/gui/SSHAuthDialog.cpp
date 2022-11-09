@@ -1,4 +1,4 @@
-#include "../headers/SSHAuthDialog.h"
+#include "SSHAuthDialog.h"
 
 wxBEGIN_EVENT_TABLE(SSHAuthDialog, wxDialog)
     EVT_BUTTON(wxID_OK, SSHAuthDialog::OnOK)
