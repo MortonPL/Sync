@@ -1,9 +1,6 @@
-#include <libgen.h>
-#include <unistd.h>
-#include <linux/limits.h>
-
 #include "Logger.h"
 #include "DBConnector.h"
+#include "Utils.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -21,12 +18,7 @@ void SetUpLogger(std::string logPath)
 
 int main(int argc, char** argv)
 {
-    char result[PATH_MAX];
-    if (readlink("/proc/self/exe", result, PATH_MAX) == -1)
-        return -1;
-    auto path = std::string(dirname(result));
-    path.append("/SyncCLI.log");
-    SetUpLogger(path);
+    SetUpLogger(Utils::GetProgramPath() + "SyncCLI.log");
     LOG(INFO) << "Starting Sync CLI.";
 
     DBConnector::EnsureCreated();

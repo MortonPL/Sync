@@ -9,7 +9,7 @@ FetchContent_MakeAvailable(fmt)
 
 # sources
 set(SRC_UTILS_FILES 
-    dummy.cpp
+    path.cpp
 )
 
 add_library(utils ${SRC_UTILS_FILES})

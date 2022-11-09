@@ -1,1 +1,1 @@
-build/Sync
+build/SyncGUI

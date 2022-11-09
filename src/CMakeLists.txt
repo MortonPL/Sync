@@ -7,7 +7,6 @@ add_subdirectory(cli)
 
 # sources
 set(SRC_FILES
-    # main
     dummy.cpp
 )
 

@@ -1,6 +1,7 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 
+#include "Utils.h"
 #include "wx.h"
 #include "MainFrame.h"
 #include "Logger.h"
@@ -33,9 +34,7 @@ void SetUpLogger(std::string logPath)
 
 bool MyApp::OnInit()
 {
-    auto programPath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-
-    SetUpLogger(programPath.GetPath().Append("/SyncGUI.log").ToStdString());
+    SetUpLogger(Utils::GetProgramPath() + "SyncGUI.log");
     LOG(INFO) << "Starting Sync GUI.";
 
     DBConnector::EnsureCreated();
@@ -43,7 +42,7 @@ bool MyApp::OnInit()
     wxImage::AddHandler(new wxPNGHandler);
 
     wxXmlResource::Get()->InitAllHandlers();
-    wxXmlResource::Get()->LoadAllFiles(programPath.GetPath().Append("/rc"));
+    wxXmlResource::Get()->LoadAllFiles(Utils::GetProgramPath() + "rc");
 
     auto pMainFrame = new MainFrame();
     pMainFrame->Show(true);

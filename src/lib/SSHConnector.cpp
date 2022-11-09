@@ -116,7 +116,7 @@ bool SSHConnector::ExecuteCD(std::string directory)
         return false;
     }
 
-    if (ssh_channel_read(pChannel, &buf, 1, 1))
+    if (ssh_channel_read(pChannel, &buf, 1, 0) > 0)
     {
         FreeChannel(pChannel);
         return false;

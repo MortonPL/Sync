@@ -9,7 +9,6 @@ public:
     Configuration(std::string name, std::string pathA, std::string pathB, std::string remoteAddress, std::string remoteUser);
     ~Configuration();
 
-private:
     std::string name;
     std::string pathA;
     std::string pathB;

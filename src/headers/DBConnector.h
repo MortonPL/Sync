@@ -5,8 +5,6 @@
 
 #include "Domain/Configuration.h"
 
-#define DATABASE_NAME "Sync.db3"
-
 class DBConnector
 {
 public:
@@ -21,4 +19,5 @@ public:
     Configuration SelectConfig();
 private:
     SQLite::Database* db;
+    static std::string Filename;
 };
