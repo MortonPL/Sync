@@ -1,0 +1,6 @@
+* text eol=lf
+.gitattributes text=auto
+.gitignore text=auto
+
+*.png binary
+*.fbp text=auto
