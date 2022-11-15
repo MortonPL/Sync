@@ -24,9 +24,11 @@ MainFrame::MainFrame(wxWindow* pParent)
     //GetSizer()->SetSizeHints(this);
 }
 
-/********************************* RESOURCES *********************************/
-
 /******************************* EVENT HANDLERS ******************************/
+
+void MainFrame::Update()
+{
+}
 
 void MainFrame::OnNewConfig(wxCommandEvent &event)
 {

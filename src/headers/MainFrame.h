@@ -6,8 +6,15 @@ public:
     MainFrame(wxWindow* parent=(wxWindow*)NULL);
 
 private:
+    // control struct
+    struct Control {};
+
+    // properties
+    Control ctrl;
     wxPanel* pViewPanel;
 
+    // event handlers
+    void Update();
     void OnNewConfig(wxCommandEvent &event);
     void OnChangeConfig(wxCommandEvent &event);
     void OnExit(wxCommandEvent &event);

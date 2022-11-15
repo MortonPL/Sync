@@ -73,36 +73,6 @@ void SSHConnector::FreeChannel(ssh_channel_struct* pChannel)
     ssh_channel_free(pChannel);
 }
 
-bool SSHConnector::ExecuteLS(std::string &result)
-{
-    auto pChannel = GetChannel();
-
-    if (ssh_channel_request_exec(pChannel, "ls") != SSH_OK)
-    {
-        FreeChannel(pChannel);
-        return false;
-    }
-    
-    // read response
-    char buffer[256];
-    auto nbytes = ssh_channel_read(pChannel, buffer, sizeof(buffer), 0);
-    if (nbytes < 0)
-    {
-        FreeChannel(pChannel);
-        return false;
-    }
-    while (nbytes > 0)
-    {
-        if (nbytes <= 255)
-            buffer[nbytes] = 0;
-        result.append(buffer);
-        nbytes = ssh_channel_read(pChannel, buffer, sizeof(buffer), 0);
-    }
-
-    FreeChannel(pChannel);
-    return true;
-}
-
 // TODO: replace with executing remote Sync CLI that uses stat()
 bool SSHConnector::ExecuteCD(std::string directory)
 {

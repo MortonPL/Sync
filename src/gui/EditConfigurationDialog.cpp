@@ -1,27 +1,25 @@
 #include <fmt/core.h>
 
-#include "NewConfigurationDialog.h"
-#include "SSHConnector.h"
+#include "EditConfigurationDialog.h"
 #include "GenericPopup.h"
-#include "Logger.h"
-#include "Domain/Configuration.h"
 #include "DBConnector.h"
+#include "SSHConnector.h"
 
 #define DD_SSH 1
 
-wxBEGIN_EVENT_TABLE(NewConfigurationDialog, wxDialog)
-    EVT_BUTTON(wxID_OK, NewConfigurationDialog::OnOK)
-    EVT_TEXT(XRCID("txtConfigName"), NewConfigurationDialog::OnAnyChange)
-    EVT_DIRPICKER_CHANGED(XRCID("dirRootA"), NewConfigurationDialog::OnAnyChange)
-    EVT_CHOICE(XRCID("ddConfigType"), NewConfigurationDialog::OnConfigTypeChange)
-    EVT_DIRPICKER_CHANGED(XRCID("dirRootBLocal"), NewConfigurationDialog::OnAnyChange)
-    EVT_TEXT(XRCID("txtAddress"), NewConfigurationDialog::OnAnyChange)
-    EVT_TEXT(XRCID("txtUser"), NewConfigurationDialog::OnAnyChange)
-    EVT_TEXT(XRCID("txtRootB"), NewConfigurationDialog::OnAnyChange)
+wxBEGIN_EVENT_TABLE(EditConfigurationDialog, wxDialog)
+    EVT_BUTTON(wxID_OK, EditConfigurationDialog::OnOK)
+    EVT_TEXT(XRCID("txtConfigName"), EditConfigurationDialog::OnAnyChange)
+    EVT_DIRPICKER_CHANGED(XRCID("dirRootA"), EditConfigurationDialog::OnAnyChange)
+    EVT_CHOICE(XRCID("ddConfigType"), EditConfigurationDialog::OnConfigTypeChange)
+    EVT_DIRPICKER_CHANGED(XRCID("dirRootBLocal"), EditConfigurationDialog::OnAnyChange)
+    EVT_TEXT(XRCID("txtAddress"), EditConfigurationDialog::OnAnyChange)
+    EVT_TEXT(XRCID("txtUser"), EditConfigurationDialog::OnAnyChange)
+    EVT_TEXT(XRCID("txtRootB"), EditConfigurationDialog::OnAnyChange)
 wxEND_EVENT_TABLE()
 
 // ctor
-NewConfigurationDialog::NewConfigurationDialog(wxWindow* pParent)
+EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWindow* pParent)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "NewConfigurationDialog");
 
@@ -37,9 +35,26 @@ NewConfigurationDialog::NewConfigurationDialog(wxWindow* pParent)
         (wxButton*)(this->FindWindow("wxID_OK")),
         (wxButton*)(this->FindWindow("wxID_CANCEL")),
     };
+
+    this->oldConfig = oldConfig;
+
+    //fill in controls
+    ctrl.txtConfigName->AppendText(this->oldConfig.name);
+    ctrl.dirRootA->SetPath(this->oldConfig.pathA);
+    ctrl.ddConfigType->SetSelection((int)(this->oldConfig.isRemote));
+    if (this->oldConfig.isRemote)
+    {
+        ctrl.txtAddress->AppendText(this->oldConfig.remoteAddress);
+        ctrl.txtUser->AppendText(this->oldConfig.remoteUser);
+        ctrl.txtRootB->AppendText(this->oldConfig.pathB);
+    }
+    else
+    {
+        ctrl.dirRootBLocal->SetPath(this->oldConfig.pathB);
+    }
 }
 
-void NewConfigurationDialog::CheckIfOK()
+void EditConfigurationDialog::CheckIfOK()
 {
     bool isOK = !ctrl.txtConfigName->GetValue().IsEmpty()
                 && !ctrl.dirRootA->GetPath().ToStdString().empty()
@@ -57,19 +72,19 @@ void NewConfigurationDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void NewConfigurationDialog::Update()
+void EditConfigurationDialog::Update()
 {
     this->CheckIfOK();
 }
 
-void NewConfigurationDialog::OnOK(wxCommandEvent &event)
+void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 {
     Configuration config;
 
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
     {
         config = Configuration(
-            NOID,
+            this->oldConfig.id,
             ctrl.txtConfigName->GetValue().ToStdString(),
             ctrl.dirRootA->GetPath().ToStdString(),
             ctrl.txtRootB->GetValue().ToStdString(),
@@ -80,11 +95,16 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
     else
     {
         config = Configuration(
-            NOID,
+            this->oldConfig.id,
             ctrl.txtConfigName->GetValue().ToStdString(),
             ctrl.dirRootA->GetPath().ToStdString(),
             ctrl.dirRootBLocal->GetPath().ToStdString()
         );
+    }
+
+    if (config == this->oldConfig)
+    {
+        EndModal(wxID_CANCEL);
     }
 
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
@@ -108,6 +128,7 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
             fmt::format("Enter password for {}@{}:", ctrl.txtUser->GetValue().ToStdString(), ctrl.txtAddress->GetValue().ToStdString()),
             NULL, &password, true).ShowModal();
 
+        // TODO support key auth
         if (!ssh.AuthenticateUserPass(ctrl.txtUser->GetValue().ToStdString(), password))
         {
             GenericPopup("Failed to authenticate user. Check user credentials.").ShowModal();
@@ -129,29 +150,29 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
     try
     {
         DBConnector db(SQLite::OPEN_READWRITE);
-        db.InsertConfig(config);
+        db.UpdateConfig(config);
     }
     catch(const std::exception& e)
     {
         GenericPopup("Failed to open configuration database.").ShowModal();
         return;
     }
-    GenericPopup("Successfully created a new configuration.").ShowModal();
+    GenericPopup("Successfully edited the configuration.").ShowModal();
 
     EndModal(wxID_OK);
 }
 
-void NewConfigurationDialog::OnAnyChange(wxCommandEvent &event)
+void EditConfigurationDialog::OnAnyChange(wxCommandEvent &event)
 {
     Update();
 }
 
-void NewConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
+void EditConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
 {
     Update();
 }
 
-void NewConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
+void EditConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
 {
     if (event.GetSelection() == DD_SSH)
     {

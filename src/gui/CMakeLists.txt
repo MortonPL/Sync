@@ -9,6 +9,7 @@ set(SRC_GUI_FILES
     # custom dialog
     NewConfigurationDialog.cpp
     ChangeConfigurationDialog.cpp
+    EditConfigurationDialog.cpp
     # frames
     MainFrame.cpp
     # main

@@ -4,7 +4,7 @@
 class GenericPopup : public wxDialog {
 public:
     GenericPopup();
-    GenericPopup(std::string message, std::string* output=nullptr, bool isPassword=false, wxWindow* pParent=(wxWindow*)NULL);
+    GenericPopup(std::string message, wxWindow* pParent=(wxWindow*)NULL, std::string* output=nullptr, bool isPassword=false);
     ~GenericPopup(){}
 
 private:
@@ -22,7 +22,9 @@ private:
     bool isPassword;
 
     // event handlers
+    void Update();
     void OnOK(wxCommandEvent &event);
+
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };

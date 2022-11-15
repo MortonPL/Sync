@@ -2,22 +2,25 @@
 #include "SQLite.h"
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <string>
+#include <vector>
 
 #include "Domain/Configuration.h"
+
+#define NOID -1
 
 class DBConnector
 {
 public:
-    DBConnector();
+    DBConnector(int mode);
     ~DBConnector();
 
     static bool EnsureCreated();
-    bool Open(int mode=SQLite::OPEN_READONLY);
-    bool Close();
-
     bool InsertConfig(Configuration config);
-    Configuration SelectConfig();
+    bool UpdateConfig(Configuration config);
+    bool DeleteConfig(int id);
+    std::vector<Configuration> SelectAllConfigs();
+
 private:
-    SQLite::Database* db;
-    static std::string Filename;
+    SQLite::Database db;
+    static std::string filename;
 };

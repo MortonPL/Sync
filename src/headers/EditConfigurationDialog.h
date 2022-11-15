@@ -1,11 +1,13 @@
 #pragma once
 #include "../headers/wx.h"
 
-class NewConfigurationDialog : public wxDialog
+#include "Domain/Configuration.h"
+
+class EditConfigurationDialog : public wxDialog
 {
 public:
-    NewConfigurationDialog(wxWindow* pParent=(wxWindow*)NULL);
-    ~NewConfigurationDialog(){}
+    EditConfigurationDialog(Configuration& oldConfig, wxWindow* pParent=(wxWindow*)NULL);
+    ~EditConfigurationDialog(){}
 
 private:
     // control struct
@@ -24,6 +26,7 @@ private:
 
     // properties
     Controls ctrl;
+    Configuration oldConfig;
 
     // custom methods
     void CheckIfOK();
