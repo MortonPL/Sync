@@ -7,11 +7,12 @@ public:
 
 private:
     // control struct
-    struct Control {};
+    struct Controls {
+        wxListCtrl* listMain;
+    };
 
     // properties
-    Control ctrl;
-    wxPanel* pViewPanel;
+    Controls ctrl;
 
     // event handlers
     void Update();

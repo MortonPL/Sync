@@ -1,9 +1,9 @@
-#include <fmt/core.h>
+#include "GUI/EditConfigurationDialog.h"
 
-#include "EditConfigurationDialog.h"
-#include "GenericPopup.h"
-#include "DBConnector.h"
-#include "SSHConnector.h"
+#include <fmt/core.h>
+#include "GUI/GenericPopup.h"
+#include "Lib/DBConnector.h"
+#include "Lib/SSHConnector.h"
 
 #define DD_SSH 1
 

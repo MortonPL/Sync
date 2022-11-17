@@ -1,11 +1,11 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 
-#include "Utils.h"
+#include "GUI/MainFrame.h"
+#include "Lib/DBConnector.h"
+#include "Utils/Utils.h"
 #include "wx.h"
-#include "MainFrame.h"
-#include "Logger.h"
-#include "DBConnector.h"
+#include "Utils/Logger.h"
 
 INITIALIZE_EASYLOGGINGPP
 

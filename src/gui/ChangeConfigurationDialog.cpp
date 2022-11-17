@@ -1,10 +1,11 @@
-#include "ChangeConfigurationDialog.h"
+#include "GUI/ChangeConfigurationDialog.h"
 
-#include "NewConfigurationDialog.h"
-#include "EditConfigurationDialog.h"
-#include "DBConnector.h"
-#include "GenericPopup.h"
-#include "Logger.h"
+#include "GUI/NewConfigurationDialog.h"
+#include "GUI/EditConfigurationDialog.h"
+#include "GUI/GenericPopup.h"
+#include "Lib/DBConnector.h"
+#include "Lib/Global.h"
+#include "Utils/Logger.h"
 
 wxBEGIN_EVENT_TABLE(ChangeConfigurationDialog, wxDialog)
     EVT_LISTBOX(XRCID("listConfigs"), ChangeConfigurationDialog::OnListBoxChange)
@@ -81,8 +82,8 @@ void ChangeConfigurationDialog::PopulateConfigDetails()
 
 void ChangeConfigurationDialog::CheckIfConfigSelected()
 {
-    this->selectedConfigIdx = ctrl.listConfigs->GetSelection();
-    if (this->selectedConfigIdx != wxNOT_FOUND)
+    selectedConfigIdx = ctrl.listConfigs->GetSelection();
+    if (selectedConfigIdx != wxNOT_FOUND)
     {
         PopulateConfigDetails();
         ctrl.btnEditConfig->Enable();
@@ -114,7 +115,12 @@ void ChangeConfigurationDialog::OnListBoxChange(wxCommandEvent &event)
 
 void ChangeConfigurationDialog::OnListBoxDClick(wxCommandEvent &event)
 {
-    Update();
+    if (EditConfigurationDialog(configs[selectedConfigIdx]).ShowModal() == wxID_OK)
+    {
+        PopulateConfigList();
+        PopulateConfigDetails();
+        Update();
+    }
 }
 
 void ChangeConfigurationDialog::OnNewConfig(wxCommandEvent &event)
@@ -126,7 +132,7 @@ void ChangeConfigurationDialog::OnNewConfig(wxCommandEvent &event)
 
 void ChangeConfigurationDialog::OnEditConfig(wxCommandEvent &event)
 {
-    if (EditConfigurationDialog(this->configs[selectedConfigIdx]).ShowModal() == wxID_OK)
+    if (EditConfigurationDialog(configs[selectedConfigIdx]).ShowModal() == wxID_OK)
     {
         PopulateConfigList();
         PopulateConfigDetails();
@@ -139,7 +145,7 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
     try
     {
         DBConnector db(SQLite::OPEN_READWRITE);
-        if (db.DeleteConfig(configs[this->selectedConfigIdx].id))
+        if (db.DeleteConfig(configs[selectedConfigIdx].id))
         {
             GenericPopup("Configuration removed successfully.").ShowModal();
         }
@@ -163,6 +169,7 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
 
 void ChangeConfigurationDialog::OnOK(wxCommandEvent &event)
 {
+    Global::config = configs[selectedConfigIdx];
     EndModal(wxID_OK);
 }
 

@@ -8,3 +8,4 @@
 
 #include <wx/xrc/xmlres.h>
 #include <wx/filepicker.h>
+#include <wx/listctrl.h>

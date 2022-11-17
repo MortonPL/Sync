@@ -1,11 +1,11 @@
-#include <fmt/core.h>
+#include "GUI/NewConfigurationDialog.h"
 
-#include "NewConfigurationDialog.h"
-#include "SSHConnector.h"
-#include "GenericPopup.h"
-#include "Logger.h"
+#include <fmt/core.h>
+#include "GUI/GenericPopup.h"
+#include "Lib/SSHConnector.h"
+#include "Lib/DBConnector.h"
 #include "Domain/Configuration.h"
-#include "DBConnector.h"
+#include "Utils/Logger.h"
 
 #define DD_SSH 1
 

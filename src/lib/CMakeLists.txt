@@ -11,6 +11,7 @@ find_package(libssh REQUIRED)
 # sources
 set(SRC_LIB_FILES
     domain/Configuration.cpp
+    Global.cpp
     DBConnector.cpp
     SSHConnector.cpp
 )

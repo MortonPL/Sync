@@ -1,8 +1,8 @@
-#include "DBConnector.h"
+#include "Lib/DBConnector.h"
 
 #include <fmt/core.h>
-#include "Logger.h"
-#include "Utils.h"
+#include "Utils/Logger.h"
+#include "Utils/Utils.h"
 
 std::string DBConnector::filename;
 
