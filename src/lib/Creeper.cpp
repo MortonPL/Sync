@@ -76,10 +76,12 @@ void Creeper::CreepPath()
             }
         }
 
-        LOG(INFO) << epath;
+        FileNode node(epath);
+        fileNodes.push_back(node);
     }
 }
 
-void Creeper::GetResults()
+std::vector<FileNode>& Creeper::GetResults()
 {
+    return fileNodes;
 }

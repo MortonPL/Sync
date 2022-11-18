@@ -15,9 +15,11 @@ private:
         wxDirPickerCtrl* dirRootA;
         wxChoice* ddConfigType;
         wxDirPickerCtrl* dirRootBLocal;
-        wxTextCtrl* txtAddress;
-        wxTextCtrl* txtUser;
+        wxTextCtrl* txtAddressB;
+        wxTextCtrl* txtUserB;
         wxTextCtrl* txtRootB;
+        wxTextCtrl* txtAddressA;
+        wxTextCtrl* txtUserA;
         wxButton* btnOK;
         wxButton* btnCancel;
     };

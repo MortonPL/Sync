@@ -12,7 +12,7 @@ public:
 
     void CreepPath();
     void SearchForLists();
-    void GetResults();
+    std::vector<FileNode>& GetResults();
 
 private:
     std::string path;

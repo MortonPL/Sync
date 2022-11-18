@@ -20,4 +20,4 @@ set(SRC_LIB_FILES
 
 add_library(lib ${SRC_LIB_FILES})
 target_include_directories(lib PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
-target_link_libraries(lib ssh SQLiteCpp utils)
+target_link_libraries(lib ssh SQLiteCpp uuid utils)

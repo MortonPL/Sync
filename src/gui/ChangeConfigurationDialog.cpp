@@ -43,7 +43,7 @@ ChangeConfigurationDialog::ChangeConfigurationDialog(wxWindow* pParent)
 
 void ChangeConfigurationDialog::PopulateConfigList()
 {
-    DBConnector db(SQLite::OPEN_READONLY);
+    DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READONLY);
     try
     {
         this->configs = db.SelectAllConfigs();
@@ -75,8 +75,12 @@ void ChangeConfigurationDialog::PopulateConfigDetails()
     *ctrl.txtDetails << "Path B: " << config.pathB << "\n";
     if (config.isRemote)
     {
-        *ctrl.txtDetails << "Remote address: " << config.remoteAddress << "\n";
-        *ctrl.txtDetails << "Remote user: " << config.remoteUser << "\n";
+        *ctrl.txtDetails << "Connecting from A to B:\n";
+        *ctrl.txtDetails << "Address/Hostname: " << config.pathBaddress << "\n";
+        *ctrl.txtDetails << "User: " << config.pathBuser << "\n";
+        *ctrl.txtDetails << "Connecting from B to A:\n";
+        *ctrl.txtDetails << "Address/Hostname: " << config.pathAaddress << "\n";
+        *ctrl.txtDetails << "User: " << config.pathAuser << "\n";
     }
 }
 
@@ -134,7 +138,7 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
 {
     try
     {
-        DBConnector db(SQLite::OPEN_READWRITE);
+        DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);
         if (db.DeleteConfig(configs[selectedConfigIdx].id))
         {
             GenericPopup("Configuration removed successfully.").ShowModal();

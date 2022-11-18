@@ -15,6 +15,9 @@ private:
     Controls ctrl;
     bool isFirstConfig;
 
+    // custom methods
+    void CreateReportList();
+
     // event handlers
     void Update();
     void OnNewConfig(wxCommandEvent &event);

@@ -16,6 +16,10 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 wxEND_EVENT_TABLE()
 
+#define COL_LOCAL 0
+#define COL_STATUS 1
+#define COL_REMOTE 2
+
 // ctor
 MainFrame::MainFrame(wxWindow* pParent)
 {
@@ -30,8 +34,17 @@ MainFrame::MainFrame(wxWindow* pParent)
 
     isFirstConfig = true;
 
+    CreateReportList();
+
     // resize for menu and status bar
     //GetSizer()->SetSizeHints(this);
+}
+
+void MainFrame::CreateReportList()
+{
+    ctrl.listMain->AppendColumn("Local");
+    ctrl.listMain->AppendColumn("Status");
+    ctrl.listMain->AppendColumn("Remote");
 }
 
 /******************************* EVENT HANDLERS ******************************/
@@ -71,6 +84,16 @@ void MainFrame::OnScan(wxCommandEvent &event)
     auto crp = Creeper(cfg.pathA);
     crp.SearchForLists();
     crp.CreepPath();
+    auto nodes = crp.GetResults();
+    for(int i = 0; i < nodes.size(); i++)
+    {
+        auto item = wxListItem();
+        auto node = nodes[i];
+        item.SetText(node.GetPath());
+        item.SetId(i);
+        item.SetColumn(COL_LOCAL);
+        ctrl.listMain->InsertItem(item);
+    }
 
     GenericPopup("Scanning...").ShowModal();
 }
@@ -85,3 +108,7 @@ void MainFrame::OnExit(wxCommandEvent &event)
 {
     Close(true);
 }
+
+#undef COL_LOCAL
+#undef COL_STATUS
+#undef COL_REMOTE

@@ -64,7 +64,7 @@
 								<flag>wxALL</flag>
 								<border>5</border>
 								<object class="wxStaticText" name="lblRootA">
-									<label>First root</label>
+									<label>Root A</label>
 									<wrap>-1</wrap>
 								</object>
 							</object>
@@ -138,7 +138,7 @@
 								<flag>wxALL</flag>
 								<border>5</border>
 								<object class="wxStaticText" name="lblRootB1">
-									<label>Second Root</label>
+									<label>Root B</label>
 									<wrap>-1</wrap>
 								</object>
 							</object>
@@ -190,6 +190,39 @@
 								<option>0</option>
 								<flag>wxALL</flag>
 								<border>5</border>
+								<object class="wxStaticText" name="lblRootB">
+									<label>Root B</label>
+									<wrap>-1</wrap>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxTextCtrl" name="txtRootB">
+									<enabled>0</enabled>
+									<value></value>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxStaticText" name="lblAtoB">
+									<label>When connecting from A to B:</label>
+									<wrap>-1</wrap>
+								</object>
+							</object>
+							<object class="spacer">
+								<option>1</option>
+								<flag>wxEXPAND</flag>
+								<border>5</border>
+								<size>0,0</size>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL</flag>
+								<border>5</border>
 								<object class="wxStaticText" name="lblRootBAddress">
 									<label>Address/Hostname</label>
 									<wrap>-1</wrap>
@@ -199,7 +232,7 @@
 								<option>0</option>
 								<flag>wxALL|wxEXPAND</flag>
 								<border>5</border>
-								<object class="wxTextCtrl" name="txtAddress">
+								<object class="wxTextCtrl" name="txtAddressB">
 									<enabled>0</enabled>
 									<value></value>
 								</object>
@@ -217,7 +250,7 @@
 								<option>0</option>
 								<flag>wxALL|wxEXPAND</flag>
 								<border>5</border>
-								<object class="wxTextCtrl" name="txtUser">
+								<object class="wxTextCtrl" name="txtUserB">
 									<enabled>0</enabled>
 									<value></value>
 								</object>
@@ -226,8 +259,23 @@
 								<option>0</option>
 								<flag>wxALL</flag>
 								<border>5</border>
-								<object class="wxStaticText" name="lblRootB">
-									<label>Second Root</label>
+								<object class="wxStaticText" name="lblAtoB1">
+									<label>When connecting from B to A:</label>
+									<wrap>-1</wrap>
+								</object>
+							</object>
+							<object class="spacer">
+								<option>1</option>
+								<flag>wxEXPAND</flag>
+								<border>5</border>
+								<size>0,0</size>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxStaticText" name="lblRootBAddress1">
+									<label>Address/Hostname</label>
 									<wrap>-1</wrap>
 								</object>
 							</object>
@@ -235,7 +283,25 @@
 								<option>0</option>
 								<flag>wxALL|wxEXPAND</flag>
 								<border>5</border>
-								<object class="wxTextCtrl" name="txtRootB">
+								<object class="wxTextCtrl" name="txtAddressA">
+									<enabled>0</enabled>
+									<value></value>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxStaticText" name="lblUser1">
+									<label>Username</label>
+									<wrap>-1</wrap>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxTextCtrl" name="txtUserA">
 									<enabled>0</enabled>
 									<value></value>
 								</object>

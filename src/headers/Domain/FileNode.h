@@ -4,11 +4,12 @@
 class FileNode
 {
 public:
-    FileNode();
+    FileNode(std::string path);
     ~FileNode();
+
+    std::string GetPath();
 
 private:
     std::string path;
-    int flags;
     int lastModified;
 };

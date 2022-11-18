@@ -29,9 +29,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
         (wxDirPickerCtrl*)(FindWindow("dirRootA")),
         (wxChoice*)(FindWindow("ddConfigType")),
         (wxDirPickerCtrl*)(FindWindow("dirRootBLocal")),
-        (wxTextCtrl*)(FindWindow("txtAddress")),
-        (wxTextCtrl*)(FindWindow("txtUser")),
+        (wxTextCtrl*)(FindWindow("txtAddressB")),
+        (wxTextCtrl*)(FindWindow("txtUserB")),
         (wxTextCtrl*)(FindWindow("txtRootB")),
+        (wxTextCtrl*)(FindWindow("txtAddressA")),
+        (wxTextCtrl*)(FindWindow("txtUserA")),
         (wxButton*)(FindWindow("wxID_OK")),
         (wxButton*)(FindWindow("wxID_CANCEL")),
     };
@@ -44,9 +46,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
     ctrl.ddConfigType->SetSelection(oldConfig.isRemote ? 1 : 0);
     if (oldConfig.isRemote)
     {
-        ctrl.txtAddress->AppendText(oldConfig.remoteAddress);
-        ctrl.txtUser->AppendText(oldConfig.remoteUser);
         ctrl.txtRootB->AppendText(oldConfig.pathB);
+        ctrl.txtAddressB->AppendText(oldConfig.pathBaddress);
+        ctrl.txtUserB->AppendText(oldConfig.pathBuser);
+        ctrl.txtAddressA->AppendText(oldConfig.pathAaddress);
+        ctrl.txtUserA->AppendText(oldConfig.pathAuser);
         EnableRemote();
     }
     else
@@ -65,9 +69,11 @@ void EditConfigurationDialog::CheckIfOK()
                     !ctrl.dirRootBLocal->GetPath().ToStdString().empty()
                     :
                     (
-                        !ctrl.txtAddress->GetValue().IsEmpty()
-                        && !ctrl.txtUser->GetValue().IsEmpty()
-                        && !ctrl.txtRootB->GetValue().IsEmpty()
+                        !ctrl.txtRootB->GetValue().IsEmpty()
+                        && !ctrl.txtAddressB->GetValue().IsEmpty()
+                        && !ctrl.txtUserB->GetValue().IsEmpty()
+                        && !ctrl.txtAddressA->GetValue().IsEmpty()
+                        && !ctrl.txtUserA->GetValue().IsEmpty()
                     )
                 );
     ctrl.btnOK->Enable(isOK);
@@ -76,24 +82,28 @@ void EditConfigurationDialog::CheckIfOK()
 void EditConfigurationDialog::DisableRemote()
 {
     ctrl.dirRootBLocal->Enable();
-    ctrl.txtAddress->Disable();
-    ctrl.txtUser->Disable();
     ctrl.txtRootB->Disable();
+    ctrl.txtAddressB->Disable();
+    ctrl.txtUserB->Disable();
+    ctrl.txtAddressA->Disable();
+    ctrl.txtUserA->Disable();
 }
 
 void EditConfigurationDialog::EnableRemote()
 {
     ctrl.dirRootBLocal->Disable();
-    ctrl.txtAddress->Enable();
-    ctrl.txtUser->Enable();
     ctrl.txtRootB->Enable();
+    ctrl.txtAddressB->Enable();
+    ctrl.txtUserB->Enable();
+    ctrl.txtAddressA->Enable();
+    ctrl.txtUserA->Enable();
 }
 
 /******************************* EVENT HANDLERS ******************************/
 
 void EditConfigurationDialog::Update()
 {
-    this->CheckIfOK();
+    CheckIfOK();
 }
 
 void EditConfigurationDialog::OnOK(wxCommandEvent &event)
@@ -103,25 +113,29 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
     {
         config = Configuration(
-            this->oldConfig.id,
+            oldConfig.id,
             ctrl.txtConfigName->GetValue().ToStdString(),
+            oldConfig.uuid,
             Utils::CorrectDirPath(ctrl.dirRootA->GetPath().ToStdString()),
+            ctrl.txtAddressA->GetValue().ToStdString(),
+            ctrl.txtUserA->GetValue().ToStdString(),
             Utils::CorrectDirPath(ctrl.txtRootB->GetValue().ToStdString()),
-            ctrl.txtAddress->GetValue().ToStdString(),
-            ctrl.txtUser->GetValue().ToStdString()
+            ctrl.txtAddressB->GetValue().ToStdString(),
+            ctrl.txtUserB->GetValue().ToStdString()
         );
     }
     else
     {
         config = Configuration(
-            this->oldConfig.id,
+            oldConfig.id,
             ctrl.txtConfigName->GetValue().ToStdString(),
+            oldConfig.uuid,
             Utils::CorrectDirPath(ctrl.dirRootA->GetPath().ToStdString()),
             Utils::CorrectDirPath(ctrl.dirRootBLocal->GetPath().ToStdString())
         );
     }
 
-    if (config == this->oldConfig)
+    if (config == oldConfig)
     {
         EndModal(wxID_CANCEL);
     }
@@ -130,7 +144,7 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
     {
         auto ssh = SSHConnector();
 
-        if (!ssh.BeginSession(ctrl.txtAddress->GetValue().ToStdString()))
+        if (!ssh.BeginSession(ctrl.txtAddressB->GetValue().ToStdString()))
         {
             GenericPopup("Failed to connect to given address.").ShowModal();
             return;
@@ -144,11 +158,11 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 
         std::string password;
         GenericPopup(
-            fmt::format("Enter password for {}@{}:", ctrl.txtUser->GetValue().ToStdString(), ctrl.txtAddress->GetValue().ToStdString()),
+            fmt::format("Enter password for {}@{}:", ctrl.txtUserB->GetValue().ToStdString(), ctrl.txtAddressB->GetValue().ToStdString()),
             NULL, &password, true).ShowModal();
 
         // TODO support key auth
-        if (!ssh.AuthenticateUserPass(ctrl.txtUser->GetValue().ToStdString(), password))
+        if (!ssh.AuthenticateUserPass(ctrl.txtUserB->GetValue().ToStdString(), password))
         {
             GenericPopup("Failed to authenticate user. Check user credentials.").ShowModal();
             ssh.EndSession();
@@ -167,7 +181,7 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 
     try
     {
-        DBConnector db(SQLite::OPEN_READWRITE);
+        DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);
         db.UpdateConfig(config);
     }
     catch(const std::exception& e)

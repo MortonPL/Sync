@@ -10,8 +10,10 @@
 class DBConnector
 {
 public:
-    DBConnector(int mode);
+    DBConnector(std::string filename, int mode);
     ~DBConnector();
+
+    static std::string& GetMainFileName();
 
     static bool EnsureCreated();
     bool InsertConfig(Configuration config);
@@ -21,5 +23,5 @@ public:
 
 private:
     SQLite::Database db;
-    static std::string filename;
+    static std::string mainFile;
 };
