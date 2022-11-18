@@ -10,4 +10,5 @@ public:
 private:
     std::string path;
     int flags;
+    int lastModified;
 };

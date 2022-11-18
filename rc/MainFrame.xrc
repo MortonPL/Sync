@@ -27,6 +27,7 @@
 				<object class="wxMenuItem" name="menu_edit_scan">
 					<label>Scan directories\tCtrl+R</label>
 					<help>Scan directories for changes.</help>
+					<enabled>0</enabled>
 				</object>
 			</object>
 			<object class="wxMenu" name="menu_help">

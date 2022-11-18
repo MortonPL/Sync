@@ -1,6 +1,5 @@
 #include "Lib/DBConnector.h"
-#include "Utils/Logger.h"
-#include "Utils/Utils.h"
+#include "Utils.h"
 
 INITIALIZE_EASYLOGGINGPP
 

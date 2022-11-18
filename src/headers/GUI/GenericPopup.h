@@ -1,5 +1,5 @@
 #pragma once
-#include "../headers/wx.h"
+#include "wx.h"
 
 class GenericPopup : public wxDialog {
 public:

@@ -1,9 +1,9 @@
 #include "GUI/EditConfigurationDialog.h"
 
-#include <fmt/core.h>
 #include "GUI/GenericPopup.h"
 #include "Lib/DBConnector.h"
 #include "Lib/SSHConnector.h"
+#include "Utils.h"
 
 #define DD_SSH 1
 
@@ -25,33 +25,36 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
 
     ctrl = Controls
     {
-        (wxTextCtrl*)(this->FindWindow("txtConfigName")),
-        (wxDirPickerCtrl*)(this->FindWindow("dirRootA")),
-        (wxChoice*)(this->FindWindow("ddConfigType")),
-        (wxDirPickerCtrl*)(this->FindWindow("dirRootBLocal")),
-        (wxTextCtrl*)(this->FindWindow("txtAddress")),
-        (wxTextCtrl*)(this->FindWindow("txtUser")),
-        (wxTextCtrl*)(this->FindWindow("txtRootB")),
-        (wxButton*)(this->FindWindow("wxID_OK")),
-        (wxButton*)(this->FindWindow("wxID_CANCEL")),
+        (wxTextCtrl*)(FindWindow("txtConfigName")),
+        (wxDirPickerCtrl*)(FindWindow("dirRootA")),
+        (wxChoice*)(FindWindow("ddConfigType")),
+        (wxDirPickerCtrl*)(FindWindow("dirRootBLocal")),
+        (wxTextCtrl*)(FindWindow("txtAddress")),
+        (wxTextCtrl*)(FindWindow("txtUser")),
+        (wxTextCtrl*)(FindWindow("txtRootB")),
+        (wxButton*)(FindWindow("wxID_OK")),
+        (wxButton*)(FindWindow("wxID_CANCEL")),
     };
 
     this->oldConfig = oldConfig;
 
     //fill in controls
-    ctrl.txtConfigName->AppendText(this->oldConfig.name);
-    ctrl.dirRootA->SetPath(this->oldConfig.pathA);
-    ctrl.ddConfigType->SetSelection((int)(this->oldConfig.isRemote));
-    if (this->oldConfig.isRemote)
+    ctrl.txtConfigName->AppendText(oldConfig.name);
+    ctrl.dirRootA->SetPath(oldConfig.pathA);
+    ctrl.ddConfigType->SetSelection(oldConfig.isRemote ? 1 : 0);
+    if (oldConfig.isRemote)
     {
-        ctrl.txtAddress->AppendText(this->oldConfig.remoteAddress);
-        ctrl.txtUser->AppendText(this->oldConfig.remoteUser);
-        ctrl.txtRootB->AppendText(this->oldConfig.pathB);
+        ctrl.txtAddress->AppendText(oldConfig.remoteAddress);
+        ctrl.txtUser->AppendText(oldConfig.remoteUser);
+        ctrl.txtRootB->AppendText(oldConfig.pathB);
+        EnableRemote();
     }
     else
     {
-        ctrl.dirRootBLocal->SetPath(this->oldConfig.pathB);
+        ctrl.dirRootBLocal->SetPath(oldConfig.pathB);
+        DisableRemote();
     }
+    ctrl.btnOK->SetLabel("Edit");
 }
 
 void EditConfigurationDialog::CheckIfOK()
@@ -70,6 +73,22 @@ void EditConfigurationDialog::CheckIfOK()
     ctrl.btnOK->Enable(isOK);
 }
 
+void EditConfigurationDialog::DisableRemote()
+{
+    ctrl.dirRootBLocal->Enable();
+    ctrl.txtAddress->Disable();
+    ctrl.txtUser->Disable();
+    ctrl.txtRootB->Disable();
+}
+
+void EditConfigurationDialog::EnableRemote()
+{
+    ctrl.dirRootBLocal->Disable();
+    ctrl.txtAddress->Enable();
+    ctrl.txtUser->Enable();
+    ctrl.txtRootB->Enable();
+}
+
 /******************************* EVENT HANDLERS ******************************/
 
 void EditConfigurationDialog::Update()
@@ -86,8 +105,8 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
         config = Configuration(
             this->oldConfig.id,
             ctrl.txtConfigName->GetValue().ToStdString(),
-            ctrl.dirRootA->GetPath().ToStdString(),
-            ctrl.txtRootB->GetValue().ToStdString(),
+            Utils::CorrectDirPath(ctrl.dirRootA->GetPath().ToStdString()),
+            Utils::CorrectDirPath(ctrl.txtRootB->GetValue().ToStdString()),
             ctrl.txtAddress->GetValue().ToStdString(),
             ctrl.txtUser->GetValue().ToStdString()
         );
@@ -97,8 +116,8 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
         config = Configuration(
             this->oldConfig.id,
             ctrl.txtConfigName->GetValue().ToStdString(),
-            ctrl.dirRootA->GetPath().ToStdString(),
-            ctrl.dirRootBLocal->GetPath().ToStdString()
+            Utils::CorrectDirPath(ctrl.dirRootA->GetPath().ToStdString()),
+            Utils::CorrectDirPath(ctrl.dirRootBLocal->GetPath().ToStdString())
         );
     }
 
@@ -144,7 +163,6 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
         }
 
         ssh.EndSession();
-        GenericPopup("Test connection successful.").ShowModal();
     }
 
     try
@@ -175,19 +193,9 @@ void EditConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
 void EditConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
 {
     if (event.GetSelection() == DD_SSH)
-    {
-        ctrl.dirRootBLocal->Disable();
-        ctrl.txtAddress->Enable();
-        ctrl.txtUser->Enable();
-        ctrl.txtRootB->Enable();
-    }
+        EnableRemote();
     else
-    {
-        ctrl.dirRootBLocal->Enable();
-        ctrl.txtAddress->Disable();
-        ctrl.txtUser->Disable();
-        ctrl.txtRootB->Disable();
-    }
+        DisableRemote();
 
     Update();
 }

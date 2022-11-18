@@ -5,11 +5,11 @@
 #include "GUI/GenericPopup.h"
 #include "Lib/DBConnector.h"
 #include "Lib/Global.h"
-#include "Utils/Logger.h"
+#include "Utils.h"
 
 wxBEGIN_EVENT_TABLE(ChangeConfigurationDialog, wxDialog)
     EVT_LISTBOX(XRCID("listConfigs"), ChangeConfigurationDialog::OnListBoxChange)
-    EVT_LISTBOX_DCLICK(XRCID("listConfigs"), ChangeConfigurationDialog::OnListBoxDClick)
+    EVT_LISTBOX_DCLICK(XRCID("listConfigs"), ChangeConfigurationDialog::OnOK)
     EVT_BUTTON(XRCID("btnNewConfig"), ChangeConfigurationDialog::OnNewConfig)
     EVT_BUTTON(XRCID("btnEditConfig"), ChangeConfigurationDialog::OnEditConfig)
     EVT_BUTTON(XRCID("btnDeleteConfig"), ChangeConfigurationDialog::OnDeleteConfig)
@@ -113,16 +113,6 @@ void ChangeConfigurationDialog::OnListBoxChange(wxCommandEvent &event)
     Update();
 }
 
-void ChangeConfigurationDialog::OnListBoxDClick(wxCommandEvent &event)
-{
-    if (EditConfigurationDialog(configs[selectedConfigIdx]).ShowModal() == wxID_OK)
-    {
-        PopulateConfigList();
-        PopulateConfigDetails();
-        Update();
-    }
-}
-
 void ChangeConfigurationDialog::OnNewConfig(wxCommandEvent &event)
 {
     NewConfigurationDialog().ShowModal();
@@ -164,12 +154,13 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
     }
 
     PopulateConfigList();
+    CheckIfConfigSelected();
     Update();
 }
 
 void ChangeConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    Global::config = configs[selectedConfigIdx];
+    Global::setCurrentConfig(configs[selectedConfigIdx]);
     EndModal(wxID_OK);
 }
 

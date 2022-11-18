@@ -1,5 +1,5 @@
 #pragma once
-#include "../headers/wx.h"
+#include "wx.h"
 
 class MainFrame : public wxFrame {
 public:
@@ -13,11 +13,13 @@ private:
 
     // properties
     Controls ctrl;
+    bool isFirstConfig;
 
     // event handlers
     void Update();
     void OnNewConfig(wxCommandEvent &event);
     void OnChangeConfig(wxCommandEvent &event);
+    void OnScan(wxCommandEvent &event);
     void OnExit(wxCommandEvent &event);
     void OnAbout(wxCommandEvent &event);
 

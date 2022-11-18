@@ -11,6 +11,8 @@ find_package(libssh REQUIRED)
 # sources
 set(SRC_LIB_FILES
     domain/Configuration.cpp
+    domain/FileNode.cpp
+    Creeper.cpp
     Global.cpp
     DBConnector.cpp
     SSHConnector.cpp

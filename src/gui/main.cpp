@@ -3,9 +3,8 @@
 
 #include "GUI/MainFrame.h"
 #include "Lib/DBConnector.h"
-#include "Utils/Utils.h"
 #include "wx.h"
-#include "Utils/Logger.h"
+#include "Utils.h"
 
 INITIALIZE_EASYLOGGINGPP
 

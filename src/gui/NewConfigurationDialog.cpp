@@ -1,11 +1,10 @@
 #include "GUI/NewConfigurationDialog.h"
 
-#include <fmt/core.h>
 #include "GUI/GenericPopup.h"
 #include "Lib/SSHConnector.h"
 #include "Lib/DBConnector.h"
 #include "Domain/Configuration.h"
-#include "Utils/Logger.h"
+#include "Utils.h"
 
 #define DD_SSH 1
 
@@ -55,6 +54,22 @@ void NewConfigurationDialog::CheckIfOK()
     ctrl.btnOK->Enable(isOK);
 }
 
+void NewConfigurationDialog::DisableRemote()
+{
+    ctrl.dirRootBLocal->Enable();
+    ctrl.txtAddress->Disable();
+    ctrl.txtUser->Disable();
+    ctrl.txtRootB->Disable();
+}
+
+void NewConfigurationDialog::EnableRemote()
+{
+    ctrl.dirRootBLocal->Disable();
+    ctrl.txtAddress->Enable();
+    ctrl.txtUser->Enable();
+    ctrl.txtRootB->Enable();
+}
+
 /******************************* EVENT HANDLERS ******************************/
 
 void NewConfigurationDialog::Update()
@@ -71,8 +86,8 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         config = Configuration(
             NOID,
             ctrl.txtConfigName->GetValue().ToStdString(),
-            ctrl.dirRootA->GetPath().ToStdString(),
-            ctrl.txtRootB->GetValue().ToStdString(),
+            Utils::CorrectDirPath(ctrl.dirRootA->GetPath().ToStdString()),
+            Utils::CorrectDirPath(ctrl.txtRootB->GetValue().ToStdString()),
             ctrl.txtAddress->GetValue().ToStdString(),
             ctrl.txtUser->GetValue().ToStdString()
         );
@@ -82,8 +97,8 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         config = Configuration(
             NOID,
             ctrl.txtConfigName->GetValue().ToStdString(),
-            ctrl.dirRootA->GetPath().ToStdString(),
-            ctrl.dirRootBLocal->GetPath().ToStdString()
+            Utils::CorrectDirPath(ctrl.dirRootA->GetPath().ToStdString()),
+            Utils::CorrectDirPath(ctrl.dirRootBLocal->GetPath().ToStdString())
         );
     }
 
@@ -123,7 +138,6 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         }
 
         ssh.EndSession();
-        GenericPopup("Test connection successful.").ShowModal();
     }
 
     try
@@ -155,17 +169,11 @@ void NewConfigurationDialog::OnConfigTypeChange(wxCommandEvent &event)
 {
     if (event.GetSelection() == DD_SSH)
     {
-        ctrl.dirRootBLocal->Disable();
-        ctrl.txtAddress->Enable();
-        ctrl.txtUser->Enable();
-        ctrl.txtRootB->Enable();
+        EnableRemote();
     }
     else
     {
-        ctrl.dirRootBLocal->Enable();
-        ctrl.txtAddress->Disable();
-        ctrl.txtUser->Disable();
-        ctrl.txtRootB->Disable();
+        DisableRemote();
     }
 
     Update();

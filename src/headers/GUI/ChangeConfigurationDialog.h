@@ -37,7 +37,6 @@ private:
     // event handlers
     void Update();
     void OnListBoxChange(wxCommandEvent &event);
-    void OnListBoxDClick(wxCommandEvent &event);
     void OnNewConfig(wxCommandEvent &event);
     void OnEditConfig(wxCommandEvent &event);
     void OnDeleteConfig(wxCommandEvent &event);

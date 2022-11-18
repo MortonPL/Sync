@@ -1,5 +1,5 @@
 #pragma once
-#include "../headers/wx.h"
+#include "wx.h"
 
 #include "Domain/Configuration.h"
 
@@ -30,6 +30,8 @@ private:
 
     // custom methods
     void CheckIfOK();
+    void EnableRemote();
+    void DisableRemote();
 
     // event handlers
     void Update();

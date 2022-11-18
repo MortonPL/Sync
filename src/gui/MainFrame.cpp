@@ -1,13 +1,17 @@
 #include "GUI/MainFrame.h"
 
+#include "GUI/GenericPopup.h"
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/ChangeConfigurationDialog.h"
 #include "Lib/Global.h"
+#include "Lib/Creeper.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_file_newc"), MainFrame::OnNewConfig)
     EVT_MENU(XRCID("menu_file_changec"), MainFrame::OnChangeConfig)
+    EVT_MENU(XRCID("menu_edit_scan"), MainFrame::OnScan)
     EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
+    EVT_TOOL(XRCID("tlb_scan"), MainFrame::OnScan)
     EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
     EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 wxEND_EVENT_TABLE()
@@ -21,8 +25,10 @@ MainFrame::MainFrame(wxWindow* pParent)
 
     ctrl = Controls
     {
-        (wxListCtrl*)(this->FindWindow("listMain")),
+        (wxListCtrl*)(FindWindow("listMain")),
     };
+
+    isFirstConfig = true;
 
     // resize for menu and status bar
     //GetSizer()->SetSizeHints(this);
@@ -48,8 +54,25 @@ void MainFrame::OnChangeConfig(wxCommandEvent &event)
     if (dialog.ShowModal() != wxID_OK)
     {
     }
+    if (!isFirstConfig)
+    {
+        auto menuBar = GetMenuBar();
+        auto menu = menuBar->GetMenu(menuBar->FindMenu("menu_edit"));
+        menu->FindItem(menu->FindItem("menu_edit_scan"))->Enable();
+        isFirstConfig = false;
+    }
+}
 
-    wxMessageBox(Global::config.name, "Woho", wxOK);
+void MainFrame::OnScan(wxCommandEvent &event)
+{
+    if (!Global::isLoadedConfig())
+        return;
+    auto cfg = Global::getCurrentConfig();
+    auto crp = Creeper(cfg.pathA);
+    crp.SearchForLists();
+    crp.CreepPath();
+
+    GenericPopup("Scanning...").ShowModal();
 }
 
 void MainFrame::OnAbout(wxCommandEvent &event)

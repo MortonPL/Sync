@@ -1,5 +1,5 @@
 #pragma once
-#include "../headers/wx.h"
+#include "wx.h"
 
 class NewConfigurationDialog : public wxDialog
 {
@@ -27,6 +27,8 @@ private:
 
     // custom methods
     void CheckIfOK();
+    void EnableRemote();
+    void DisableRemote();
 
     // event handlers
     void Update();
