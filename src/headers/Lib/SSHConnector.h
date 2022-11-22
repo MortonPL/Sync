@@ -13,6 +13,7 @@ public:
     bool AuthenticateUserPass(std::string name, std::string password);
     bool AuthenticateUserKey();
     bool ExecuteCD(std::string directory);
+    bool CallCLI();
     void EndSession();
 
 private:

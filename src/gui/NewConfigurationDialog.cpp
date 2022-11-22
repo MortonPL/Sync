@@ -43,6 +43,7 @@ NewConfigurationDialog::NewConfigurationDialog(wxWindow* pParent)
 
 void NewConfigurationDialog::CheckIfOK()
 {
+    // TODO a bug here requires you to edit config name?
     bool isOK = !ctrl.txtConfigName->GetValue().IsEmpty()
                 && !ctrl.dirRootA->GetPath().ToStdString().empty()
                 && (ctrl.ddConfigType->GetSelection() == 0 ?
@@ -141,6 +142,13 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         if (!ssh.AuthenticateUserPass(ctrl.txtUserB->GetValue().ToStdString(), password))
         {
             GenericPopup("Failed to authenticate user. Check user credentials.").ShowModal();
+            ssh.EndSession();
+            return;
+        }
+
+        if (!ssh.CallCLI())
+        {
+            GenericPopup("Failed to call Sync on the remote.").ShowModal();
             ssh.EndSession();
             return;
         }

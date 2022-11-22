@@ -21,7 +21,7 @@ std::string& DBConnector::GetMainFileName()
 // run this method at the start of the program!
 bool DBConnector::EnsureCreated()
 {
-    DBConnector::mainFile = Utils::GetProgramPath() + "Sync.db3";
+    DBConnector::mainFile = Utils::GetDataPath() + "sync.db3";
     try
     {
         SQLite::Database db(DBConnector::mainFile, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);

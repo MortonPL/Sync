@@ -94,3 +94,27 @@ bool SSHConnector::ExecuteCD(std::string directory)
     FreeChannel(pChannel);
     return true;
 }
+
+bool SSHConnector::CallCLI()
+{
+    std::string cmd = "synccli -n";
+    auto pChannel = GetChannel();
+    char buf[10];
+    
+    if (ssh_channel_request_exec(pChannel, cmd.c_str()) != SSH_OK)
+    {
+        FreeChannel(pChannel);
+        return false;
+    }
+
+    if (!ssh_channel_read(pChannel, &buf, 10, 0))
+    {
+        FreeChannel(pChannel);
+        return false;
+    }
+
+    LOG(INFO) << buf;
+
+    FreeChannel(pChannel);
+    return true;
+}

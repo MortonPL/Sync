@@ -1,5 +1,11 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/filesys.h>
+#include <wx/fs_arc.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "GUI/MainFrame.h"
 #include "Lib/DBConnector.h"
@@ -33,15 +39,34 @@ void SetUpLogger(std::string logPath)
 
 bool MyApp::OnInit()
 {
-    SetUpLogger(Utils::GetProgramPath() + "SyncGUI.log");
-    LOG(INFO) << "Starting Sync GUI.";
+    if (mkdir(Utils::GetDataPath().c_str(), S_IRWXU | S_IRWXG) == 0 || errno == EEXIST)
+    {
+        SetUpLogger(Utils::GetDataPath() + "syncgui.log");
+        LOG(INFO) << "Starting Sync GUI.";
+    }
+    else
+    {
+        std::cout << "Failed to create application directory! Exiting.\n";
+        LOG(ERROR) << "Failed to create application directory! Exiting.";
+        return false;
+    }
 
-    DBConnector::EnsureCreated();
-
-    wxImage::AddHandler(new wxPNGHandler);
+    if (!DBConnector::EnsureCreated())
+    {
+        std::cout << "Failed to ensure that the application database exists! Exiting.\n";
+        LOG(ERROR) << "Failed to ensure that the application database exists! Exiting.";
+        return false;
+    }
 
     wxXmlResource::Get()->InitAllHandlers();
-    wxXmlResource::Get()->LoadAllFiles(Utils::GetProgramPath() + "rc");
+    wxImage::AddHandler(new wxPNGHandler);
+    wxFileSystem::AddHandler(new wxArchiveFSHandler);
+    if (!wxXmlResource::Get()->Load(Utils::GetSharedPath() + "sync.xrs"))
+    {
+        std::cout << "Failed to find application resources! Exiting.\n";
+        LOG(ERROR) << "Failed to find application resources! Exiting.";
+        return false;
+    }
 
     auto pMainFrame = new MainFrame();
     pMainFrame->Show(true);

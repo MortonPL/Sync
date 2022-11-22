@@ -2,33 +2,32 @@
 
 #include <libgen.h>
 #include <unistd.h>
+#include <pwd.h>
 #include <linux/limits.h>
 
-std::string Utils::programPath;
-bool Utils::isProgramPathSet = false;
+std::string Utils::dataPath = "";
 
-std::string Utils::GetProgramPath()
+std::string Utils::GetDataPath()
 {
-    if (Utils::isProgramPathSet)
+    if (Utils::dataPath == "")
     {
-        return Utils::programPath;
+        auto home = getenv("HOME");
+        if (home == NULL)
+            home = getpwuid(getuid())->pw_dir;
+        Utils::dataPath = std::string(home) + "/.sync/";
     }
-    else
-    {
-        char result[PATH_MAX];
-        if (readlink("/proc/self/exe", result, PATH_MAX) == -1)
-            return "";
-        Utils::programPath = std::string(dirname(result)) + "/";
-        Utils::isProgramPathSet = true;
-        return Utils::programPath;
-    }
+    return Utils::dataPath;
 }
+
+std::string Utils::GetSharedPath()
+{
+    return "/usr/local/share/sync/";
+}
+
 
 std::string Utils::CorrectDirPath(const std::string path)
 {
-    if (path.back() != '/')
-        return path + '/';
-    return path;
+    return path.back() != '/' ? path + '/' : path;
 }
 
 // See: https://stackoverflow.com/a/29752943

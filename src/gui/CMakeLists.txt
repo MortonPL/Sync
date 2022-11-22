@@ -1,5 +1,5 @@
 # dependencies
-find_package(wxWidgets REQUIRED COMPONENTS net core base xrc)
+find_package(wxWidgets REQUIRED COMPONENTS core base net xrc)
 include(${wxWidgets_USE_FILE})
 
 # sources

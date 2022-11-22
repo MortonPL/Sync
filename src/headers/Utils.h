@@ -8,10 +8,10 @@ class Utils
 public:
     static void Replace(std::string& original, const std::string& from, const std::string& to);
 
-    static std::string GetProgramPath();
+    static std::string GetDataPath();
+    static std::string GetSharedPath();
     static std::string CorrectDirPath(const std::string path);
 
 private:
-    static bool isProgramPathSet;
-    static std::string programPath;
+    static std::string dataPath;
 };

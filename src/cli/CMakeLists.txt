@@ -1,5 +1,6 @@
 # sources
 set(SRC_CLI_FILES
+    Global.cpp
     # main
     main.cpp
 )
