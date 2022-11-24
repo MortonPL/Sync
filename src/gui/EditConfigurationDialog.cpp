@@ -169,16 +169,13 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
             return;
         }
 
-        if (!ssh.CallCLI())
+        int rc = ssh.CallCLID(ctrl.txtRootB->GetValue().ToStdString());
+        if (rc != 0)
         {
-            GenericPopup("Failed to call Sync on the remote.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
-
-        if (!ssh.ExecuteCD(ctrl.txtRootB->GetValue().ToStdString()))
-        {
-            GenericPopup("Failed to find remote directory. Check name or permissions.").ShowModal();
+            if (rc == 1)
+                GenericPopup("Failed to call Sync on the remote.").ShowModal();
+            else if (rc == 2)
+                GenericPopup("Failed to find remote directory. Check path or permissions.").ShowModal();
             ssh.EndSession();
             return;
         }

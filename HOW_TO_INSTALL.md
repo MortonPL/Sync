@@ -20,5 +20,5 @@ sudo ldconfig
 
 Budowanie projektu
 ```
-./build.sh
+./action.sh build -c
 ```

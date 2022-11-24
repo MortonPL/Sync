@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <linux/limits.h>
+#include <ctime>
+#include <iostream>
+#include <sstream>
+#include <time.h>
 
 std::string Utils::dataPath = "";
 
@@ -47,4 +51,18 @@ void Utils::Replace(std::string& original, const std::string& from, const std::s
 
     newString += original.substr(lastPos);
     original.swap(newString);
+}
+
+time_t Utils::StringToTimestamp(const std::string string)
+{
+    std::tm timestruct = {};
+    strptime(string.c_str(), "%Y-%m-%d %H:%M:%S", &timestruct);
+    return mktime(&timestruct);
+}
+
+std::string Utils::TimestampToString(const time_t* timestamp)
+{
+    char buf[20];
+    strftime(buf, 20, "%d.%m.%Y %H:%M:%S", localtime(timestamp));
+    return std::string(buf);
 }

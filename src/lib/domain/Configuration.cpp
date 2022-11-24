@@ -1,5 +1,7 @@
 #include "Domain/Configuration.h"
 
+#include <Utils.h>
+
 Configuration::Configuration()
 {
 }
@@ -31,7 +33,7 @@ Configuration::Configuration(int id, std::string name, uuid_t uuid,
     this->isRemote = true;
 }
 
-Configuration::Configuration(int id, std::string name, std::string uuid, int isRemote, 
+Configuration::Configuration(int id, std::string name, std::string uuid, std::string timestamp, int isRemote,
                              std::string pathA, std::string pathAaddress, std::string pathAuser,
                              std::string pathB, std::string pathBaddress, std::string pathBuser)
 {
@@ -45,6 +47,7 @@ Configuration::Configuration(int id, std::string name, std::string uuid, int isR
     this->pathBaddress = pathBaddress;
     this->pathBuser = pathBuser;
     this->isRemote = isRemote;
+    this->timestamp = Utils::StringToTimestamp(timestamp);
 }
 
 Configuration::~Configuration()

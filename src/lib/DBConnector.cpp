@@ -32,6 +32,7 @@ bool DBConnector::EnsureCreated()
             "id INTEGER PRIMARY KEY,"
             "name TEXT UNIQUE NOT NULL,"
             "uuid BLOB NOT NULL,"
+            "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,"
             "is_remote BOOLEAN NOT NULL,"
             "root_A TEXT NOT NULL,"
             "root_A_address TEXT,"
@@ -89,7 +90,7 @@ bool DBConnector::UpdateConfig(Configuration config)
     {
         this->db.exec(fmt::format(
             "UPDATE configs SET "
-            "name = \"{}\", is_remote = {},"
+            "name = \"{}\", is_remote = {}, timestamp = CURRENT_TIMESTAMP,"
             "root_A = \"{}\", root_A_address = \"{}\", root_A_user = \"{}\","
             "root_B = \"{}\", root_B_address = \"{}\", root_B_user = \"{}\""
             "WHERE id = {}",
@@ -127,7 +128,7 @@ std::vector<Configuration> DBConnector::SelectAllConfigs()
     SQLite::Statement query(this->db, "SELECT * from configs");
     while(query.executeStep())
     {
-        configs.push_back(query.getColumns<Configuration, 10>());
+        configs.push_back(query.getColumns<Configuration, 11>());
     }
     return configs;
 }

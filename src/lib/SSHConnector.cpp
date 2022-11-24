@@ -72,49 +72,27 @@ void SSHConnector::FreeChannel(ssh_channel_struct* pChannel)
     ssh_channel_free(pChannel);
 }
 
-// TODO: replace with executing remote Sync CLI that uses stat()
-bool SSHConnector::ExecuteCD(std::string directory)
+int SSHConnector::CallCLID(std::string remoteRoot)
 {
-    std::string cmd = fmt::format("[ ! -d \"{}\"] && echo 1", directory);
     auto pChannel = GetChannel();
-    char buf;
-
-    if (ssh_channel_request_exec(pChannel, cmd.c_str()) != SSH_OK)
-    {
-        FreeChannel(pChannel);
-        return false;
-    }
-
-    if (ssh_channel_read(pChannel, &buf, 1, 0) > 0)
-    {
-        FreeChannel(pChannel);
-        return false;
-    }
-
-    FreeChannel(pChannel);
-    return true;
-}
-
-bool SSHConnector::CallCLI()
-{
-    std::string cmd = "synccli -n";
-    auto pChannel = GetChannel();
-    char buf[10];
+    char buf[1];
     
+    std::string cmd = fmt::format("synccli -d {}", remoteRoot);
     if (ssh_channel_request_exec(pChannel, cmd.c_str()) != SSH_OK)
     {
-        FreeChannel(pChannel);
-        return false;
+            FreeChannel(pChannel);
+            return 1;
     }
 
-    if (!ssh_channel_read(pChannel, &buf, 10, 0))
+    if (ssh_channel_read(pChannel, &buf, 1, 0) == 0)
     {
         FreeChannel(pChannel);
-        return false;
+        return 1;
     }
 
-    LOG(INFO) << buf;
+    if (buf[0] != '0') 
+        return 2;
 
     FreeChannel(pChannel);
-    return true;
+    return 0;
 }

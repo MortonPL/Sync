@@ -1,3 +1,7 @@
 #include "CLI/Global.h"
 
-bool Global::isNetworkMode = false;
+Global::CLIMode Global::mode;
+std::string Global::remoteAddress = "";
+std::string Global::remoteUser = "";
+std::string Global::remoteRoot = "";
+std::string Global::dirToCheck = "";

@@ -12,8 +12,7 @@ public:
     bool AuthenticateServer();
     bool AuthenticateUserPass(std::string name, std::string password);
     bool AuthenticateUserKey();
-    bool ExecuteCD(std::string directory);
-    bool CallCLI();
+    int CallCLID(std::string remoteRoot);
     void EndSession();
 
 private:
