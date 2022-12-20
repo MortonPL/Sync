@@ -7,8 +7,19 @@ public:
 
 private:
     // control struct
-    struct Controls {
+    struct Controls
+    {
         wxListCtrl* listMain;
+        struct Details
+        {
+            wxStaticText* lblDetName;
+            wxStaticText* lblDetPath;
+            wxStaticText* lblDetDev;
+            wxStaticText* lblDetInode;
+            wxStaticText* lblDetMtime;
+            wxStaticText* lblDetSize;
+        };
+        Details det;
     };
 
     // properties
@@ -23,6 +34,7 @@ private:
     void OnNewConfig(wxCommandEvent &event);
     void OnChangeConfig(wxCommandEvent &event);
     void OnScan(wxCommandEvent &event);
+    void OnSelectNode(wxListEvent &event);
     void OnExit(wxCommandEvent &event);
     void OnAbout(wxCommandEvent &event);
 

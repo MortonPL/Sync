@@ -2,7 +2,10 @@
 #include <sys/types.h>
 
 #include "Lib/General.h"
+#include "Lib/Creeper.h"
+#include "Lib/DBConnector.h"
 #include "Lib/SSHConnector.h"
+#include "Lib/SocketListener.h"
 #include "CLI/Global.h"
 #include "CLI/MainLoop.h"
 #include "Utils.h"
@@ -18,32 +21,122 @@ void ParseArgs(int argc, char* argv[])
 
         switch (argv[i][1])
         {
-        case 't':
-            if ( i + 3 >= argc)
+        case 'c':
+            if (i + 1 >= argc)
                 break;
-            Global::mode = Global::CLIMode::Test;
-            Global::remoteAddress = argv[i+1];
-            Global::remoteUser = argv[i+2];
-            Global::remoteRoot = argv[i+3];
+            GlobalCLI::dirToCreep = Utils::CorrectDirPath(argv[i+1]);
             break;
         case 'd':
+            GlobalCLI::mode |= GlobalCLI::CLIMode::DaemonServant;
+            break;
+        case 'D':
+            GlobalCLI::mode |= GlobalCLI::CLIMode::DaemonMaster;
+            break;
+        case 'r':
+            if (i + 2 >= argc)
+                break;
+            GlobalCLI::remoteAddress = argv[i+1];
+            GlobalCLI::remotePort = atoi(argv[i+2]);
+            break;
+        case 't':
             if ( i + 1 >= argc)
                 break;
-            Global::mode = Global::CLIMode::DirCheck;
-            Global::dirToCheck = argv[i+1];
+            GlobalCLI::dirToCheck = argv[i+1];
         default:
             break;
         }
     }
 }
 
-int CheckDir(std::string path)
+void CheckDir(std::string path)
 {
+    int rc = 0;
     struct stat ret;
     if (stat(path.c_str(), &ret) == -1)
-        return 1;
+        rc = 1;
     if (!S_ISDIR(ret.st_mode))
-        return 2;
+        rc = 2;
+    std::cout << rc << '\n';
+}
+
+void CreepDir(std::string path)
+{
+    auto crp = Creeper(path);
+    crp.SearchForLists();
+    crp.CreepPath();
+    auto nodes = crp.GetResults();
+
+    auto s = SocketListener();
+    if (!s.Init(GlobalCLI::remoteAddress, GlobalCLI::remotePort))
+    {
+        s.DeInit();
+        LOG(ERROR) << "Failed to initialize socket";
+    }
+    if (!s.Connect())
+    {
+        s.DeInit();
+        LOG(ERROR) << "Failed to connect socket";
+    }
+
+    LOG(INFO) << "Connected";
+    for (auto& node: nodes)
+    {
+        auto path = node.GetPath();
+        path.push_back('\n');
+        s.Write(path.c_str(), path.size());
+    }
+
+    s.DeInit();
+    LOG(INFO) << "Done";
+}
+
+int Serve()
+{
+    auto s = SocketListener();
+    if (!s.Init(GlobalCLI::remoteAddress, GlobalCLI::remotePort))
+    {
+        s.DeInit();
+        LOG(ERROR) << "Failed to initialize socket";
+    }
+    if (!s.Bind())
+    {
+        s.DeInit();
+        LOG(ERROR) << "Failed to bind socket";
+    }
+    if (!s.Listen())
+    {
+        s.DeInit();
+        LOG(ERROR) << "Failed to listen to the socket";
+    }
+
+    char buff[32];
+    bool isDone = false;
+    while (!isDone)
+    {
+        LOG(INFO) << "Loop";
+        if (!s.Accept())
+        {
+            s.DeInit();
+            LOG(ERROR) << "Failed to accept a connection";
+            continue;
+        }
+        if (s.Read(buff, 32) == -1)
+        {
+            s.DeInit();
+            LOG(ERROR) << "Error receiving data";
+            s.EndAccept();
+            return 4;
+        }
+
+        s.EndAccept();
+        isDone = true;
+    }
+    s.DeInit();
+    return 0;
+}
+
+int Master()
+{
     return 0;
 }
 
@@ -54,18 +147,49 @@ int main(int argc, char* argv[])
     if (!General::InitEverything("synccli.log"))
         return -1;
     
-    switch (Global::mode)
+    if (GlobalCLI::dirToCheck != "")
+        CheckDir(GlobalCLI::dirToCheck);
+
+    if (GlobalCLI::dirToCreep != "")
     {
-    case Global::CLIMode::DirCheck:
-        std::cout << CheckDir(Global::dirToCheck) << '\n';
-        break;
-    default:
+        CreepDir(GlobalCLI::dirToCreep);
+    }
+
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::DaemonServant)
+    {
+        if (fork() == 0) // parent kills itself here, child becomes a daemon
+            Serve();
         return 0;
     }
 
-    while (MainLoop::DoWork())
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::DaemonMaster)
     {
+        if (fork() == 0) // parent kills itself here, child becomes a daemon
+            Master();
+        return 0;
     }
 
     return 0;
 }
+
+/*
+int LoadConfig(std::string uuid)
+{   
+    DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READONLY);
+    try
+    {
+        if ((config = db.SelectByUUID(uuid)) != nullptr)
+            Global::setCurrentConfig(config);
+        else
+            return 2;
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to open configuration database.";
+        LOG(ERROR) << e.what();
+        return 1;
+    }
+
+    return 0;
+}
+*/

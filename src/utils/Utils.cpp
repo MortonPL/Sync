@@ -4,14 +4,14 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <linux/limits.h>
-#include <ctime>
 #include <iostream>
 #include <sstream>
+#include <ctime>
 #include <time.h>
 
 std::string Utils::dataPath = "";
 
-std::string Utils::GetDataPath()
+std::string Utils::GetRootPath()
 {
     if (Utils::dataPath == "")
     {
@@ -23,11 +23,20 @@ std::string Utils::GetDataPath()
     return Utils::dataPath;
 }
 
-std::string Utils::GetSharedPath()
+std::string Utils::GetResourcePath()
 {
-    return "/usr/local/share/sync/";
+    return Utils::GetRootPath() + "res/";
 }
 
+std::string Utils::GetLogsPath()
+{
+    return Utils::GetRootPath() + "log/";
+}
+
+std::string Utils::GetDatabasePath()
+{
+    return Utils::GetRootPath() + "db/";
+}
 
 std::string Utils::CorrectDirPath(const std::string path)
 {

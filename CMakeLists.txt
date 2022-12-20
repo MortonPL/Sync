@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # other settings
 set(CMAKE_INSTALL_MESSAGE LAZY)
+get_filename_component(my_path "~/.sync" ABSOLUTE)
+set(CMAKE_INSTALL_PREFIX ${my_path})
 
 # set binary names
 set(GUI_NAME ${PROJECT_NAME}gui)

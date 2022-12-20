@@ -26,7 +26,7 @@ bool InitXRC()
     wxXmlResource::Get()->InitAllHandlers();
     wxImage::AddHandler(new wxPNGHandler);
     wxFileSystem::AddHandler(new wxArchiveFSHandler);
-    return wxXmlResource::Get()->Load(Utils::GetSharedPath() + "sync.xrs");
+    return wxXmlResource::Get()->Load(Utils::GetResourcePath() + "sync.xrs");
 }
 
 bool MyApp::OnInit()

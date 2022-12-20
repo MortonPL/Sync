@@ -1,8 +1,10 @@
 #include "GUI/EditConfigurationDialog.h"
 
 #include "GUI/GenericPopup.h"
+#include "GUI/SSHConnectorWrap.h"
 #include "Lib/DBConnector.h"
 #include "Lib/SSHConnector.h"
+#include "Lib/Global.h"
 #include "Utils.h"
 
 #define DD_SSH 1
@@ -143,33 +145,11 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
     {
         auto ssh = SSHConnector();
-
-        if (!ssh.BeginSession(ctrl.txtAddressB->GetValue().ToStdString()))
-        {
-            GenericPopup("Failed to connect to given address.").ShowModal();
+        if (!SSHConnectorWrap::Connect(ssh, ctrl.txtAddressB->GetValue().ToStdString(), ctrl.txtUserB->GetValue().ToStdString()))
             return;
-        }
-        if (!ssh.AuthenticateServer())
-        {
-            GenericPopup("Failed to authenticate server.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
+        uuid_copy(Global::lastUsedCreds.uuid, oldConfig.uuid);
 
-        std::string password;
-        GenericPopup(
-            fmt::format("Enter password for {}@{}:", ctrl.txtUserB->GetValue().ToStdString(), ctrl.txtAddressB->GetValue().ToStdString()),
-            NULL, &password, true).ShowModal();
-
-        // TODO support key auth
-        if (!ssh.AuthenticateUserPass(ctrl.txtUserB->GetValue().ToStdString(), password))
-        {
-            GenericPopup("Failed to authenticate user. Check user credentials.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
-
-        int rc = ssh.CallCLID(ctrl.txtRootB->GetValue().ToStdString());
+        int rc = ssh.CallCLITest(ctrl.txtRootB->GetValue().ToStdString());
         if (rc != 0)
         {
             if (rc == 1)

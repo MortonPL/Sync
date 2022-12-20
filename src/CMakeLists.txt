@@ -15,9 +15,9 @@ add_executable(${GUI_NAME} ${SRC_FILES})
 target_link_libraries(${GUI_NAME} gui lib utils)
 install(TARGETS ${GUI_NAME} DESTINATION bin)
 if (${CMAKE_BUILD_TYPE} MATCHES RELEASE)
-    install(FILES ../build/sync.xrs DESTINATION share/sync)
+    install(FILES ../build/sync.xrs DESTINATION res)
 elseif(${CMAKE_BUILD_TYPE} MATCHES DEBUG)
-    install(FILES ../debug/sync.xrs DESTINATION share/sync)
+    install(FILES ../debug/sync.xrs DESTINATION res)
 endif()
 
 # add the CLI executable

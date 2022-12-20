@@ -45,8 +45,13 @@ void Creeper::SearchForLists()
 
 void Creeper::CreepPath()
 {
-    for (auto const& entry: std::filesystem::recursive_directory_iterator(path))
+    for (auto const& entry: std::filesystem::recursive_directory_iterator(
+        path, std::filesystem::directory_options::follow_directory_symlink
+            | std::filesystem::directory_options::skip_permission_denied))
     {
+        if (!entry.is_regular_file())
+            continue;
+
         bool isWhitelisted = false;
         bool isBlacklisted = false;
         std::string epath = entry.path().string().substr(path.length());
@@ -76,7 +81,11 @@ void Creeper::CreepPath()
             }
         }
 
-        FileNode node(epath);
+        struct stat buf;
+        auto str = entry.path().string();
+        auto cstr = str.c_str();
+        stat(cstr, &buf);
+        FileNode node(epath, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size);
         fileNodes.push_back(node);
     }
 }

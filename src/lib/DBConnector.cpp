@@ -21,7 +21,7 @@ std::string& DBConnector::GetMainFileName()
 // run this method at the start of the program!
 bool DBConnector::EnsureCreated()
 {
-    DBConnector::mainFile = Utils::GetDataPath() + "sync.db3";
+    DBConnector::mainFile = Utils::GetDatabasePath() + "sync.db3";
     try
     {
         SQLite::Database db(DBConnector::mainFile, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);
@@ -131,4 +131,12 @@ std::vector<Configuration> DBConnector::SelectAllConfigs()
         configs.push_back(query.getColumns<Configuration, 11>());
     }
     return configs;
+}
+
+Configuration DBConnector::SelectConfigByUUID(std::string uuid)
+{
+    SQLite::Statement query(this->db, fmt::format("SELECT * from configs WHERE uuid = {}", uuid));
+    if (!query.executeStep())
+        return Configuration();
+    return query.getColumns<Configuration, 11>();
 }

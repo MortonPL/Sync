@@ -1,10 +1,14 @@
 #include "GUI/MainFrame.h"
 
+#include <uuid/uuid.h>
+
+#include "GUI/SSHConnectorWrap.h"
 #include "GUI/GenericPopup.h"
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/ChangeConfigurationDialog.h"
 #include "Lib/Global.h"
 #include "Lib/Creeper.h"
+#include "Utils.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_file_newc"), MainFrame::OnNewConfig)
@@ -12,13 +16,15 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_edit_scan"), MainFrame::OnScan)
     EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
     EVT_TOOL(XRCID("tlb_scan"), MainFrame::OnScan)
+    EVT_LIST_ITEM_SELECTED(XRCID("listMain"), MainFrame::OnSelectNode)
     EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
     EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 wxEND_EVENT_TABLE()
 
-#define COL_LOCAL 0
+#define COL_NAME 0
 #define COL_STATUS 1
-#define COL_REMOTE 2
+#define COL_ACTION 2
+#define COL_PROGRESS 3
 
 // ctor
 MainFrame::MainFrame(wxWindow* pParent)
@@ -30,6 +36,15 @@ MainFrame::MainFrame(wxWindow* pParent)
     ctrl = Controls
     {
         (wxListCtrl*)(FindWindow("listMain")),
+        Controls::Details
+        {
+            (wxStaticText*)(FindWindow("lblDetName")),
+            (wxStaticText*)(FindWindow("lblDetPath")),
+            (wxStaticText*)(FindWindow("lblDetDev")),
+            (wxStaticText*)(FindWindow("lblDetInode")),
+            (wxStaticText*)(FindWindow("lblDetMtime")),
+            (wxStaticText*)(FindWindow("lblDetSize")),
+        }
     };
 
     isFirstConfig = true;
@@ -42,9 +57,10 @@ MainFrame::MainFrame(wxWindow* pParent)
 
 void MainFrame::CreateReportList()
 {
-    ctrl.listMain->AppendColumn("Local");
-    ctrl.listMain->AppendColumn("Status");
-    ctrl.listMain->AppendColumn("Remote");
+    ctrl.listMain->InsertColumn(0, "File", 0, 300);
+    ctrl.listMain->InsertColumn(1, "Status", 0, 100);
+    ctrl.listMain->InsertColumn(2, "Action", 0, 100);
+    ctrl.listMain->InsertColumn(3, "Progress", 0, 100);
 }
 
 /******************************* EVENT HANDLERS ******************************/
@@ -61,41 +77,66 @@ void MainFrame::OnNewConfig(wxCommandEvent &event)
     }
 }
 
+#define MENU_EDIT 1
+#define MENU_EDIT_SCAN 0
 void MainFrame::OnChangeConfig(wxCommandEvent &event)
 {
     ChangeConfigurationDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
     {
     }
-    if (!isFirstConfig)
+    if (isFirstConfig)
     {
-        auto menuBar = GetMenuBar();
-        auto menu = menuBar->GetMenu(menuBar->FindMenu("menu_edit"));
-        menu->FindItem(menu->FindItem("menu_edit_scan"))->Enable();
+        GetMenuBar()->GetMenu(MENU_EDIT)->FindItemByPosition(MENU_EDIT_SCAN)->Enable();
         isFirstConfig = false;
     }
 }
+#undef MENU_EDIT
+#undef MENU_EDIT_SCAN
 
 void MainFrame::OnScan(wxCommandEvent &event)
 {
-    if (!Global::isLoadedConfig())
+    if (!Global::IsLoadedConfig())
         return;
-    auto cfg = Global::getCurrentConfig();
+    auto cfg = Global::GetCurrentConfig();
     auto crp = Creeper(cfg.pathA);
     crp.SearchForLists();
     crp.CreepPath();
-    auto nodes = crp.GetResults();
-    for(int i = 0; i < nodes.size(); i++)
+    bool ok;
+    /*
+    auto ssh = SSHConnector();
+    if (uuid_compare(cfg.uuid, Global::lastUsedCreds.uuid) == 0)
+        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, Global::lastUsedCreds.username, Global::lastUsedCreds.password);
+    else
+        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser);
+    if (!ok)
+        return;
+    */
+
+    Global::SetNodes(crp.GetResults());
+    auto nodes = Global::GetNodes();
+    ctrl.listMain->DeleteAllItems();
+    for(int i = 0; i < nodes->size(); i++)
     {
-        auto item = wxListItem();
-        auto node = nodes[i];
-        item.SetText(node.GetPath());
-        item.SetId(i);
-        item.SetColumn(COL_LOCAL);
-        ctrl.listMain->InsertItem(item);
+        auto node = (*nodes)[i];
+        ctrl.listMain->InsertItem(i, node.GetPath());
+        ctrl.listMain->SetItemData(i, (long)&(*nodes)[i]);
     }
 
-    GenericPopup("Scanning...").ShowModal();
+    /*
+    auto nodesB = ssh.CallCLICreep(cfg.pathB);
+    for(int i = 0; i < nodesB.size(); i++)
+    {
+        auto node = nodesB[i];
+        ctrl.listMain->SetItem(i, COL_REMOTE, node.GetPath());
+    }
+    */
+}
+
+void MainFrame::OnSelectNode(wxListEvent &event)
+{
+    auto pNode = (FileNode*)event.GetData();
+    ctrl.det.lblDetName->SetLabel(pNode->GetPath());
 }
 
 void MainFrame::OnAbout(wxCommandEvent &event)
@@ -110,5 +151,6 @@ void MainFrame::OnExit(wxCommandEvent &event)
 }
 
 #undef COL_LOCAL
-#undef COL_STATUS
+#undef COL_LOCAL_STATUS
 #undef COL_REMOTE
+#undef COL_REMOTE_STATUS

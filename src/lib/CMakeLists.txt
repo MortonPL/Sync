@@ -14,6 +14,7 @@ set(SRC_LIB_FILES
     domain/FileNode.cpp
     Global.cpp
     General.cpp
+    SocketListener.cpp
     Creeper.cpp
     DBConnector.cpp
     SSHConnector.cpp

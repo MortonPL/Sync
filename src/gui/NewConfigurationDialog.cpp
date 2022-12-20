@@ -2,8 +2,10 @@
 
 #include <uuid/uuid.h>
 #include "GUI/GenericPopup.h"
+#include "GUI/SSHConnectorWrap.h"
 #include "Lib/SSHConnector.h"
 #include "Lib/DBConnector.h"
+#include "Lib/Global.h"
 #include "Domain/Configuration.h"
 #include "Utils.h"
 
@@ -121,42 +123,12 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
     {
         auto ssh = SSHConnector();
-
-        if (!ssh.BeginSession(ctrl.txtAddressB->GetValue().ToStdString()))
-        {
-            GenericPopup("Failed to connect to given address.").ShowModal();
+        if (!SSHConnectorWrap::Connect(ssh, ctrl.txtAddressB->GetValue().ToStdString(), ctrl.txtUserB->GetValue().ToStdString()))
             return;
-        }
-        if (!ssh.AuthenticateServer())
-        {
-            GenericPopup("Failed to authenticate server.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
+        uuid_copy(Global::lastUsedCreds.uuid, uuid);
 
-        std::string password;
-        GenericPopup(
-            fmt::format("Enter password for {}@{}:", ctrl.txtUserB->GetValue().ToStdString(), ctrl.txtAddressB->GetValue().ToStdString()),
-            NULL, &password, true).ShowModal();
-
-        if (!ssh.AuthenticateUserPass(ctrl.txtUserB->GetValue().ToStdString(), password))
-        {
-            GenericPopup("Failed to authenticate user. Check user credentials.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
-
-        /*
-        if (!ssh.CallCLIT(ctrl.txtAddressA->GetValue().ToStdString(), ctrl.txtUserA->GetValue().ToStdString(), ctrl.dirRootA->GetPath().ToStdString()))
-        {
-            GenericPopup("Failed to call Sync on the remote.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
-        */
-
-        int rc;
-        if (rc = ssh.CallCLID(ctrl.txtRootB->GetValue().ToStdString()) != 0)
+        int rc = ssh.CallCLITest(ctrl.txtRootB->GetValue().ToStdString());
+        if (rc != 0)
         {
             if (rc == 1)
                 GenericPopup("Failed to call Sync on the remote.").ShowModal();

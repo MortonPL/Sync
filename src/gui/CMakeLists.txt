@@ -6,6 +6,8 @@ include(${wxWidgets_USE_FILE})
 set(SRC_GUI_FILES
     # generics
     GenericPopup.cpp
+    # utilities
+    SSHConnectorWrap.cpp
     # custom dialog
     NewConfigurationDialog.cpp
     ChangeConfigurationDialog.cpp

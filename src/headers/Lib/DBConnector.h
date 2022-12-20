@@ -20,6 +20,7 @@ public:
     bool UpdateConfig(Configuration config);
     bool DeleteConfig(int id);
     std::vector<Configuration> SelectAllConfigs();
+    Configuration SelectConfigByUUID(std::string uuid);
 
 private:
     SQLite::Database db;

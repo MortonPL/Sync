@@ -1,19 +1,20 @@
 #pragma once
 #include <string>
 
-class Global
+class GlobalCLI
 {
 public:
     enum CLIMode
     {
-        Default = 0,
-        DirCheck,
-        Test,
+        Default = 0x000,
+        DirCheck = 0x01,
+        DaemonMaster = 0x010,
+        DaemonServant = 0x100,
     };
 
-    static CLIMode mode;
+    static int mode;
     static std::string remoteAddress;
-    static std::string remoteUser;
-    static std::string remoteRoot;
+    static int remotePort;
     static std::string dirToCheck;
+    static std::string dirToCreep;
 };

@@ -1,7 +1,7 @@
 #include "CLI/Global.h"
 
-Global::CLIMode Global::mode;
-std::string Global::remoteAddress = "";
-std::string Global::remoteUser = "";
-std::string Global::remoteRoot = "";
-std::string Global::dirToCheck = "";
+int GlobalCLI::mode = GlobalCLI::CLIMode::Default;
+std::string GlobalCLI::remoteAddress = "";
+int GlobalCLI::remotePort = 40404;
+std::string GlobalCLI::dirToCheck = "";
+std::string GlobalCLI::dirToCreep = "";
