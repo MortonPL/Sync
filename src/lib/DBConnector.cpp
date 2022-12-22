@@ -3,9 +3,9 @@
 #include <uuid/uuid.h>
 #include "Utils.h"
 
-std::string DBConnector::mainFile;
+#define MAIN_DB_FILE "sync.db3"
 
-DBConnector::DBConnector(std::string filename, int mode): db(filename, mode)
+DBConnector::DBConnector(std::string path, int mode): db(Utils::GetDatabasePath() + path, mode)
 {
 }
 
@@ -13,18 +13,17 @@ DBConnector::~DBConnector()
 {
 }
 
-std::string& DBConnector::GetMainFileName()
+std::string DBConnector::GetMainFileName()
 {
-    return DBConnector::mainFile;
+    return MAIN_DB_FILE;
 }
 
-// run this method at the start of the program!
-bool DBConnector::EnsureCreated()
+// run this method ONCE at the start of the program!
+bool DBConnector::EnsureCreatedMain()
 {
-    DBConnector::mainFile = Utils::GetDatabasePath() + "sync.db3";
     try
     {
-        SQLite::Database db(DBConnector::mainFile, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);
+        SQLite::Database db(Utils::GetDatabasePath() + MAIN_DB_FILE, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);
 
         // create tables
         db.exec(
@@ -40,6 +39,35 @@ bool DBConnector::EnsureCreated()
             "root_B TEXT NOT NULL,"
             "root_B_address TEXT,"
             "root_B_user TEXT)"
+        );
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    };
+
+    return true;
+}
+
+bool DBConnector::EnsureCreatedHistory(std::string path)
+{
+    try
+    {
+        SQLite::Database db(Utils::GetDatabasePath() + path, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);
+
+        // create tables
+        db.exec(
+            "CREATE TABLE IF NOT EXISTS header ("
+            "id INTEGER PRIMARY KEY)"
+        );
+        db.exec(
+            "CREATE TABLE IF NOT EXISTS nodes ("
+            "hashpath BLOB PRIMARY KEY,"
+            "dev INTEGER NOT NULL,"
+            "inode INTEGER NOT NULL,"
+            "mtime INTEGER NOT NULL,"
+            "size INTEGER NOT NULL)"
         );
     }
     catch(const std::exception& e)
@@ -139,4 +167,24 @@ Configuration DBConnector::SelectConfigByUUID(std::string uuid)
     if (!query.executeStep())
         return Configuration();
     return query.getColumns<Configuration, 11>();
+}
+
+bool DBConnector::InsertFileNode(FileNode file)
+{
+    return true;
+}
+
+bool DBConnector::UpdateFileNode(FileNode file)
+{
+    return true;
+}
+
+bool DBConnector::DeleteFileNode(int id)
+{
+    return true;
+}
+
+std::vector<FileNode> DBConnector::SelectAllFileNodes()
+{
+    return std::vector<FileNode>();
 }

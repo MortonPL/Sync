@@ -61,10 +61,8 @@ void CheckDir(std::string path)
 
 void CreepDir(std::string path)
 {
-    auto crp = Creeper(path);
-    crp.SearchForLists();
-    crp.CreepPath();
-    auto nodes = crp.GetResults();
+    Creeper::CreepPath(path);
+    auto nodes = Creeper::GetResults();
 
     auto s = SocketListener();
     if (!s.Init(GlobalCLI::remoteAddress, GlobalCLI::remotePort))
@@ -79,9 +77,9 @@ void CreepDir(std::string path)
     }
 
     LOG(INFO) << "Connected";
-    for (auto& node: nodes)
+    for (auto& node: *nodes)
     {
-        auto path = node.GetPath();
+        auto path = node.path;
         path.push_back('\n');
         s.Write(path.c_str(), path.size());
     }

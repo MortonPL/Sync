@@ -9,7 +9,7 @@ sudo apt-get install uuid-dev
 Własne budowanie wxWidgets
 ```
 git clone --recurse-submodules https://github.com/wxWidgets/wxWidgets.git
-cd wxWidgets   
+cd wxWidgets
 mkdir gtk-build             # the name is not really relevant
 cd gtk-build
 ../configure
@@ -20,5 +20,5 @@ sudo ldconfig
 
 Budowanie projektu
 ```
-./action.sh build -c
+./action.sh build -c -i
 ```

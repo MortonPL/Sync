@@ -120,7 +120,7 @@
 								<flag>wxALL</flag>
 								<border>5</border>
 								<object class="wxStaticText" name="m_staticText19">
-									<label>Full Path:</label>
+									<label>Directory:</label>
 									<wrap>-1</wrap>
 								</object>
 							</object>

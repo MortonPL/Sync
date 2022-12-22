@@ -10,13 +10,15 @@ public:
     Creeper(std::string path);
     ~Creeper();
 
-    void CreepPath();
-    void SearchForLists();
-    std::vector<FileNode>& GetResults();
+    static void CreepPath(std::string path);
+    static std::vector<FileNode>* GetResults();
 
 private:
-    std::string path;
-    std::vector<FileNode> fileNodes;
-    std::vector<std::regex> whitelist;
-    std::vector<std::regex> blacklist;
+    static std::string path;
+    static std::vector<FileNode> fileNodes;
+    static std::vector<std::regex> whitelist;
+    static std::vector<std::regex> blacklist;
+
+    static void SearchForLists(std::string path);
+    static bool CheckBlackWhiteLists(std::string path);
 };

@@ -4,6 +4,11 @@
 #include <filesystem>
 #include "Utils.h"
 
+std::string Creeper::path;
+std::vector<FileNode> Creeper::fileNodes;
+std::vector<std::regex> Creeper::whitelist;
+std::vector<std::regex> Creeper::blacklist;
+
 Creeper::Creeper(std::string path)
 {
     this->path = path;
@@ -13,7 +18,7 @@ Creeper::~Creeper()
 {
 }
 
-void Creeper::SearchForLists()
+void Creeper::SearchForLists(std::string path)
 {
     auto readList = [](std::string path, std::string filename, std::vector<std::regex>& rules) {
         std::ifstream in(path + filename, std::ios_base::in);
@@ -39,12 +44,29 @@ void Creeper::SearchForLists()
         }
     };
 
+    whitelist.clear();
+    blacklist.clear();
     readList(path, ".SyncWhitelist", whitelist);
     readList(path, ".SyncBlacklist", blacklist);
 }
 
-void Creeper::CreepPath()
+bool Creeper::CheckBlackWhiteLists(std::string path)
 {
+    for (auto const& regex: whitelist)
+        if (std::regex_search(path, regex))
+            return true;
+
+    for (auto const& regex: blacklist)
+        if (std::regex_search(path, regex))
+            return false;
+
+    return true;
+}
+
+void Creeper::CreepPath(std::string path)
+{
+    Creeper::SearchForLists(path);
+
     for (auto const& entry: std::filesystem::recursive_directory_iterator(
         path, std::filesystem::directory_options::follow_directory_symlink
             | std::filesystem::directory_options::skip_permission_denied))
@@ -52,45 +74,25 @@ void Creeper::CreepPath()
         if (!entry.is_regular_file())
             continue;
 
-        bool isWhitelisted = false;
-        bool isBlacklisted = false;
-        std::string epath = entry.path().string().substr(path.length());
+        std::string filePath = entry.path().string().substr(path.length());
 
-        for (auto const& regex: whitelist)
-        {
-            if (std::regex_search(epath, regex))
-            {
-                isWhitelisted = true;
-                break;
-            }
-        }
+        if (!Creeper::CheckBlackWhiteLists(filePath))
+            continue;
 
-        if (!isWhitelisted)
-        {
-            for (auto const& regex: blacklist)
-            {
-                if (std::regex_search(epath, regex))
-                {
-                    isBlacklisted = true;
-                    break;
-                }
-            }
-            if (isBlacklisted)
-            {
-                continue;
-            }
-        }
-
+        //stat the file
         struct stat buf;
         auto str = entry.path().string();
         auto cstr = str.c_str();
         stat(cstr, &buf);
-        FileNode node(epath, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size);
+
+
+        // make node
+        FileNode node(filePath, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size);
         fileNodes.push_back(node);
     }
 }
 
-std::vector<FileNode>& Creeper::GetResults()
+std::vector<FileNode>* Creeper::GetResults()
 {
-    return fileNodes;
+    return &fileNodes;
 }

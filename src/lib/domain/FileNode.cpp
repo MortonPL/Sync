@@ -12,8 +12,3 @@ FileNode::FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t
 FileNode::~FileNode()
 {
 }
-
-std::string FileNode::GetPath()
-{
-    return path;
-}

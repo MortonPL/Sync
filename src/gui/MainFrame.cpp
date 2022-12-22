@@ -1,5 +1,6 @@
 #include "GUI/MainFrame.h"
 
+#include <filesystem>
 #include <uuid/uuid.h>
 
 #include "GUI/SSHConnectorWrap.h"
@@ -99,9 +100,7 @@ void MainFrame::OnScan(wxCommandEvent &event)
     if (!Global::IsLoadedConfig())
         return;
     auto cfg = Global::GetCurrentConfig();
-    auto crp = Creeper(cfg.pathA);
-    crp.SearchForLists();
-    crp.CreepPath();
+    Creeper::CreepPath(cfg.pathA);
     bool ok;
     /*
     auto ssh = SSHConnector();
@@ -113,13 +112,12 @@ void MainFrame::OnScan(wxCommandEvent &event)
         return;
     */
 
-    Global::SetNodes(crp.GetResults());
-    auto nodes = Global::GetNodes();
+    auto nodes = Creeper::GetResults();
     ctrl.listMain->DeleteAllItems();
     for(int i = 0; i < nodes->size(); i++)
     {
         auto node = (*nodes)[i];
-        ctrl.listMain->InsertItem(i, node.GetPath());
+        ctrl.listMain->InsertItem(i, node.path);
         ctrl.listMain->SetItemData(i, (long)&(*nodes)[i]);
     }
 
@@ -133,11 +131,18 @@ void MainFrame::OnScan(wxCommandEvent &event)
     */
 }
 
+#define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
 void MainFrame::OnSelectNode(wxListEvent &event)
 {
     auto pNode = (FileNode*)event.GetData();
-    ctrl.det.lblDetName->SetLabel(pNode->GetPath());
+    ctrl.det.lblDetName->SetLabel(pNode->path);
+    ctrl.det.lblDetPath->SetLabel(std::filesystem::path(pNode->path).parent_path().string());
+    ctrl.det.lblDetDev->SetLabel(LTOA(pNode->dev));
+    ctrl.det.lblDetInode->SetLabel(LTOA(pNode->inode));
+    ctrl.det.lblDetMtime->SetLabel(Utils::TimestampToString(&pNode->mtime));
+    ctrl.det.lblDetSize->SetLabel(LTOA(pNode->size));
 }
+#undef LTOA
 
 void MainFrame::OnAbout(wxCommandEvent &event)
 {

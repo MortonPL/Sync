@@ -11,8 +11,6 @@ public:
     static bool IsLoadedConfig();
     static const Configuration& GetCurrentConfig();
     static void SetCurrentConfig(const Configuration& config);
-    static std::vector<FileNode>* GetNodes();
-    static void SetNodes(std::vector<FileNode> nodes);
 
     struct LastCredsStruct
     {
@@ -25,5 +23,4 @@ public:
 private:
     static Configuration config;
     static bool hasLoadedConfig;
-    static std::vector<FileNode> nodes;
 };

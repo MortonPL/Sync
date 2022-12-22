@@ -43,7 +43,7 @@ ChangeConfigurationDialog::ChangeConfigurationDialog(wxWindow* pParent)
 
 void ChangeConfigurationDialog::PopulateConfigList()
 {
-    DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READONLY);
+    DBConnector db(DBConnector::GetMainFileName());
     try
     {
         this->configs = db.SelectAllConfigs();
