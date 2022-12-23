@@ -205,6 +205,24 @@
 									<wrap>-1</wrap>
 								</object>
 							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxStaticText" name="m_staticText251">
+									<label>Hash:</label>
+									<wrap>-1</wrap>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxStaticText" name="lblDetHash">
+									<label></label>
+									<wrap>-1</wrap>
+								</object>
+							</object>
 						</object>
 					</object>
 				</object>

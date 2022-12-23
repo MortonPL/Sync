@@ -7,6 +7,7 @@
 #include "GUI/GenericPopup.h"
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/ChangeConfigurationDialog.h"
+#include "Lib/DBConnector.h"
 #include "Lib/Global.h"
 #include "Lib/Creeper.h"
 #include "Utils.h"
@@ -45,6 +46,7 @@ MainFrame::MainFrame(wxWindow* pParent)
             (wxStaticText*)(FindWindow("lblDetInode")),
             (wxStaticText*)(FindWindow("lblDetMtime")),
             (wxStaticText*)(FindWindow("lblDetSize")),
+            (wxStaticText*)(FindWindow("lblDetHash")),
         }
     };
 
@@ -85,11 +87,18 @@ void MainFrame::OnChangeConfig(wxCommandEvent &event)
     ChangeConfigurationDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
     {
+        return;
     }
     if (isFirstConfig)
     {
         GetMenuBar()->GetMenu(MENU_EDIT)->FindItemByPosition(MENU_EDIT_SCAN)->Enable();
         isFirstConfig = false;
+    }
+    char uuidbuf[37];
+    uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
+    if (DBConnector::EnsureCreatedHistory(std::string(uuidbuf) + ".db3") != DB_GOOD)
+    {
+        GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned for the first time\nor if it's corrupted. All files will be marked as new.").ShowModal();
     }
 }
 #undef MENU_EDIT
@@ -99,6 +108,33 @@ void MainFrame::OnScan(wxCommandEvent &event)
 {
     if (!Global::IsLoadedConfig())
         return;
+
+
+    //temp
+    char uuidbuf[37];
+    uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
+    try
+    {
+        auto db = DBConnector(std::string(uuidbuf) + ".db3", SQLite::OPEN_READWRITE);
+        Creeper::fileNodes = db.SelectAllFileNodes(); //temp
+        auto nodes = Creeper::GetResults();
+        for(int i = 0; i < nodes->size(); i++)
+        {
+            auto node = (*nodes)[i];
+            ctrl.listMain->InsertItem(i, node.path);
+            ctrl.listMain->SetItemData(i, (long)&(*nodes)[i]);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to update file history.";
+        GenericPopup("Failed to update file history.").ShowModal();
+        return;
+    }
+
+    return;
+
+
     auto cfg = Global::GetCurrentConfig();
     Creeper::CreepPath(cfg.pathA);
     bool ok;
@@ -121,6 +157,24 @@ void MainFrame::OnScan(wxCommandEvent &event)
         ctrl.listMain->SetItemData(i, (long)&(*nodes)[i]);
     }
 
+    //temp
+    //char uuidbuf[37];
+    uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
+    try
+    {
+        auto db = DBConnector(std::string(uuidbuf) + ".db3", SQLite::OPEN_READWRITE);
+        for(int i = 0; i < nodes->size(); i++)
+        {
+            db.InsertFileNode((*nodes)[i]);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to update file history.";
+        GenericPopup("Failed to update file history.").ShowModal();
+        return;
+    }
+
     /*
     auto nodesB = ssh.CallCLICreep(cfg.pathB);
     for(int i = 0; i < nodesB.size(); i++)
@@ -141,6 +195,7 @@ void MainFrame::OnSelectNode(wxListEvent &event)
     ctrl.det.lblDetInode->SetLabel(LTOA(pNode->inode));
     ctrl.det.lblDetMtime->SetLabel(Utils::TimestampToString(&pNode->mtime));
     ctrl.det.lblDetSize->SetLabel(LTOA(pNode->size));
+    ctrl.det.lblDetHash->SetLabel(fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow));
 }
 #undef LTOA
 

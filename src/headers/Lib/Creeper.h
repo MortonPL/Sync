@@ -10,10 +10,13 @@ public:
     Creeper(std::string path);
     ~Creeper();
 
-    static void CreepPath(std::string path);
+    static bool CreepPath(std::string path);
     static std::vector<FileNode>* GetResults();
 
-private:
+    static std::map<std::string, FileNode*> mapPath;
+    static std::map<FileNode::devinode, FileNode*> mapInode;
+
+public://private:
     static std::string path;
     static std::vector<FileNode> fileNodes;
     static std::vector<std::regex> whitelist;

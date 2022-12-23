@@ -18,6 +18,7 @@ private:
             wxStaticText* lblDetInode;
             wxStaticText* lblDetMtime;
             wxStaticText* lblDetSize;
+            wxStaticText* lblDetHash;
         };
         Details det;
     };

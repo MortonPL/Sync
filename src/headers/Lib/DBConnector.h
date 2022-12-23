@@ -7,6 +7,9 @@
 #include "Domain/FileNode.h"
 
 #define NOID -1
+#define DB_FAIL 0
+#define DB_EMPTY 1
+#define DB_GOOD 2
 
 class DBConnector
 {
@@ -16,17 +19,17 @@ public:
 
     static std::string GetMainFileName();
 
-    static bool EnsureCreatedMain();
+    static int EnsureCreatedMain();
     bool InsertConfig(Configuration config);
     bool UpdateConfig(Configuration config);
     bool DeleteConfig(int id);
     std::vector<Configuration> SelectAllConfigs();
     Configuration SelectConfigByUUID(std::string uuid);
 
-    static bool EnsureCreatedHistory(std::string path);
+    static int EnsureCreatedHistory(std::string path);
     bool InsertFileNode(FileNode file);
     bool UpdateFileNode(FileNode file);
-    bool DeleteFileNode(int id);
+    bool DeleteFileNode(std::string& path);
     std::vector<FileNode> SelectAllFileNodes();
 
 private:

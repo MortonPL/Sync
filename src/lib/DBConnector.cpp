@@ -19,7 +19,7 @@ std::string DBConnector::GetMainFileName()
 }
 
 // run this method ONCE at the start of the program!
-bool DBConnector::EnsureCreatedMain()
+int DBConnector::EnsureCreatedMain()
 {
     try
     {
@@ -44,13 +44,13 @@ bool DBConnector::EnsureCreatedMain()
     catch(const std::exception& e)
     {
         LOG(ERROR) << e.what();
-        return false;
+        return DB_FAIL;
     };
 
-    return true;
+    return DB_GOOD;
 }
 
-bool DBConnector::EnsureCreatedHistory(std::string path)
+int DBConnector::EnsureCreatedHistory(std::string path)
 {
     try
     {
@@ -63,20 +63,30 @@ bool DBConnector::EnsureCreatedHistory(std::string path)
         );
         db.exec(
             "CREATE TABLE IF NOT EXISTS nodes ("
-            "hashpath BLOB PRIMARY KEY,"
+            "path TEXT PRIMARY KEY,"
             "dev INTEGER NOT NULL,"
             "inode INTEGER NOT NULL,"
             "mtime INTEGER NOT NULL,"
-            "size INTEGER NOT NULL)"
+            "size INTEGER NOT NULL,"
+            "hash_high BLOB NOT NULL,"
+            "hash_low BLOB NOT NULL)"
         );
+
+        SQLite::Statement query(db, "SELECT * from nodes");
+        if (query.executeStep())
+        {
+            return DB_GOOD;
+        }
+        else
+        {
+            return query.hasRow()? DB_GOOD: DB_EMPTY;
+        }
     }
     catch(const std::exception& e)
     {
         LOG(ERROR) << e.what();
-        return false;
+        return DB_FAIL;
     };
-
-    return true;
 }
 
 bool DBConnector::InsertConfig(Configuration config)
@@ -171,20 +181,86 @@ Configuration DBConnector::SelectConfigByUUID(std::string uuid)
 
 bool DBConnector::InsertFileNode(FileNode file)
 {
+    try
+    {
+        SQLite::Statement query(db, fmt::format(
+            "INSERT INTO nodes "
+            "(path, dev, inode, mtime, size, hash_high, hash_low) "
+            "VALUES (\"{}\", {}, {}, {}, {}, ?, ?)",
+            file.path, file.dev, file.inode, file.mtime, file.size));
+        query.bind(1, &file.hashHigh, 8);
+        query.bind(2, &file.hashLow, 8);
+        query.exec();
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
     return true;
 }
 
 bool DBConnector::UpdateFileNode(FileNode file)
 {
+    try
+    {
+        this->db.exec(fmt::format(
+            "UPDATE nodes SET "
+            "dev = {}, inode = {}, mtime = {}, size = {}, "
+            "hash_high = ?, hash_low = ?"
+            "WHERE path = \"{}\"",
+            file.dev, file.inode, file.mtime, file.size,
+            file.hashHigh));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
     return true;
 }
 
-bool DBConnector::DeleteFileNode(int id)
+bool DBConnector::DeleteFileNode(std::string& path)
 {
+    try
+    {
+        this->db.exec(fmt::format("DELETE FROM nodes WHERE path = {}", path));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
     return true;
 }
 
 std::vector<FileNode> DBConnector::SelectAllFileNodes()
 {
-    return std::vector<FileNode>();
+    std::vector<FileNode> nodes;
+    SQLite::Statement query(this->db, "SELECT * from nodes");
+    while(query.executeStep())
+    {
+        XXH64_hash_t high;
+        XXH64_hash_t low;
+
+        high = *(XXH64_hash_t*)query.getColumn(5).getBlob();
+        low = *(XXH64_hash_t*)query.getColumn(6).getBlob();
+
+        auto alt = query.getColumn(6).getBlob();
+
+        nodes.push_back(FileNode
+        (
+            (std::string)query.getColumn(0),
+            (uint32_t)query.getColumn(1),
+            (int64_t)query.getColumn(2),
+            (uint32_t)query.getColumn(3),
+            (uint32_t)query.getColumn(4),
+            high,
+            low
+        ));
+    }
+    return nodes;
 }

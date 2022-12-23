@@ -184,13 +184,13 @@ std::vector<FileNode> SSHConnector::CallCLICreep(std::string dirToCreep)
                 if (incomplete)
                 {
                     tempString += path;
-                    nodes.push_back(FileNode(tempString, 0, 0, 0, 0));
+                    nodes.push_back(FileNode(tempString, 0, 0, 0, 0, 0, 0));
                     tempString = "";
                     incomplete = false;
                 }
                 else
                 {
-                    nodes.push_back(FileNode(path, 0, 0, 0, 0));
+                    nodes.push_back(FileNode(path, 0, 0, 0, 0, 0, 0));
                 }
             }
             else
@@ -203,7 +203,7 @@ std::vector<FileNode> SSHConnector::CallCLICreep(std::string dirToCreep)
     }
     if (incomplete)
     {
-        nodes.push_back(FileNode(tempString, 0, 0, 0, 0));
+        nodes.push_back(FileNode(tempString, 0, 0, 0, 0, 0, 0));
     }
 
     FreeChannel(pChannel);
