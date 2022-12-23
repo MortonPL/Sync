@@ -25,16 +25,16 @@ private:
 
     // properties
     Controls ctrl;
-    bool isFirstConfig;
+    bool isFirstSelectedConfig = true;
 
     // custom methods
     void CreateReportList();
 
     // event handlers
-    void Update();
     void OnNewConfig(wxCommandEvent &event);
     void OnChangeConfig(wxCommandEvent &event);
     void OnScan(wxCommandEvent &event);
+    void OnSync(wxCommandEvent &event);
     void OnSelectNode(wxListEvent &event);
     void OnExit(wxCommandEvent &event);
     void OnAbout(wxCommandEvent &event);

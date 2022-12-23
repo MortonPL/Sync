@@ -16,19 +16,41 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_file_newc"), MainFrame::OnNewConfig)
     EVT_MENU(XRCID("menu_file_changec"), MainFrame::OnChangeConfig)
     EVT_MENU(XRCID("menu_edit_scan"), MainFrame::OnScan)
+    EVT_MENU(XRCID("menu_edit_sync"), MainFrame::OnSync)
     EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
     EVT_TOOL(XRCID("tlb_scan"), MainFrame::OnScan)
+    EVT_TOOL(XRCID("tlb_sync"), MainFrame::OnSync)
     EVT_LIST_ITEM_SELECTED(XRCID("listMain"), MainFrame::OnSelectNode)
     EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
     EVT_MENU(wxID_EXIT, MainFrame::OnExit)
 wxEND_EVENT_TABLE()
 
-#define COL_NAME 0
-#define COL_STATUS 1
-#define COL_ACTION 2
-#define COL_PROGRESS 3
+#define COL_NAME        0
+#define COL_STATUS      1
+#define COL_ACTION      2
+#define COL_PROGRESS    3
 
-// ctor
+#define TOOLBAR_CONFIG  0
+//      TOOLBAR_DIVIDER 1
+#define TOOLBAR_SCAN    2
+#define TOOLBAR_SYNC    3
+
+#define MENU_FILE           0
+#define MENU_EDIT           1
+#define MENU_HELP           2
+#define MENU_FILE_NEW       0
+#define MENU_FILE_CHANGE    1
+#define MENU_FILE_EXIT      2
+#define MENU_EDIT_SCAN      0
+#define MENU_EDIT_SYNC      1
+#define MENU_HELP_ABOUT     0
+
+#define ENABLE_MENU_ITEM(menu, item)\
+    this->GetMenuBar()->GetMenu(menu)->FindItemByPosition(item)->Enable();
+
+#define ENABLE_TOOLBAR_ITEM(item, toggle)\
+    toolBar->EnableTool(toolBar->GetToolByPos(item)->GetId(), toggle);
+
 MainFrame::MainFrame(wxWindow* pParent)
 {
     wxXmlResource::Get()->LoadFrame(this, pParent, "MainFrame");
@@ -50,8 +72,11 @@ MainFrame::MainFrame(wxWindow* pParent)
         }
     };
 
-    isFirstConfig = true;
+    isFirstSelectedConfig = true;
 
+    auto toolBar = GetToolBar();
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, false)
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false)
     CreateReportList();
 
     // resize for menu and status bar
@@ -68,10 +93,6 @@ void MainFrame::CreateReportList()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void MainFrame::Update()
-{
-}
-
 void MainFrame::OnNewConfig(wxCommandEvent &event)
 {
     NewConfigurationDialog dialog(this);
@@ -80,8 +101,6 @@ void MainFrame::OnNewConfig(wxCommandEvent &event)
     }
 }
 
-#define MENU_EDIT 1
-#define MENU_EDIT_SCAN 0
 void MainFrame::OnChangeConfig(wxCommandEvent &event)
 {
     ChangeConfigurationDialog dialog(this);
@@ -89,21 +108,22 @@ void MainFrame::OnChangeConfig(wxCommandEvent &event)
     {
         return;
     }
-    if (isFirstConfig)
+
+    if (isFirstSelectedConfig)
     {
-        GetMenuBar()->GetMenu(MENU_EDIT)->FindItemByPosition(MENU_EDIT_SCAN)->Enable();
-        isFirstConfig = false;
+        auto toolBar = GetToolBar();
+        ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SCAN)
+        ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, true)
+        isFirstSelectedConfig = false;
     }
+
     ctrl.listMain->DeleteAllItems();
-    char uuidbuf[37];
-    uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
-    if (DBConnector::EnsureCreatedHistory(std::string(uuidbuf) + ".db3") != DB_GOOD)
+
+    if (DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)) != DB_GOOD)
     {
         GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned for the first time\nor if it's corrupted. All files will be marked as new.").ShowModal();
     }
 }
-#undef MENU_EDIT
-#undef MENU_EDIT_SCAN
 
 void MainFrame::OnScan(wxCommandEvent &event)
 {
@@ -118,12 +138,10 @@ void MainFrame::OnScan(wxCommandEvent &event)
     bool ok;
     auto scanNodes = Creeper::GetResults();
     //read history
-    char uuidbuf[37];
     std::vector<FileNode> historyNodes;
-    uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
     try
     {
-        auto db = DBConnector(std::string(uuidbuf) + ".db3", SQLite::OPEN_READWRITE);
+        auto db = DBConnector(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
         historyNodes = db.SelectAllFileNodes();
     }
     catch(const std::exception& e)
@@ -139,6 +157,21 @@ void MainFrame::OnScan(wxCommandEvent &event)
         if (res != Creeper::mapPath.end())
         {
             res->second->status = STATUS_OLD;
+            if (res->second->size == history.size)
+            {
+                if (res->second->IsEqualHash(history))
+                {
+                    res->second->status = STATUS_CLEAN;
+                }
+                else
+                {
+                    history.status = STATUS_DIRTY;
+                }
+            }
+            else
+            {
+                res->second->status = STATUS_DIRTY;
+            }
         }
         else
         {
@@ -210,6 +243,14 @@ void MainFrame::OnScan(wxCommandEvent &event)
         ctrl.listMain->SetItem(i, COL_REMOTE, node.GetPath());
     }
     */
+
+    auto toolBar = GetToolBar();  
+    ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SYNC)
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, true)
+}
+
+void MainFrame::OnSync(wxCommandEvent &event)
+{
 }
 
 #define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
@@ -237,7 +278,24 @@ void MainFrame::OnExit(wxCommandEvent &event)
     Close(true);
 }
 
-#undef COL_LOCAL
-#undef COL_LOCAL_STATUS
-#undef COL_REMOTE
-#undef COL_REMOTE_STATUS
+#undef COL_NAME
+#undef COL_STATUS
+#undef COL_ACTION
+#undef COL_PROGRESS
+
+#undef TOOLBAR_CONFIG
+#undef TOOLBAR_SCAN
+#undef TOOLBAR_SYNC
+
+#undef MENU_FILE
+#undef MENU_EDIT
+#undef MENU_HELP
+#undef MENU_FILE_NEW
+#undef MENU_FILE_CHANGE
+#undef MENU_FILE_EXIT
+#undef MENU_EDIT_SCAN
+#undef MENU_EDIT_SYNC
+#undef MENU_HELP_ABOUT
+
+#undef ENABLE_MENU_ITEM
+#undef ENABLE_TOOLBAR_ITEM

@@ -29,6 +29,11 @@
 					<help>Scan directories for changes.</help>
 					<enabled>0</enabled>
 				</object>
+				<object class="wxMenuItem" name="menu_edit_sync">
+					<label>Synchronize!\tCtrl+S</label>
+					<help>Synchronize the changes.</help>
+					<enabled>0</enabled>
+				</object>
 			</object>
 			<object class="wxMenu" name="menu_help">
 				<label>Help</label>
@@ -43,7 +48,7 @@
 			<fields>1</fields>
 		</object>
 		<object class="wxToolBar" name="ToolBar">
-			<style>wxTB_HORIZONTAL</style>
+			<style>wxTB_HORIZONTAL|wxTB_TEXT</style>
 			<bitmapsize></bitmapsize>
 			<margins></margins>
 			<packing>1</packing>
@@ -58,8 +63,14 @@
 			<object class="tool" name="tlb_scan">
 				<label>Scan directories</label>
 				<tooltip>Scan directories</tooltip>
-				<longhelp>Scan directories.</longhelp>
+				<longhelp>Scan directories, looking for changes.</longhelp>
 				<bitmap stock_id="wxART_FIND" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="tlb_sync">
+				<label>Synchronize!</label>
+				<tooltip>Synchronize the changes.</tooltip>
+				<longhelp>Synchronize the changes.</longhelp>
+				<bitmap>ico/sync.png</bitmap>
 			</object>
 		</object>
 		<object class="wxFlexGridSizer">

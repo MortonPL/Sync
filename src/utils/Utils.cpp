@@ -75,3 +75,10 @@ std::string Utils::TimestampToString(const time_t* timestamp)
     strftime(buf, 20, "%d.%m.%Y %H:%M:%S", localtime(timestamp));
     return std::string(buf);
 }
+
+std::string Utils::UUIDToDBPath(const uuid_t& uuid)
+{
+    char uuidbuf[37];
+    uuid_unparse(uuid, uuidbuf);
+    return std::string(uuidbuf) + ".db3";
+}

@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 #include <string>
 #include <iomanip>
+#include <uuid/uuid.h>
 
 class Utils
 {
@@ -16,6 +17,7 @@ public:
     static std::string CorrectDirPath(const std::string path);
     static time_t StringToTimestamp(const std::string string);
     static std::string TimestampToString(const time_t* timestamp);
+    static std::string UUIDToDBPath(const uuid_t& uuid);
 private:
     static std::string dataPath;
 };
