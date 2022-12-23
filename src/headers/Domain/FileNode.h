@@ -3,6 +3,13 @@
 #include <sys/types.h>
 #include "xxhash.h"
 
+#define STATUS_NEW 0
+#define STATUS_DELETED 1
+#define STATUS_CLEAN 2
+#define STATUS_DIRTY 3
+#define STATUS_MOVED 4
+#define STATUS_OLD 5
+
 class FileNode
 {
 public:
@@ -16,11 +23,11 @@ public:
 
         friend bool operator <(const devinode& one, const devinode& other)
         {
-            return (one.dev < other.dev) && (one.inode < other.inode);
+            return (one.dev < other.dev || (one.dev == other.dev && one.inode < other.inode));
         }
     };
 
-    devinode GetDevInode();
+    static std::string StatusString[6];
 
     std::string path;
     dev_t dev;
@@ -30,4 +37,7 @@ public:
     XXH64_hash_t hashHigh;
     XXH64_hash_t hashLow;
     char status;
+
+    devinode GetDevInode();
+    bool IsEqualHash(const FileNode& other);
 };

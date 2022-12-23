@@ -243,14 +243,6 @@ std::vector<FileNode> DBConnector::SelectAllFileNodes()
     SQLite::Statement query(this->db, "SELECT * from nodes");
     while(query.executeStep())
     {
-        XXH64_hash_t high;
-        XXH64_hash_t low;
-
-        high = *(XXH64_hash_t*)query.getColumn(5).getBlob();
-        low = *(XXH64_hash_t*)query.getColumn(6).getBlob();
-
-        auto alt = query.getColumn(6).getBlob();
-
         nodes.push_back(FileNode
         (
             (std::string)query.getColumn(0),
@@ -258,8 +250,8 @@ std::vector<FileNode> DBConnector::SelectAllFileNodes()
             (int64_t)query.getColumn(2),
             (uint32_t)query.getColumn(3),
             (uint32_t)query.getColumn(4),
-            high,
-            low
+            *(XXH64_hash_t*)query.getColumn(5).getBlob(),
+            *(XXH64_hash_t*)query.getColumn(6).getBlob()
         ));
     }
     return nodes;

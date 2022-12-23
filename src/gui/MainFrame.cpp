@@ -94,6 +94,7 @@ void MainFrame::OnChangeConfig(wxCommandEvent &event)
         GetMenuBar()->GetMenu(MENU_EDIT)->FindItemByPosition(MENU_EDIT_SCAN)->Enable();
         isFirstConfig = false;
     }
+    ctrl.listMain->DeleteAllItems();
     char uuidbuf[37];
     uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
     if (DBConnector::EnsureCreatedHistory(std::string(uuidbuf) + ".db3") != DB_GOOD)
@@ -109,56 +110,71 @@ void MainFrame::OnScan(wxCommandEvent &event)
     if (!Global::IsLoadedConfig())
         return;
 
+    ctrl.listMain->DeleteAllItems();
 
-    //temp
+    //scan
+    auto cfg = Global::GetCurrentConfig();
+    Creeper::CreepPath(cfg.pathA);
+    bool ok;
+    auto scanNodes = Creeper::GetResults();
+    //read history
     char uuidbuf[37];
+    std::vector<FileNode> historyNodes;
     uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
     try
     {
         auto db = DBConnector(std::string(uuidbuf) + ".db3", SQLite::OPEN_READWRITE);
-        Creeper::fileNodes = db.SelectAllFileNodes(); //temp
-        auto nodes = Creeper::GetResults();
-        for(int i = 0; i < nodes->size(); i++)
-        {
-            auto node = (*nodes)[i];
-            ctrl.listMain->InsertItem(i, node.path);
-            ctrl.listMain->SetItemData(i, (long)&(*nodes)[i]);
-        }
+        historyNodes = db.SelectAllFileNodes();
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << "Failed to update file history.";
-        GenericPopup("Failed to update file history.").ShowModal();
+        LOG(ERROR) << "Failed to read file history.";
+        GenericPopup("Failed to read file history.").ShowModal();
         return;
     }
-
-    return;
-
-
-    auto cfg = Global::GetCurrentConfig();
-    Creeper::CreepPath(cfg.pathA);
-    bool ok;
-    /*
-    auto ssh = SSHConnector();
-    if (uuid_compare(cfg.uuid, Global::lastUsedCreds.uuid) == 0)
-        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, Global::lastUsedCreds.username, Global::lastUsedCreds.password);
-    else
-        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser);
-    if (!ok)
-        return;
-    */
-
-    auto nodes = Creeper::GetResults();
-    ctrl.listMain->DeleteAllItems();
-    for(int i = 0; i < nodes->size(); i++)
+    //pair
+    for(auto history: historyNodes)
     {
-        auto node = (*nodes)[i];
-        ctrl.listMain->InsertItem(i, node.path);
-        ctrl.listMain->SetItemData(i, (long)&(*nodes)[i]);
+        auto res = Creeper::mapPath.find(history.path);
+        if (res != Creeper::mapPath.end())
+        {
+            res->second->status = STATUS_OLD;
+        }
+        else
+        {
+            auto res = Creeper::mapInode.find(history.GetDevInode());
+            if (res != Creeper::mapInode.end())
+            {
+                if (res->second->IsEqualHash(history))
+                {
+                    res->second->status = STATUS_MOVED;
+                }
+                else
+                {
+                    history.status = STATUS_DELETED;
+                    scanNodes->push_back(history);
+                }
+            }
+            else
+            {
+                history.status = STATUS_DELETED;
+                scanNodes->push_back(history);
+            }
+        }
+    }
+    //diff
+    int i = 0;
+    for(auto node = (*scanNodes).begin(); node != (*scanNodes).end(); ++node)
+    {
+        ctrl.listMain->InsertItem(i, node->path);
+        ctrl.listMain->SetItemData(i, (long)&(*node));
+        ctrl.listMain->SetItem(i, COL_STATUS, FileNode::StatusString[node->status]);
+        i++;
     }
 
     //temp
-    //char uuidbuf[37];
+    /*
+    char uuidbuf[37];
     uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
     try
     {
@@ -174,6 +190,17 @@ void MainFrame::OnScan(wxCommandEvent &event)
         GenericPopup("Failed to update file history.").ShowModal();
         return;
     }
+    */
+
+    /*
+    auto ssh = SSHConnector();
+    if (uuid_compare(cfg.uuid, Global::lastUsedCreds.uuid) == 0)
+        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, Global::lastUsedCreds.username, Global::lastUsedCreds.password);
+    else
+        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser);
+    if (!ok)
+        return;
+    */
 
     /*
     auto nodesB = ssh.CallCLICreep(cfg.pathB);

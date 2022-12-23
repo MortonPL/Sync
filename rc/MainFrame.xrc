@@ -83,7 +83,7 @@
 				<flag>wxEXPAND</flag>
 				<border>5</border>
 				<object class="wxStaticBoxSizer">
-					<minsize>200,-1</minsize>
+					<minsize>350,-1</minsize>
 					<orient>wxVERTICAL</orient>
 					<label>File Details</label>
 					<object class="sizeritem">
@@ -156,7 +156,7 @@
 								<flag>wxALL</flag>
 								<border>5</border>
 								<object class="wxStaticText" name="m_staticText24">
-									<label>Inode:</label>
+									<label>Inode #:</label>
 									<wrap>-1</wrap>
 								</object>
 							</object>

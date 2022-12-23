@@ -9,7 +9,7 @@
 #include "Utils.h"
 
 std::string Creeper::path;
-std::vector<FileNode> Creeper::fileNodes;
+std::list<FileNode> Creeper::fileNodes;
 std::vector<std::regex> Creeper::whitelist;
 std::vector<std::regex> Creeper::blacklist;
 std::map<std::string, FileNode*> Creeper::mapPath;
@@ -118,7 +118,7 @@ bool Creeper::CreepPath(std::string path)
         // make node
         FileNode node(filePath, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size, hash.high64, hash.low64);
         fileNodes.push_back(node);
-        FileNode* pNode = &fileNodes[fileNodes.size() - 1];
+        FileNode* pNode = &fileNodes.back();
         mapPath.emplace(filePath, pNode);
         mapInode.emplace(pNode->GetDevInode(), pNode);
     }
@@ -129,7 +129,7 @@ bool Creeper::CreepPath(std::string path)
 #undef BUFFER_SIZE
 #undef FAIL
 
-std::vector<FileNode>* Creeper::GetResults()
+std::list<FileNode>* Creeper::GetResults()
 {
     return &fileNodes;
 }
