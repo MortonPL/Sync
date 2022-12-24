@@ -205,13 +205,30 @@ bool DBConnector::UpdateFileNode(FileNode file)
 {
     try
     {
-        this->db.exec(fmt::format(
-            "UPDATE nodes SET "
-            "dev = {}, inode = {}, mtime = {}, size = {}, "
-            "hash_high = ?, hash_low = ?"
-            "WHERE path = \"{}\"",
-            file.dev, file.inode, file.mtime, file.size,
-            file.hashHigh));
+        if (file.status == STATUS_MOVED)
+        {
+            SQLite::Statement query(db, fmt::format(
+                "UPDATE nodes SET "
+                "path = \"{}\", mtime = {}, size = {}, "
+                "hash_high = ?, hash_low = ?"
+                "WHERE dev = {} AND inode = {}",
+                file.path, file.mtime, file.size, file.dev, file.inode));
+            query.bind(1, &file.hashHigh, 8);
+            query.bind(2, &file.hashLow, 8);
+            query.exec();
+        }
+        else
+        {
+            SQLite::Statement query(db, fmt::format(
+                "UPDATE nodes SET "
+                "dev = {}, inode = {}, mtime = {}, size = {}, "
+                "hash_high = ?, hash_low = ?"
+                "WHERE path = \"{}\"",
+                file.dev, file.inode, file.mtime, file.size, file.path));
+            query.bind(1, &file.hashHigh, 8);
+            query.bind(2, &file.hashLow, 8);
+            query.exec();
+        }
     }
     catch(const std::exception& e)
     {

@@ -10,6 +10,7 @@
 #define STATUS_MOVED 4
 #define STATUS_OLD 5
 
+/*A domain class representing a single file.*/
 class FileNode
 {
 public:
@@ -27,7 +28,7 @@ public:
         }
     };
 
-    static std::string StatusString[6];
+    static const std::string StatusString[6];
 
     std::string path;
     dev_t dev;
@@ -38,6 +39,6 @@ public:
     XXH64_hash_t hashLow;
     char status;
 
-    devinode GetDevInode();
-    bool IsEqualHash(const FileNode& other);
+    devinode GetDevInode() const;
+    bool IsEqualHash(const FileNode& other) const;
 };

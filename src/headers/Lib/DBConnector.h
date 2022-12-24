@@ -11,6 +11,7 @@
 #define DB_EMPTY 1
 #define DB_GOOD 2
 
+/*A class that connects to a specific SQLite database file and CRUD queries.*/
 class DBConnector
 {
 public:

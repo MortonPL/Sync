@@ -1,10 +1,10 @@
 #pragma once
 #include <uuid/uuid.h>
-#include <vector>
 
 #include "Domain/Configuration.h"
 #include "Domain/FileNode.h"
 
+/*A static class for globally accessible data.*/
 class Global
 {
 public:

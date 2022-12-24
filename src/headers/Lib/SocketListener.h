@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
-#include <sys/socket.h>
 #include <netinet/in.h>
 
+/*A wrapper class for managing TCP communications.*/
 class SocketListener
 {
 public:

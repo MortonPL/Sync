@@ -2,6 +2,7 @@
 #include <string>
 #include <uuid/uuid.h>
 
+/*A domain class representing an app config.*/
 class Configuration
 {
 public:

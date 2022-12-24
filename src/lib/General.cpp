@@ -26,8 +26,6 @@ void SetUpLogger(std::string logPath)
 {
     el::Configurations defaultConf;
     defaultConf.setToDefault();
-    //defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-    // To set GLOBAL configurations you may use
     defaultConf.setGlobally(el::ConfigurationType::Format, "%datetime %level %msg");
     defaultConf.setGlobally(el::ConfigurationType::Filename, logPath);
     defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
@@ -36,16 +34,12 @@ void SetUpLogger(std::string logPath)
 
 bool General::InitEverything(std::string logName)
 {
-    if (ensureDirectory(Utils::GetLogsPath(), "Failed to make sure that the logging directory exists! Exiting."), true)
-    {
-        SetUpLogger(Utils::GetLogsPath() + logName);
-        LOG(INFO) << "Starting Sync.";
-    }
-    else
+    if (!ensureDirectory(Utils::GetLogsPath(), "Failed to make sure that the logging directory exists! Exiting.", true))
     {
         return false;
     }
-
+    SetUpLogger(Utils::GetLogsPath() + logName);
+    LOG(INFO) << "Starting Sync.";
     if (!ensureDirectory(Utils::GetDatabasePath(), "Failed to make sure that the database directory exists! Exiting."))
     {
         return false;

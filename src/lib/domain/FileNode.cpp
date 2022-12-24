@@ -1,6 +1,6 @@
 #include "Domain/FileNode.h"
 
-std::string FileNode::StatusString[6] =
+const std::string FileNode::StatusString[6] =
 {
     "New",
     "Deleted",
@@ -26,12 +26,12 @@ FileNode::~FileNode()
 {
 }
 
-FileNode::devinode FileNode::GetDevInode()
+FileNode::devinode FileNode::GetDevInode() const
 {
     return devinode{dev, inode};
 }
 
-bool FileNode::IsEqualHash(const FileNode& other)
+bool FileNode::IsEqualHash(const FileNode& other) const
 {
-    return (this->hashHigh == other.hashHigh) && (this->hashLow == other.hashLow);
+    return this->hashHigh == other.hashHigh && this->hashLow == other.hashLow;
 }

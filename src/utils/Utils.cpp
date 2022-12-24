@@ -1,26 +1,20 @@
 #include "Utils.h"
 
-#include <libgen.h>
-#include <unistd.h>
 #include <pwd.h>
-#include <linux/limits.h>
-#include <iostream>
-#include <sstream>
-#include <ctime>
-#include <time.h>
+#include <unistd.h>
 
-std::string Utils::dataPath = "";
+std::string Utils::rootPath = "";
 
-std::string Utils::GetRootPath()
+std::string& Utils::GetRootPath()
 {
-    if (Utils::dataPath == "")
+    if (Utils::rootPath == "")
     {
         auto home = getenv("HOME");
         if (home == NULL)
             home = getpwuid(getuid())->pw_dir;
-        Utils::dataPath = std::string(home) + "/.sync/";
+        Utils::rootPath = std::string(home) + "/.sync/";
     }
-    return Utils::dataPath;
+    return Utils::rootPath;
 }
 
 std::string Utils::GetResourcePath()
@@ -38,7 +32,7 @@ std::string Utils::GetDatabasePath()
     return Utils::GetRootPath() + "db/";
 }
 
-std::string Utils::CorrectDirPath(const std::string path)
+std::string Utils::CorrectDirPath(const std::string& path)
 {
     return path.back() != '/' ? path + '/' : path;
 }
@@ -62,17 +56,17 @@ void Utils::Replace(std::string& original, const std::string& from, const std::s
     original.swap(newString);
 }
 
-time_t Utils::StringToTimestamp(const std::string string)
+time_t Utils::StringToTimestamp(const std::string& string)
 {
     std::tm timestruct = {};
     strptime(string.c_str(), "%Y-%m-%d %H:%M:%S", &timestruct);
     return mktime(&timestruct);
 }
 
-std::string Utils::TimestampToString(const time_t* timestamp)
+std::string Utils::TimestampToString(const time_t& timestamp)
 {
     char buf[20];
-    strftime(buf, 20, "%d.%m.%Y %H:%M:%S", localtime(timestamp));
+    strftime(buf, 20, "%d.%m.%Y %H:%M:%S", localtime(&timestamp));
     return std::string(buf);
 }
 

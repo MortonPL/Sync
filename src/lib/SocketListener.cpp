@@ -1,7 +1,6 @@
 #include "Lib/SocketListener.h"
 
 #include <unistd.h>
-#include <netinet/in.h>
 
 #include "Utils.h"
 
@@ -94,6 +93,7 @@ bool SocketListener::Accept()
     return theirFd >= 0;
 }
 
+// For server
 bool SocketListener::EndAccept()
 {
     close(theirFd);

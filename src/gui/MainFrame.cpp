@@ -93,7 +93,7 @@ void MainFrame::CreateReportList()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void MainFrame::OnNewConfig(wxCommandEvent &event)
+void MainFrame::OnNewConfig(wxCommandEvent& event)
 {
     NewConfigurationDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
@@ -101,7 +101,7 @@ void MainFrame::OnNewConfig(wxCommandEvent &event)
     }
 }
 
-void MainFrame::OnChangeConfig(wxCommandEvent &event)
+void MainFrame::OnChangeConfig(wxCommandEvent& event)
 {
     ChangeConfigurationDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
@@ -125,7 +125,7 @@ void MainFrame::OnChangeConfig(wxCommandEvent &event)
     }
 }
 
-void MainFrame::OnScan(wxCommandEvent &event)
+void MainFrame::OnScan(wxCommandEvent& event)
 {
     if (!Global::IsLoadedConfig())
         return;
@@ -135,7 +135,6 @@ void MainFrame::OnScan(wxCommandEvent &event)
     //scan
     auto cfg = Global::GetCurrentConfig();
     Creeper::CreepPath(cfg.pathA);
-    bool ok;
     auto scanNodes = Creeper::GetResults();
     //read history
     std::vector<FileNode> historyNodes;
@@ -226,6 +225,7 @@ void MainFrame::OnScan(wxCommandEvent &event)
     */
 
     /*
+    bool ok;
     auto ssh = SSHConnector();
     if (uuid_compare(cfg.uuid, Global::lastUsedCreds.uuid) == 0)
         ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, Global::lastUsedCreds.username, Global::lastUsedCreds.password);
@@ -244,36 +244,36 @@ void MainFrame::OnScan(wxCommandEvent &event)
     }
     */
 
-    auto toolBar = GetToolBar();  
+    auto toolBar = GetToolBar();
     ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SYNC)
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, true)
 }
 
-void MainFrame::OnSync(wxCommandEvent &event)
+void MainFrame::OnSync(wxCommandEvent& event)
 {
 }
 
 #define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
-void MainFrame::OnSelectNode(wxListEvent &event)
+void MainFrame::OnSelectNode(wxListEvent& event)
 {
     auto pNode = (FileNode*)event.GetData();
-    ctrl.det.lblDetName->SetLabel(pNode->path);
+    ctrl.det.lblDetName->SetLabel(std::filesystem::path(pNode->path).filename().string());
     ctrl.det.lblDetPath->SetLabel(std::filesystem::path(pNode->path).parent_path().string());
     ctrl.det.lblDetDev->SetLabel(LTOA(pNode->dev));
     ctrl.det.lblDetInode->SetLabel(LTOA(pNode->inode));
-    ctrl.det.lblDetMtime->SetLabel(Utils::TimestampToString(&pNode->mtime));
+    ctrl.det.lblDetMtime->SetLabel(Utils::TimestampToString(pNode->mtime));
     ctrl.det.lblDetSize->SetLabel(LTOA(pNode->size));
     ctrl.det.lblDetHash->SetLabel(fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow));
 }
 #undef LTOA
 
-void MainFrame::OnAbout(wxCommandEvent &event)
+void MainFrame::OnAbout(wxCommandEvent& event)
 {
     wxMessageBox("This is a message box.", "About...",
                 wxOK | wxICON_INFORMATION);
 }
 
-void MainFrame::OnExit(wxCommandEvent &event)
+void MainFrame::OnExit(wxCommandEvent& event)
 {
     Close(true);
 }

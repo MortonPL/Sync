@@ -74,7 +74,7 @@ void ChangeConfigurationDialog::PopulateConfigDetails()
     *ctrl.txtDetails << "\tType: " << (config.isRemote ? "SSH" : "Local") << "\n";
     *ctrl.txtDetails << "\tPath A: " << config.pathA << "\n";
     *ctrl.txtDetails << "\tPath B: " << config.pathB << "\n";
-    *ctrl.txtDetails << "\tLast config edit: " << Utils::TimestampToString(&config.timestamp) << "\n";
+    *ctrl.txtDetails << "\tLast config edit: " << Utils::TimestampToString(config.timestamp) << "\n";
     if (config.isRemote)
     {
         *ctrl.txtDetails << "Connecting from A to B:\n";

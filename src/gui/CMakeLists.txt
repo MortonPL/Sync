@@ -9,9 +9,10 @@ set(SRC_GUI_FILES
     # utilities
     SSHConnectorWrap.cpp
     # custom dialog
+    SSHAuthDialog.cpp
     NewConfigurationDialog.cpp
-    ChangeConfigurationDialog.cpp
     EditConfigurationDialog.cpp
+    ChangeConfigurationDialog.cpp
     # frames
     MainFrame.cpp
     # main

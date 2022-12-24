@@ -31,13 +31,13 @@ private:
     void CreateReportList();
 
     // event handlers
-    void OnNewConfig(wxCommandEvent &event);
-    void OnChangeConfig(wxCommandEvent &event);
-    void OnScan(wxCommandEvent &event);
-    void OnSync(wxCommandEvent &event);
-    void OnSelectNode(wxListEvent &event);
-    void OnExit(wxCommandEvent &event);
-    void OnAbout(wxCommandEvent &event);
+    void OnNewConfig(wxCommandEvent& event);
+    void OnChangeConfig(wxCommandEvent& event);
+    void OnScan(wxCommandEvent& event);
+    void OnSync(wxCommandEvent& event);
+    void OnSelectNode(wxListEvent& event);
+    void OnExit(wxCommandEvent& event);
+    void OnAbout(wxCommandEvent& event);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();
