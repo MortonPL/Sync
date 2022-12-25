@@ -12,13 +12,14 @@ SSHConnector::~SSHConnector()
 {
 }
 
-bool SSHConnector::BeginSession(std::string host)
+bool SSHConnector::BeginSession(std::string host, std::string user)
 {
-    session = ssh_new();
-    if (session == NULL)
+    if ((session = ssh_new()) == NULL)
         return false;
+    long timeout = 10;
     ssh_options_set(session, SSH_OPTIONS_HOST, host.c_str());
-
+    ssh_options_set(session, SSH_OPTIONS_USER, user.c_str());
+    ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &timeout);
     return ssh_connect(session) == SSH_OK;
 }
 
@@ -52,13 +53,130 @@ bool SSHConnector::AuthenticateServer()
     return true;
 }
 
-bool SSHConnector::AuthenticateUserPass(std::string user, std::string password)
+bool SSHConnector::AuthenticateUserPass(std::string password)
 {
-    return ssh_userauth_password(session, user.c_str(), password.c_str()) == SSH_AUTH_SUCCESS;
+    return AuthenticateResult(ssh_userauth_password(session, NULL, password.c_str()));
 }
 
-bool SSHConnector::AuthenticateUserKey()
+int SSHConnector::GetAuthStatus()
 {
+    return authStatus;
+}
+
+bool SSHConnector::AuthenticateResult(int rc)
+{
+    switch(rc)
+    {
+    case SSH_AUTH_ERROR:
+        authStatus = AUTH_STATUS_ERROR;
+        return false;
+    case SSH_AUTH_DENIED:
+        return false;
+    case SSH_AUTH_PARTIAL:
+        authMethods = ssh_userauth_list(session, NULL);
+        authStatus = AUTH_STATUS_PARTIAL;
+        return true;
+    case SSH_AUTH_SUCCESS:
+        authStatus = AUTH_STATUS_OK;
+        return true;
+    default:
+        break;
+    }
+
+    return false;
+}
+
+bool SSHConnector::AuthenticateUserNone()
+{
+    switch(ssh_userauth_none(session, NULL))
+    {
+    case SSH_AUTH_ERROR:
+        authStatus = AUTH_STATUS_ERROR;
+        return false;
+    case SSH_AUTH_DENIED:
+    case SSH_AUTH_PARTIAL:
+        authMethods = ssh_userauth_list(session, NULL);
+        authStatus = AUTH_STATUS_PARTIAL;
+        return true;
+    case SSH_AUTH_SUCCESS:
+        authStatus = AUTH_STATUS_OK;
+        return true;
+    default:
+        break;
+    }
+
+    return false;
+}
+
+bool SSHConnector::AuthenticateUserKey(int unused)
+{
+    return AuthenticateResult(ssh_userauth_publickey_auto(session, NULL, NULL));
+}
+
+bool SSHConnector::AuthenticateUserInteractive(std::string response)
+{
+    return false;
+}
+
+void printmethods(int m)
+{
+    std::cout << "pubkey " << (m & SSH_AUTH_METHOD_PUBLICKEY) << '\n';
+    std::cout << "kbint " << (m & SSH_AUTH_METHOD_INTERACTIVE) << '\n';
+    std::cout << "passwd " << (m & SSH_AUTH_METHOD_PASSWORD) << '\n';
+    std::cout << "none " << (m & SSH_AUTH_METHOD_NONE) << '\n';
+    std::cout << "host " << (m & SSH_AUTH_METHOD_HOSTBASED) << '\n';
+    std::cout << "gsapi " << (m & SSH_AUTH_METHOD_GSSAPI_MIC) << '\n';
+    std::cout << "??? " << (m & SSH_AUTH_METHOD_UNKNOWN) << '\n';
+}
+
+bool SSHConnector::AuthenticateUser(passProviderType passProvider,
+                                    interactiveProviderType interactiveProvider,
+                                    keyProviderType keyProvider,
+                                    void* passData, void* interactiveData, void* keyData)
+{
+    bool isError = false;
+    switch(authStatus)
+    {
+    case AUTH_STATUS_NONE:
+        return AuthenticateUserNone();
+    case AUTH_STATUS_PARTIAL:
+        if (authMethods & SSH_AUTH_METHOD_PUBLICKEY)
+        {
+            auto res = keyProvider(isError, keyData);
+            if (isError)
+            {
+                authStatus = SSH_AUTH_ERROR;
+                return false;
+            }
+            return AuthenticateUserKey(res);
+        }
+        if (authMethods & SSH_AUTH_METHOD_PASSWORD)
+        {
+            auto res = passProvider(isError, passData);
+            if (isError)
+            {
+                authStatus = SSH_AUTH_ERROR;
+                return false;
+            }
+            return AuthenticateUserPass(res);
+        }
+        if (authMethods & SSH_AUTH_METHOD_INTERACTIVE)
+        {
+            auto res = interactiveProvider(isError, interactiveData);
+            if (isError)
+            {
+                authStatus = SSH_AUTH_ERROR;
+                return false;
+            }
+            return AuthenticateUserInteractive(res);
+        }
+        break;
+    case AUTH_STATUS_OK:
+        return true;
+    default:
+        break;
+    }
+
     return false;
 }
 

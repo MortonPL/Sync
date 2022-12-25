@@ -1,10 +1,9 @@
 #include "Lib/Global.h"
 
-uuid_t uuid;
-
 Configuration Global::config;
 bool Global::hasLoadedConfig = false;
-Global::LastCredsStruct Global::lastUsedCreds = {"" , "", *uuid};
+SSHConnector Global::ssh;
+bool Global::hasEstablishedConnection = false;
 
 bool Global::IsLoadedConfig()
 {
@@ -20,4 +19,33 @@ void Global::SetCurrentConfig(const Configuration& config)
 {
     Global::hasLoadedConfig = true;
     Global::config = config;
+}
+
+bool Global::IsEstablishedConnection()
+{
+    return Global::hasEstablishedConnection;
+}
+
+const SSHConnector& Global::GetConnection()
+{
+    return Global::ssh;
+}
+
+void Global::SetConnection()
+{
+    if (Global::hasEstablishedConnection)
+    {
+        Global::ssh.EndSession();
+    }
+    Global::hasEstablishedConnection = false;
+}
+
+void Global::SetConnection(const SSHConnector& config)
+{
+    if (Global::hasEstablishedConnection)
+    {
+        Global::ssh.EndSession();
+    }
+    Global::hasEstablishedConnection = true;
+    Global::ssh = ssh;
 }

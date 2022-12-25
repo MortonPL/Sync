@@ -142,6 +142,7 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
         EndModal(wxID_CANCEL);
     }
 
+    /* TEMP
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
     {
         auto ssh = SSHConnector();
@@ -162,6 +163,7 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 
         ssh.EndSession();
     }
+    */
 
     try
     {

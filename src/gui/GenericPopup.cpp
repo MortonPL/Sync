@@ -12,7 +12,7 @@ GenericPopup::GenericPopup()
 }
 
 // ctor
-GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* output, bool isPassword)
+GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* output, bool isPassword, bool canBeCanceled)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "GenericPopup");
 
@@ -24,10 +24,14 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
         (wxTextCtrl*)(this->FindWindow("txtInputStd")),
         (wxTextCtrl*)(this->FindWindow("txtInputPass")),
         (wxButton*)(this->FindWindow("wxID_OK")),
+        (wxButton*)(this->FindWindow("wxID_CANCEL")),
     };
 
     this->output = output;
     this->isPassword = isPassword;
+    this->canBeCanceled = canBeCanceled;
+    if (this->canBeCanceled)
+        ctrl.btnCancel->Show();
     if (this->output)
     {
         if (this->isPassword)
@@ -38,10 +42,6 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
 }
 
 /******************************* EVENT HANDLERS ******************************/
-
-void GenericPopup::Update()
-{
-}
 
 void GenericPopup::OnOK(wxCommandEvent &event)
 {

@@ -4,5 +4,5 @@
 class SSHConnectorWrap
 {
 public:
-    static bool Connect(SSHConnector& ssh, const std::string& address, const std::string& user, const std::string pass="");
+    static bool Connect(SSHConnector& ssh, const std::string& address, const std::string& user);
 };

@@ -130,10 +130,23 @@ void MainFrame::OnScan(wxCommandEvent& event)
     if (!Global::IsLoadedConfig())
         return;
 
+    //get current config
+    auto cfg = Global::GetCurrentConfig();
+
+    //establish session
+    if (!Global::IsEstablishedConnection())
+    {
+        auto ssh = SSHConnector();
+        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
+        {
+            return;
+        }
+        Global::SetConnection(ssh);
+    }
+
     ctrl.listMain->DeleteAllItems();
 
     //scan
-    auto cfg = Global::GetCurrentConfig();
     Creeper::CreepPath(cfg.pathA);
     auto scanNodes = Creeper::GetResults();
     //read history
@@ -222,17 +235,6 @@ void MainFrame::OnScan(wxCommandEvent& event)
         GenericPopup("Failed to update file history.").ShowModal();
         return;
     }
-    */
-
-    /*
-    bool ok;
-    auto ssh = SSHConnector();
-    if (uuid_compare(cfg.uuid, Global::lastUsedCreds.uuid) == 0)
-        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, Global::lastUsedCreds.username, Global::lastUsedCreds.password);
-    else
-        ok = SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser);
-    if (!ok)
-        return;
     */
 
     /*

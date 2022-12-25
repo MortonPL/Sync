@@ -120,6 +120,7 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
         );
     }
 
+    /* TEMP
     if (ctrl.ddConfigType->GetSelection() == DD_SSH)
     {
         auto ssh = SSHConnector();
@@ -140,6 +141,7 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 
         ssh.EndSession();
     }
+    */
 
     try
     {
