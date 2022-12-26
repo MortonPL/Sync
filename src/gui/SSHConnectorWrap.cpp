@@ -29,16 +29,23 @@ bool showError(SSHConnector& ssh)
     return false;
 }
 
-std::string passwordProvider(bool& isError, void* data)
+std::string passwordProvider(bool& isCanceled, std::string& prompt)
 {
     std::string password;
-    isError = GenericPopup(*(std::string*)(data),NULL, &password, true, true).ShowModal() != wxID_OK;
+    isCanceled = GenericPopup(prompt,NULL, &password, true, true).ShowModal() != wxID_OK;
     return password;
 };
 
-int keyProvider(bool& isError, void* data)
+std::string interactiveProvider(bool& isCanceled, std::string& challenge, bool shouldBeHidden)
 {
-    isError = false;
+    std::string password;
+    isCanceled = GenericPopup(challenge,NULL, &password, shouldBeHidden, true).ShowModal() != wxID_OK;
+    return password;
+};
+
+int keyProvider(bool& isCanceled, void* data)
+{
+    isCanceled = false;
     return 0;
 }
 
@@ -48,16 +55,17 @@ bool SSHConnectorWrap::Connect(SSHConnector& ssh, const std::string& address, co
         return false;
 
     std::string passPrompt = fmt::format("Enter password for {}@{}:", user, address);
-    void* passData = &passPrompt;
     void* interactiveData;
     void* keyData;
 
     while(ssh.GetAuthStatus() != AUTH_STATUS_OK)
     {
-        while (!ssh.AuthenticateUser(passwordProvider, passwordProvider, keyProvider,
-                                     passData, interactiveData, keyData)
+        while (!ssh.AuthenticateUser(passwordProvider, interactiveProvider, keyProvider,
+                                     passPrompt, keyData)
                && ssh.GetAuthStatus() != AUTH_STATUS_ERROR)
         {
+            if (ssh.IsAuthDenied())
+                GenericPopup("Permission denied. Please try again.").ShowModal();
         }
 
         if (ssh.GetAuthStatus() == AUTH_STATUS_ERROR)
