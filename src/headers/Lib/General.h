@@ -1,9 +1,8 @@
 #pragma once
 #include <string>
 
-/*A static class for misc functions, i.e. app initialization.*/
-class General
+/*A namespace for misc functions, i.e. app initialization.*/
+namespace General
 {
-public:
-    static bool InitEverything(std::string logName);
+    bool InitEverything(std::string logName);
 };

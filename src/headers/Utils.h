@@ -4,20 +4,21 @@
 #include <string>
 #include <uuid/uuid.h>
 
-class Utils
+namespace Utils
 {
-public:
-    static void Replace(std::string& original, const std::string& from, const std::string& to);
+    void Replace(std::string& original, const std::string& from, const std::string& to);
 
-    static std::string& GetHomePath();
-    static std::string GetRootPath();
-    static std::string GetResourcePath();
-    static std::string GetLogsPath();
-    static std::string GetDatabasePath();
-    static std::string CorrectDirPath(const std::string& path);
-    static time_t StringToTimestamp(const std::string& string);
-    static std::string TimestampToString(const time_t& timestamp);
-    static std::string UUIDToDBPath(const uuid_t& uuid);
-private:
-    static std::string homePath;
+    void FindHomePath();
+
+    std::string GetHomePath();
+    std::string GetRootPath();
+    std::string GetResourcePath();
+    std::string GetLogsPath();
+    std::string GetDatabasePath();
+    
+    std::string CorrectDirPath(const std::string& path);
+    
+    time_t StringToTimestamp(const std::string& string);
+    std::string TimestampToString(const time_t& timestamp);
+    std::string UUIDToDBPath(const uuid_t& uuid);
 };

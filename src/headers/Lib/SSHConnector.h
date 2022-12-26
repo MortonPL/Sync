@@ -32,6 +32,8 @@ public:
                  interactiveProviderType interactiveProvider, keyProviderType keyProvider);
     void EndSession();
 
+    bool IsActiveSession();
+
     bool CreateTunnels();
     int CallCLITest(std::string dirToCheck);
     std::vector<FileNode> CallCLICreep(std::string dirToCreep);
@@ -61,7 +63,7 @@ private:
     bool AuthenticateUserPass(std::string password);
     bool AuthenticateResult(int rc);
 
-    ssh_session session;
+    ssh_session session = NULL;
     int authStatus = AUTH_STATUS_NONE;
     int authMethods = 0;
     bool isAuthDenied = false;

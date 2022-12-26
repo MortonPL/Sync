@@ -1,6 +1,8 @@
 #pragma once
 #include "wx.h"
 
+#include "Lib/SSHConnector.h"
+
 class MainFrame : public wxFrame {
 public:
     MainFrame(wxWindow* parent=(wxWindow*)NULL);
@@ -26,6 +28,7 @@ private:
     // properties
     Controls ctrl;
     bool isFirstSelectedConfig = true;
+    SSHConnector ssh;
 
     // custom methods
     void CreateReportList();

@@ -1,9 +1,5 @@
 #include "Lib/General.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
-
 #include "Lib/DBConnector.h"
 #include "Utils.h"
 
@@ -34,16 +30,15 @@ void SetUpLogger(std::string logPath)
 
 bool General::InitEverything(std::string logName)
 {
+    Utils::FindHomePath();
+
     if (!ensureDirectory(Utils::GetLogsPath(), "Failed to make sure that the logging directory exists! Exiting.", true))
-    {
         return false;
-    }
     SetUpLogger(Utils::GetLogsPath() + logName);
     LOG(INFO) << "Starting Sync.";
+
     if (!ensureDirectory(Utils::GetDatabasePath(), "Failed to make sure that the database directory exists! Exiting."))
-    {
         return false;
-    }
     if (!DBConnector::EnsureCreatedMain())
     {
         std::cout << "Failed to ensure that the application database exists! Exiting.\n";

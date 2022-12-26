@@ -11,6 +11,7 @@ SSHConnector::SSHConnector()
 
 SSHConnector::~SSHConnector()
 {
+    EndSession();
 }
 
 bool SSHConnector::Connect(const std::string& address, const std::string& user,
@@ -19,6 +20,9 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
                    serverHashCallbackType errorCallback, passProviderType passwordProvider,
                    interactiveProviderType interactiveProvider, keyProviderType keyProvider)
 {
+    if (session != NULL)
+        return false;
+
     if (!BeginSession(address, user))
     {
         genericMessenger("Failed to connect to given address.");
@@ -69,13 +73,32 @@ bool SSHConnector::BeginSession(std::string host, std::string user)
     ssh_options_set(session, SSH_OPTIONS_HOST, host.c_str());
     ssh_options_set(session, SSH_OPTIONS_USER, user.c_str());
     ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &timeout);
-    return ssh_connect(session) == SSH_OK;
+    if (ssh_connect(session) != SSH_OK)
+    {
+        ssh_free(session);
+        return false;
+    }
+    return true;
 }
 
 void SSHConnector::EndSession()
 {
-    ssh_disconnect(session);
-    ssh_free(session);
+    authStatus = AUTH_STATUS_NONE;
+    authMethods = 0;
+    isAuthDenied = false;
+    retryCount = 0;
+    if (session != NULL)
+    {
+        if (ssh_is_connected(session))
+            ssh_disconnect(session);
+        ssh_free(session);
+        session = NULL;
+    }
+}
+
+bool SSHConnector::IsActiveSession()
+{
+    return authStatus == AUTH_STATUS_OK;
 }
 
 bool SSHConnector::AuthenticateServer(serverHashCallbackType unknownCallback,
@@ -245,8 +268,7 @@ bool SSHConnector::AuthenticateUserNone()
     switch(ssh_userauth_none(session, NULL))
     {
     case SSH_AUTH_ERROR:
-        authStatus = AUTH_STATUS_ERROR;
-        return false;
+        break;
     case SSH_AUTH_DENIED:
     case SSH_AUTH_PARTIAL:
         authMethods = ssh_userauth_list(session, NULL);
@@ -259,6 +281,7 @@ bool SSHConnector::AuthenticateUserNone()
         break;
     }
 
+    authStatus = AUTH_STATUS_ERROR;
     return false;
 }
 

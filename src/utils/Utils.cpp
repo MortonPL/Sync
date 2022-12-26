@@ -3,18 +3,22 @@
 #include <pwd.h>
 #include <unistd.h>
 
-std::string Utils::homePath = "";
+std::string homePath;
 
-std::string& Utils::GetHomePath()
+void Utils::FindHomePath()
 {
-    if (Utils::homePath == "")
+    if (homePath.length() <= 0)
     {
-        auto home = getenv("HOME");
+        char*  home = getenv("HOME");
         if (home == NULL)
             home = getpwuid(getuid())->pw_dir;
-        Utils::homePath = home;
+        homePath = home;
     }
-    return Utils::homePath;
+}
+
+std::string Utils::GetHomePath()
+{
+    return homePath;
 }
 
 std::string Utils::GetRootPath()

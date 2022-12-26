@@ -51,7 +51,7 @@ wxEND_EVENT_TABLE()
 #define ENABLE_TOOLBAR_ITEM(item, toggle)\
     toolBar->EnableTool(toolBar->GetToolByPos(item)->GetId(), toggle);
 
-MainFrame::MainFrame(wxWindow* pParent)
+MainFrame::MainFrame(wxWindow* pParent): ssh()
 {
     wxXmlResource::Get()->LoadFrame(this, pParent, "MainFrame");
     SetMenuBar(wxDynamicCast(wxXmlResource::Get()->LoadObjectRecursively(this, "MenuBar", "wxMenuBar"), wxMenuBar));
@@ -134,15 +134,9 @@ void MainFrame::OnScan(wxCommandEvent& event)
     auto cfg = Global::GetCurrentConfig();
 
     //establish session
-    if (!Global::IsEstablishedConnection())
-    {
-        auto ssh = SSHConnector();
+    if (!ssh.IsActiveSession())
         if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
-        {
             return;
-        }
-        Global::SetConnection(ssh);
-    }
 
     ctrl.listMain->DeleteAllItems();
 
