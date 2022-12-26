@@ -4,15 +4,30 @@
 		<style>wxDEFAULT_DIALOG_STYLE</style>
 		<title>Notice</title>
 		<centered>1</centered>
-		<object class="wxBoxSizer">
-			<orient>wxVERTICAL</orient>
+		<object class="wxFlexGridSizer">
+			<rows>0</rows>
+			<cols>1</cols>
+			<vgap>0</vgap>
+			<hgap>0</hgap>
+			<growablecols>0</growablecols>
+			<growablerows>0,1,2,3,4</growablerows>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_CENTER|wxALL</flag>
+				<flag>wxALL|wxEXPAND</flag>
 				<border>5</border>
 				<object class="wxStaticText" name="lblMessage">
 					<label></label>
 					<wrap>-1</wrap>
+				</object>
+			</object>
+			<object class="sizeritem">
+				<option>0</option>
+				<flag>wxALL|wxEXPAND</flag>
+				<border>5</border>
+				<object class="wxTextCtrl" name="txtOutput">
+					<style>wxTE_MULTILINE|wxTE_READONLY</style>
+					<hidden>1</hidden>
+					<value></value>
 				</object>
 			</object>
 			<object class="sizeritem">
@@ -36,7 +51,7 @@
 			</object>
 			<object class="sizeritem">
 				<option>1</option>
-				<flag>wxEXPAND</flag>
+				<flag>wxALIGN_BOTTOM|wxEXPAND</flag>
 				<border>5</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
@@ -48,7 +63,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALL</flag>
+						<flag>wxALIGN_BOTTOM|wxALL</flag>
 						<border>5</border>
 						<object class="wxButton" name="wxID_OK">
 							<label>OK</label>
@@ -60,10 +75,9 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALL</flag>
+						<flag>wxALIGN_BOTTOM|wxALL</flag>
 						<border>5</border>
 						<object class="wxButton" name="wxID_CANCEL">
-							<hidden>1</hidden>
 							<label>Cancel</label>
 							<default>0</default>
 							<auth_needed>0</auth_needed>

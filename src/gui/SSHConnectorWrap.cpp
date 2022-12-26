@@ -1,76 +1,55 @@
 #include "GUI/SSHConnectorWrap.h"
 
-#include <uuid/uuid.h>
-
 #include "GUI/GenericPopup.h"
-#include "Lib/Global.h"
-#include "Utils.h"
 
-bool initializeSession(SSHConnector& ssh, std::string address, std::string user)
+void genericPopuper(std::string prompt)
 {
-    if (!ssh.BeginSession(address, user))
-    {
-        GenericPopup("Failed to connect to given address.").ShowModal();
-        return false;
-    }
-    if (!ssh.AuthenticateServer())
-    {
-        GenericPopup("Failed to authenticate server.").ShowModal();
-        ssh.EndSession();
-        return false;
-    }
-    return true;
-}
-
-bool showError(SSHConnector& ssh)
-{
-    GenericPopup("Failed to connect.").ShowModal();
-    ssh.EndSession();
-    return false;
+    GenericPopup(prompt).ShowModal();
 }
 
 std::string passwordProvider(bool& isCanceled, std::string& prompt)
 {
     std::string password;
-    isCanceled = GenericPopup(prompt,NULL, &password, true, true).ShowModal() != wxID_OK;
+    isCanceled = GenericPopup(prompt, NULL, &password, nullptr, GenericPopup::Flags::PasswordCancel).ShowModal() != wxID_OK;
     return password;
 };
 
 std::string interactiveProvider(bool& isCanceled, std::string& challenge, bool shouldBeHidden)
 {
     std::string password;
-    isCanceled = GenericPopup(challenge,NULL, &password, shouldBeHidden, true).ShowModal() != wxID_OK;
+    GenericPopup::Flags flags = GenericPopup::Flags::Cancel;
+    if (shouldBeHidden)
+        flags | GenericPopup::Flags::Password;
+    isCanceled = GenericPopup(challenge, NULL, &password, nullptr, flags).ShowModal() != wxID_OK;
     return password;
 };
 
-int keyProvider(bool& isCanceled, void* data)
+bool unknownCallback(std::string& pubkeyHash)
 {
-    isCanceled = false;
-    return 0;
+    std::string msg = "This host is unknown. Do you trust this host?\nKey:";
+    return GenericPopup(msg, NULL, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
+}
+
+bool otherCallback(std::string& pubkeyHash)
+{
+    std::string msg = "Couldn't find the key for this host, but another type of key exists.\nThis might be dangerous. Do you trust this host?\nKey: ";
+    return GenericPopup(msg, NULL, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
+}
+
+bool changedCallback(std::string& pubkeyHash)
+{
+    std::string msg = "Host key for this server has changed.\nTHIS MIGHT BE DANGEROUS. Do you trust this host?\nKey: ";
+    return GenericPopup(msg, NULL, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
+}
+
+bool errorCallback(std::string& pubkeyHash)
+{
+    return GenericPopup("An error has occured while attempting to authenticate the server.").ShowModal() == wxID_OK;
 }
 
 bool SSHConnectorWrap::Connect(SSHConnector& ssh, const std::string& address, const std::string& user)
 {
-    if (!initializeSession(ssh, address, user))
-        return false;
-
-    std::string passPrompt = fmt::format("Enter password for {}@{}:", user, address);
-    void* interactiveData;
-    void* keyData;
-
-    while(ssh.GetAuthStatus() != AUTH_STATUS_OK)
-    {
-        while (!ssh.AuthenticateUser(passwordProvider, interactiveProvider, keyProvider,
-                                     passPrompt, keyData)
-               && ssh.GetAuthStatus() != AUTH_STATUS_ERROR)
-        {
-            if (ssh.IsAuthDenied())
-                GenericPopup("Permission denied. Please try again.").ShowModal();
-        }
-
-        if (ssh.GetAuthStatus() == AUTH_STATUS_ERROR)
-            return showError(ssh);
-    }
-
-    return true;
+    return ssh.Connect(address, user, genericPopuper,
+                       unknownCallback, otherCallback, changedCallback, errorCallback,
+                       passwordProvider, interactiveProvider, passwordProvider);
 }

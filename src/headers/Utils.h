@@ -9,7 +9,8 @@ class Utils
 public:
     static void Replace(std::string& original, const std::string& from, const std::string& to);
 
-    static std::string& GetRootPath();
+    static std::string& GetHomePath();
+    static std::string GetRootPath();
     static std::string GetResourcePath();
     static std::string GetLogsPath();
     static std::string GetDatabasePath();
@@ -18,5 +19,5 @@ public:
     static std::string TimestampToString(const time_t& timestamp);
     static std::string UUIDToDBPath(const uuid_t& uuid);
 private:
-    static std::string rootPath;
+    static std::string homePath;
 };

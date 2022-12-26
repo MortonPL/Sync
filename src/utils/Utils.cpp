@@ -3,18 +3,23 @@
 #include <pwd.h>
 #include <unistd.h>
 
-std::string Utils::rootPath = "";
+std::string Utils::homePath = "";
 
-std::string& Utils::GetRootPath()
+std::string& Utils::GetHomePath()
 {
-    if (Utils::rootPath == "")
+    if (Utils::homePath == "")
     {
         auto home = getenv("HOME");
         if (home == NULL)
             home = getpwuid(getuid())->pw_dir;
-        Utils::rootPath = std::string(home) + "/.sync/";
+        Utils::homePath = home;
     }
-    return Utils::rootPath;
+    return Utils::homePath;
+}
+
+std::string Utils::GetRootPath()
+{
+    return Utils::GetHomePath() + "/.sync/";
 }
 
 std::string Utils::GetResourcePath()

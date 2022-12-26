@@ -40,7 +40,7 @@ void Global::SetConnection()
     Global::hasEstablishedConnection = false;
 }
 
-void Global::SetConnection(const SSHConnector& config)
+void Global::SetConnection(const SSHConnector& ssh)
 {
     if (Global::hasEstablishedConnection)
     {

@@ -1,8 +1,7 @@
 #pragma once
 #include "Lib/SSHConnector.h"
 
-class SSHConnectorWrap
+namespace SSHConnectorWrap
 {
-public:
-    static bool Connect(SSHConnector& ssh, const std::string& address, const std::string& user);
+    bool Connect(SSHConnector& ssh, const std::string& address, const std::string& user);
 };

@@ -12,26 +12,31 @@ GenericPopup::GenericPopup()
 }
 
 // ctor
-GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* output, bool isPassword, bool canBeCanceled)
+GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* output, std::string* input, Flags flags)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "GenericPopup");
 
-    auto lblMessage = (wxStaticText*)(this->FindWindow("lblMessage"));
-    lblMessage->SetLabelText(message);
+    ((wxStaticText*)(this->FindWindow("lblMessage")))->SetLabelText(message);
 
     ctrl = Controls
     {
         (wxTextCtrl*)(this->FindWindow("txtInputStd")),
         (wxTextCtrl*)(this->FindWindow("txtInputPass")),
+        (wxTextCtrl*)(this->FindWindow("txtOutput")),
         (wxButton*)(this->FindWindow("wxID_OK")),
         (wxButton*)(this->FindWindow("wxID_CANCEL")),
     };
 
+    this->input = input;
     this->output = output;
-    this->isPassword = isPassword;
-    this->canBeCanceled = canBeCanceled;
-    if (this->canBeCanceled)
-        ctrl.btnCancel->Show();
+    this->isPassword = flags & Flags::Password;
+    if (!(flags & Flags::Cancel))
+        ctrl.btnCancel->Hide();
+    if (this->input)
+    {
+        ctrl.txtOutput->AppendText(*input);
+        ctrl.txtOutput->Show();
+    }
     if (this->output)
     {
         if (this->isPassword)

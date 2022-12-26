@@ -3,8 +3,16 @@
 
 class GenericPopup : public wxDialog {
 public:
+    enum Flags: unsigned char
+    {
+        None = 0x0,
+        Password = 0x1,
+        Cancel = 0x2,
+        PasswordCancel = 0x3,
+    };
+
     GenericPopup();
-    GenericPopup(std::string message, wxWindow* pParent=(wxWindow*)NULL, std::string* output=nullptr, bool isPassword=false, bool canBeCanceled=false);
+    GenericPopup(std::string message, wxWindow* pParent=(wxWindow*)NULL, std::string* output=nullptr, std::string* input=nullptr, Flags flags=Flags::None);
     ~GenericPopup(){}
 
 private:
@@ -13,6 +21,7 @@ private:
     {
         wxTextCtrl* txtInputStd;
         wxTextCtrl* txtInputPass;
+        wxTextCtrl* txtOutput;
         wxButton* btnOK;
         wxButton* btnCancel;
     };
@@ -20,8 +29,8 @@ private:
     // properties
     Controls ctrl;
     std::string* output;
+    std::string* input;
     bool isPassword;
-    bool canBeCanceled;
 
     // event handlers
     void OnOK(wxCommandEvent &event);

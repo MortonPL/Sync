@@ -142,29 +142,6 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
         EndModal(wxID_CANCEL);
     }
 
-    /* TEMP
-    if (ctrl.ddConfigType->GetSelection() == DD_SSH)
-    {
-        auto ssh = SSHConnector();
-        if (!SSHConnectorWrap::Connect(ssh, ctrl.txtAddressB->GetValue().ToStdString(), ctrl.txtUserB->GetValue().ToStdString()))
-            return;
-        uuid_copy(Global::lastUsedCreds.uuid, oldConfig.uuid);
-
-        int rc = ssh.CallCLITest(ctrl.txtRootB->GetValue().ToStdString());
-        if (rc != 0)
-        {
-            if (rc == 1)
-                GenericPopup("Failed to call Sync on the remote.").ShowModal();
-            else if (rc == 2)
-                GenericPopup("Failed to find remote directory. Check path or permissions.").ShowModal();
-            ssh.EndSession();
-            return;
-        }
-
-        ssh.EndSession();
-    }
-    */
-
     try
     {
         DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);

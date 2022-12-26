@@ -7,29 +7,30 @@
 
 #define AUTH_STATUS_ERROR       -1
 #define AUTH_STATUS_NONE        0
-#define AUTH_STATUS_PARTIAL     1
-#define AUTH_STATUS_CHALLENGE   2
-#define AUTH_STATUS_OK          3
+#define AUTH_STATUS_UNHANDLED   1
+#define AUTH_STATUS_PARTIAL     2
+#define AUTH_STATUS_CHALLENGE   3
+#define AUTH_STATUS_OK          4
 
+typedef void (*genericMessengerType)(std::string prompt);
 typedef std::string (*passProviderType)(bool& isCanceled, std::string& prompt);
 typedef std::string (*interactiveProviderType)(bool& isCanceled, std::string& challenge, bool shouldBeHidden);
-typedef int (*keyProviderType)(bool& isCanceled, void* data);
-/*A wrapper class for managing SSH communications.*/
+typedef std::string (*keyProviderType)(bool& isCanceled, std::string& prompt);
+typedef bool (*serverHashCallbackType)(std::string& pubkeyHash);
+
+/*A class for managing SSH communications.*/
 class SSHConnector
 {
 public:
     SSHConnector();
     ~SSHConnector();
 
-    bool BeginSession(std::string host, std::string user);
+    bool Connect(const std::string& address, const std::string& user,
+                 genericMessengerType genericMessenger, serverHashCallbackType unknownCallback,
+                 serverHashCallbackType otherCallback, serverHashCallbackType changedCallback,
+                 serverHashCallbackType errorCallback, passProviderType passwordProvider,
+                 interactiveProviderType interactiveProvider, keyProviderType keyProvider);
     void EndSession();
-    bool AuthenticateServer();
-    bool AuthenticateUser(passProviderType passwordProvider,
-                          interactiveProviderType interactiveProvider,
-                          keyProviderType keyProvider,
-                          std::string& passPrompt, void* keyData);
-    int GetAuthStatus();
-    bool IsAuthDenied();
 
     bool CreateTunnels();
     int CallCLITest(std::string dirToCheck);
@@ -41,10 +42,22 @@ private:
     ssh_channel_struct* CallCLI(std::string cmd);
     ssh_channel_struct* PrepareReverseTunnel();
 
+    bool BeginSession(std::string host, std::string user);
+    bool AuthenticateServer(serverHashCallbackType unknownCallback,
+                            serverHashCallbackType otherCallback,
+                            serverHashCallbackType changedCallback,
+                            serverHashCallbackType errorCallback);
+    bool AuthenticateUser(passProviderType passwordProvider,
+                          interactiveProviderType interactiveProvider,
+                          keyProviderType keyProvider,
+                          std::string& passPrompt, std::string& keyPrompt);
     bool AuthenticateUserNone();
-    bool AuthenticateUserKey(int unused);
+    bool AuthenticateGSSAPI();
+    bool AuthenticateUserKeyAuto();
+    bool AuthenticateUserKeyFetch(keyProviderType provider, std::string keyPrompt, ssh_key* pPrivate);
+    bool AuthenticateUserKey(ssh_key* pPrivate);
     bool AuthenticateUserInteractiveFetch(std::string& name, std::string& instruction, int& nprompts);
-    bool AuthenticateUserInteractive(interactiveProviderType, std::string& name, std::string& instruction, int nprompts);
+    bool AuthenticateUserInteractive(interactiveProviderType provider, std::string& name, std::string& instruction, int nprompts);
     bool AuthenticateUserPass(std::string password);
     bool AuthenticateResult(int rc);
 
@@ -52,4 +65,5 @@ private:
     int authStatus = AUTH_STATUS_NONE;
     int authMethods = 0;
     bool isAuthDenied = false;
+    int retryCount = 0;
 };
