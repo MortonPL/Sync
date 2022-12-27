@@ -61,31 +61,33 @@ void CheckDir(std::string path)
 
 void CreepDir(std::string path)
 {
-    Creeper::CreepPath(path);
+    Creeper::CreepPathNoMap(path);
     auto nodes = Creeper::GetResults();
 
     auto s = SocketListener();
     if (!s.Init(GlobalCLI::remoteAddress, GlobalCLI::remotePort))
     {
         s.DeInit();
-        LOG(ERROR) << "Failed to initialize socket";
+        LOG(ERROR) << "Failed to initialize socket.";
     }
     if (!s.Connect())
     {
         s.DeInit();
-        LOG(ERROR) << "Failed to connect socket";
+        LOG(ERROR) << "Failed to connect socket.";
     }
 
-    LOG(INFO) << "Connected";
+    LOG(INFO) << "Connected.";
+    unsigned char buf[FileNode::MaxBinarySize];
+    std::size_t nnodes = nodes->size();
+    s.Write((char*)&nnodes, sizeof(nnodes));
     for (auto& node: *nodes)
     {
-        auto path = node.path;
-        path.push_back('\n');
-        s.Write(path.c_str(), path.size());
+        unsigned short size = node.Serialize(buf);
+        s.Write((char*)buf, size);
     }
 
     s.DeInit();
-    LOG(INFO) << "Done";
+    LOG(INFO) << "Done.";
 }
 
 int Serve()
@@ -169,25 +171,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
-/*
-int LoadConfig(std::string uuid)
-{   
-    DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READONLY);
-    try
-    {
-        if ((config = db.SelectByUUID(uuid)) != nullptr)
-            Global::setCurrentConfig(config);
-        else
-            return 2;
-    }
-    catch(const std::exception& e)
-    {
-        LOG(ERROR) << "Failed to open configuration database.";
-        LOG(ERROR) << e.what();
-        return 1;
-    }
-
-    return 0;
-}
-*/

@@ -132,17 +132,19 @@ void MainFrame::OnScan(wxCommandEvent& event)
 
     //get current config
     auto cfg = Global::GetCurrentConfig();
+    LOG(INFO) << "Loaded config " << cfg.name << ".";
 
     //establish session
     if (!ssh.IsActiveSession())
+    {
         if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
+        {
+            LOG(ERROR) << "Failed to connect to the remote.";
             return;
+        }
+    }
+    LOG(INFO) << "Successfully connected to the remote.";
 
-    ctrl.listMain->DeleteAllItems();
-
-    //scan
-    Creeper::CreepPath(cfg.pathA);
-    auto scanNodes = Creeper::GetResults();
     //read history
     std::vector<FileNode> historyNodes;
     try
@@ -156,18 +158,29 @@ void MainFrame::OnScan(wxCommandEvent& event)
         GenericPopup("Failed to read file history.").ShowModal();
         return;
     }
+    LOG(INFO) << "Read file history.";
+    // get remote nodes
+    auto nodesB = ssh.CallCLICreep(cfg.pathB);
+    LOG(INFO) << "Received remote file nodes.";
+
+    ctrl.listMain->DeleteAllItems();
+    
+    //scan
+    LOG(INFO) << "Beginning local scan.";
+    Creeper::CreepPath(cfg.pathA);
+    auto scanNodes = Creeper::GetResults();
     //pair
     for(auto history: historyNodes)
     {
-        auto res = Creeper::mapPath.find(history.path);
-        if (res != Creeper::mapPath.end())
+        auto res = Creeper::FindMapPath(history.path);
+        if (res != nullptr)
         {
-            res->second->status = STATUS_OLD;
-            if (res->second->size == history.size)
+            res->status = STATUS_OLD;
+            if (res->size == history.size)
             {
-                if (res->second->IsEqualHash(history))
+                if (res->IsEqualHash(history))
                 {
-                    res->second->status = STATUS_CLEAN;
+                    res->status = STATUS_CLEAN;
                 }
                 else
                 {
@@ -176,17 +189,17 @@ void MainFrame::OnScan(wxCommandEvent& event)
             }
             else
             {
-                res->second->status = STATUS_DIRTY;
+                res->status = STATUS_DIRTY;
             }
         }
         else
         {
-            auto res = Creeper::mapInode.find(history.GetDevInode());
-            if (res != Creeper::mapInode.end())
+            auto res = Creeper::FindMapInode(history.GetDevInode());
+            if (res != nullptr)
             {
-                if (res->second->IsEqualHash(history))
+                if (res->IsEqualHash(history))
                 {
-                    res->second->status = STATUS_MOVED;
+                    res->status = STATUS_MOVED;
                 }
                 else
                 {
@@ -201,7 +214,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
             }
         }
     }
-    //diff
+    LOG(INFO) << "Local scan finished.";
     int i = 0;
     for(auto node = (*scanNodes).begin(); node != (*scanNodes).end(); ++node)
     {
@@ -228,15 +241,6 @@ void MainFrame::OnScan(wxCommandEvent& event)
         LOG(ERROR) << "Failed to update file history.";
         GenericPopup("Failed to update file history.").ShowModal();
         return;
-    }
-    */
-
-    /*
-    auto nodesB = ssh.CallCLICreep(cfg.pathB);
-    for(int i = 0; i < nodesB.size(); i++)
-    {
-        auto node = nodesB[i];
-        ctrl.listMain->SetItem(i, COL_REMOTE, node.GetPath());
     }
     */
 

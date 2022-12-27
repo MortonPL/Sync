@@ -263,6 +263,7 @@ std::vector<FileNode> DBConnector::SelectAllFileNodes()
         nodes.push_back(FileNode
         (
             (std::string)query.getColumn(0),
+            "",
             (uint32_t)query.getColumn(1),
             (int64_t)query.getColumn(2),
             (uint32_t)query.getColumn(3),

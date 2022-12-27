@@ -31,10 +31,8 @@ public:
                  serverHashCallbackType errorCallback, passProviderType passwordProvider,
                  interactiveProviderType interactiveProvider, keyProviderType keyProvider);
     void EndSession();
-
     bool IsActiveSession();
 
-    bool CreateTunnels();
     int CallCLITest(std::string dirToCheck);
     std::vector<FileNode> CallCLICreep(std::string dirToCreep);
 
@@ -43,6 +41,7 @@ private:
     void FreeChannel(ssh_channel_struct* pChannel);
     ssh_channel_struct* CallCLI(std::string cmd);
     ssh_channel_struct* PrepareReverseTunnel();
+    bool CreateTunnels();
 
     bool BeginSession(std::string host, std::string user);
     bool AuthenticateServer(serverHashCallbackType unknownCallback,

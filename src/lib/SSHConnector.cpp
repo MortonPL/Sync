@@ -491,13 +491,29 @@ bool SSHConnector::CreateTunnels()
     return true;
 }
 
+ssh_channel_struct* SSHConnector::PrepareReverseTunnel()
+{
+    if (ssh_channel_listen_forward(session, NULL, 40405, NULL) != SSH_OK)
+    {
+        return nullptr;
+    }
+    auto pReverseChannel = ssh_channel_accept_forward(session, 60000, nullptr);
+    if (pReverseChannel == NULL)
+    {
+        fprintf(stderr, "Error waiting for incoming connection: %s\n",
+                ssh_get_error(session));
+        return nullptr;
+    }
+    return pReverseChannel;
+}
+
 ssh_channel_struct* SSHConnector::CallCLI(std::string cmd)
 {
     auto pChannel = GetChannel();
     if (ssh_channel_request_exec(pChannel, ("~/.sync/bin/synccli " + cmd).c_str()) != SSH_OK)
     {
-            FreeChannel(pChannel);
-            return nullptr;
+        FreeChannel(pChannel);
+        return nullptr;
     }
     return pChannel;
 }
@@ -524,28 +540,9 @@ int SSHConnector::CallCLITest(std::string dirToCheck)
     return 0;
 }
 
-ssh_channel_struct* SSHConnector::PrepareReverseTunnel()
-{
-    if (ssh_channel_listen_forward(session, NULL, 40405, NULL) != SSH_OK)
-    {
-        return nullptr;
-    }
-    auto pReverseChannel = ssh_channel_accept_forward(session, 60000, nullptr);
-    if (pReverseChannel == NULL)
-    {
-        fprintf(stderr, "Error waiting for incoming connection: %s\n",
-                ssh_get_error(session));
-        return nullptr;
-    }
-    return pReverseChannel;
-}
-
-#define BUFFER_SIZE (PATH_MAX + 4*sizeof(long) + 4 + 1)
 std::vector<FileNode> SSHConnector::CallCLICreep(std::string dirToCreep)
 {
     std::vector<FileNode> nodes;
-    char buf[BUFFER_SIZE];
-    int len = 0;
     auto pChannel = CallCLI(fmt::format("-c {} -r {} {}", dirToCreep, "localhost", 40405));
     
     auto pReverseChannel = PrepareReverseTunnel();
@@ -555,39 +552,23 @@ std::vector<FileNode> SSHConnector::CallCLICreep(std::string dirToCreep)
         return nodes;
     }
 
-    std::string tempString = "";
-    bool incomplete = false;
-    while ((len = ssh_channel_read(pReverseChannel, &buf, BUFFER_SIZE, 0)) > 0)
+    unsigned char buf2[FileNode::MaxBinarySize];
+    unsigned short len = 0;
+    std::size_t nnodes = 0;
+    if (ssh_channel_read(pReverseChannel, &nnodes, sizeof(nnodes), 0) != sizeof(nnodes))
     {
-        std::stringstream ss(buf);
-        std::string path;
-        while(std::getline(ss, path, '\n'))
-        {
-            if (!ss.fail() && !ss.eof())
-            {
-                if (incomplete)
-                {
-                    tempString += path;
-                    nodes.push_back(FileNode(tempString, 0, 0, 0, 0, 0, 0));
-                    tempString = "";
-                    incomplete = false;
-                }
-                else
-                {
-                    nodes.push_back(FileNode(path, 0, 0, 0, 0, 0, 0));
-                }
-            }
-            else
-            {
-                tempString += path;
-                incomplete = true;
-            }
-        }
-        memset(buf, 0, BUFFER_SIZE);
+        FreeChannel(pChannel);
+        FreeChannel(pReverseChannel);
+        return nodes;
     }
-    if (incomplete)
+    LOG(INFO) << "Receiving " << nnodes << " nodes...";
+    while (nnodes > 0)
     {
-        nodes.push_back(FileNode(tempString, 0, 0, 0, 0, 0, 0));
+        ssh_channel_read(pReverseChannel, &len, sizeof(len), 0);
+        ssh_channel_read(pReverseChannel, &buf2, len, 0);
+        auto node = FileNode::Deserialize(buf2);
+        nodes.push_back(node);
+        nnodes--;
     }
 
     FreeChannel(pChannel);

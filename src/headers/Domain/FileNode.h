@@ -14,7 +14,8 @@
 class FileNode
 {
 public:
-    FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t size, XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
+    FileNode();
+    FileNode(std::string path, std::string oldPath, dev_t dev, ino_t inode, time_t mtime, off_t size, XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
     ~FileNode();
 
     struct devinode
@@ -29,8 +30,10 @@ public:
     };
 
     static const std::string StatusString[6];
+    static const unsigned short MaxBinarySize;
 
     std::string path;
+    std::string oldPath;
     dev_t dev;
     ino_t inode;
     time_t mtime;
@@ -41,4 +44,7 @@ public:
 
     devinode GetDevInode() const;
     bool IsEqualHash(const FileNode& other) const;
+
+    unsigned short Serialize(unsigned char* buf);
+    static FileNode Deserialize(unsigned char* buf);
 };
