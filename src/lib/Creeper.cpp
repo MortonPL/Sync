@@ -188,10 +188,7 @@ bool Creeper::CreepPath(std::string rootPath)
             break;
         }
 
-        fileNodes.push_back(node);
-        FileNode* pNodeMapPtr = &fileNodes.back();
-        mapPath.emplace(node.path, pNodeMapPtr);
-        mapInode.emplace(node.GetDevInode(), pNodeMapPtr);
+        Creeper::AddNode(node);
     }
     XXH3_freeState(pState);
     free(pBuffer);
@@ -222,4 +219,12 @@ FileNode* Creeper::FindMapInode(FileNode::devinode inode)
     if (it == Creeper::mapInode.end())
         return nullptr;
     return it->second;
+}
+
+void Creeper::AddNode(FileNode& node)
+{
+    fileNodes.push_back(node);
+    FileNode* pNodeMapPtr = &fileNodes.back();
+    mapPath.emplace(node.path, pNodeMapPtr);
+    mapInode.emplace(node.GetDevInode(), pNodeMapPtr);
 }

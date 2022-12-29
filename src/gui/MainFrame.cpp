@@ -130,6 +130,8 @@ void MainFrame::OnScan(wxCommandEvent& event)
     if (!Global::IsLoadedConfig())
         return;
 
+    ctrl.listMain->DeleteAllItems();
+
     //get current config
     auto cfg = Global::GetCurrentConfig();
     LOG(INFO) << "Loaded config " << cfg.name << ".";
@@ -160,16 +162,14 @@ void MainFrame::OnScan(wxCommandEvent& event)
     }
     LOG(INFO) << "Read file history.";
     // get remote nodes
-    auto nodesB = ssh.CallCLICreep(cfg.pathB);
+    auto remoteNodes = ssh.CallCLICreep(cfg.pathB);
     LOG(INFO) << "Received remote file nodes.";
-
-    ctrl.listMain->DeleteAllItems();
     
     //scan
     LOG(INFO) << "Beginning local scan.";
     Creeper::CreepPath(cfg.pathA);
     auto scanNodes = Creeper::GetResults();
-    //pair
+    //pair history
     for(auto history: historyNodes)
     {
         auto res = Creeper::FindMapPath(history.path);
@@ -200,18 +200,34 @@ void MainFrame::OnScan(wxCommandEvent& event)
                 if (res->IsEqualHash(history))
                 {
                     res->status = STATUS_MOVED;
+                    res->oldPath = history.path;
                 }
                 else
                 {
                     history.status = STATUS_DELETED;
-                    scanNodes->push_back(history);
+                    Creeper::AddNode(history);
                 }
             }
             else
             {
                 history.status = STATUS_DELETED;
-                scanNodes->push_back(history);
+                Creeper::AddNode(history);
             }
+        }
+    }
+    //pair remote
+    for(auto remoteNode: remoteNodes)
+    {
+        if (Creeper::CheckIfFileIsIgnored(remoteNode.path))
+            continue;
+        auto res = Creeper::FindMapPath(remoteNode.path);
+        if (res != nullptr)
+        {
+            
+        }
+        else
+        {
+            Creeper::AddNode(remoteNode);
         }
     }
     LOG(INFO) << "Local scan finished.";

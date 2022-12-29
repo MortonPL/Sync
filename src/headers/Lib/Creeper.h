@@ -16,12 +16,13 @@ public:
     static bool CreepPathNoMap(std::string rootPath);
     static std::list<FileNode>* GetResults();
 
+    static void AddNode(FileNode& node);
+    static bool CheckIfFileIsIgnored(std::string path);
     static FileNode* FindMapPath(std::string path);
     static FileNode* FindMapInode(FileNode::devinode inode);
 
 private:
     static void SearchForLists(std::string path);
-    static bool CheckIfFileIsIgnored(std::string path);
     static int MakeNode(const std::filesystem::__cxx11::directory_entry& entry,
                         std::string& rootPath, XXH3_state_t* pState, void* pBuffer, FileNode& node);
     static void PreCreepCleanup(std::string rootPath, XXH3_state_t*& pState, void*& pBuffer);

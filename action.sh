@@ -127,7 +127,7 @@ do_install() {
         mkdir -p ~/.sync;
         mkdir -p ~/.sync/bin;
         mkdir -p ~/.sync/res;
-        sudo cmake --install .;
+        cmake --install .;
         echo "Installation complete!";
     fi
 }

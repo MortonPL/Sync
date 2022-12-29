@@ -19,6 +19,7 @@ public:
     int Read(char* buffer, int size);
     int Write(const char* buffer, int size);
 
+    static bool writeall(int fd, const char *buffer, unsigned buffer_size);
 private:
     int err = 0;
     int ourFd = -1;

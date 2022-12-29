@@ -20,7 +20,7 @@ int readall(int fd, char* buffer, unsigned buffer_size)
     return buffer_size - bytes_left;
 }
 
-bool writeall(int fd, const char *buffer, unsigned buffer_size)
+bool SocketListener::writeall(int fd, const char *buffer, unsigned buffer_size)
 {
     int bytes_left = buffer_size;
     int bytes_written = 0;

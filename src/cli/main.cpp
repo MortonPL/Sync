@@ -64,29 +64,15 @@ void CreepDir(std::string path)
     Creeper::CreepPathNoMap(path);
     auto nodes = Creeper::GetResults();
 
-    auto s = SocketListener();
-    if (!s.Init(GlobalCLI::remoteAddress, GlobalCLI::remotePort))
-    {
-        s.DeInit();
-        LOG(ERROR) << "Failed to initialize socket.";
-    }
-    if (!s.Connect())
-    {
-        s.DeInit();
-        LOG(ERROR) << "Failed to connect socket.";
-    }
-
     LOG(INFO) << "Connected.";
     unsigned char buf[FileNode::MaxBinarySize];
     std::size_t nnodes = nodes->size();
-    s.Write((char*)&nnodes, sizeof(nnodes));
+    SocketListener::writeall(1, (char*)&nnodes, sizeof(nnodes));
     for (auto& node: *nodes)
     {
         unsigned short size = node.Serialize(buf);
-        s.Write((char*)buf, size);
+        SocketListener::writeall(1, (char*)buf, size);
     }
-
-    s.DeInit();
     LOG(INFO) << "Done.";
 }
 
