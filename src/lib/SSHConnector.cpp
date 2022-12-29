@@ -511,7 +511,7 @@ ssh_channel_struct* SSHConnector::PrepareReverseTunnel()
 ssh_channel_struct* SSHConnector::CallCLI(std::string cmd)
 {
     auto pChannel = GetChannel();
-    if (ssh_channel_request_exec(pChannel, ("~/.sync/bin/synccli " + cmd).c_str()) != SSH_OK)
+    if (ssh_channel_request_exec(pChannel, ("synccli " + cmd).c_str()) != SSH_OK)
     {
         FreeChannel(pChannel);
         return nullptr;
@@ -519,41 +519,37 @@ ssh_channel_struct* SSHConnector::CallCLI(std::string cmd)
     return pChannel;
 }
 
-int SSHConnector::CallCLITest(std::string dirToCheck)
+int SSHConnector::CallCLICreep(std::string dirToCreep, std::vector<FileNode>& nodes)
 {
-    char buf[1];
-    auto pChannel = CallCLI(fmt::format("-t {}", dirToCheck));
-    if (pChannel == nullptr)
+    ssh_channel_struct* pChannel;
+    if ((pChannel = CallCLI(fmt::format("-c {}", dirToCreep))) == nullptr)
     {
         FreeChannel(pChannel);
-        return 1;
+        return CALLCLI_NOANSWER;
     }
-    if (ssh_channel_read(pChannel, &buf, 1, 0) == 0)
-    {
-        FreeChannel(pChannel);
-        return 1;
-    }
-
-    if (buf[0] != '0') 
-        return 2;
-
-    FreeChannel(pChannel);
-    return 0;
-}
-
-std::vector<FileNode> SSHConnector::CallCLICreep(std::string dirToCreep)
-{
-    std::vector<FileNode> nodes;
-    auto pChannel = CallCLI(fmt::format("-c {}", dirToCreep));
 
     unsigned char buf2[FileNode::MaxBinarySize];
     unsigned short len = 0;
+    char rc;
     std::size_t nnodes = 0;
+    // read return code for creep
+    if (ssh_channel_read(pChannel, &rc, sizeof(rc), 0) != sizeof(rc))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_404;
+    }
+    if (rc != 0)
+    {
+        FreeChannel(pChannel);
+        return rc;
+    }
+    // read node count
     if (ssh_channel_read(pChannel, &nnodes, sizeof(nnodes), 0) != sizeof(nnodes))
     {
         FreeChannel(pChannel);
-        return nodes;
+        return CALLCLI_ERROR;
     }
+    // read nodes
     LOG(INFO) << "Receiving " << nnodes << " nodes...";
     while (nnodes > 0)
     {
@@ -565,6 +561,6 @@ std::vector<FileNode> SSHConnector::CallCLICreep(std::string dirToCreep)
     }
 
     FreeChannel(pChannel);
-    return nodes;
+    return CALLCLI_OK;
 }
 #undef BUFFER_SIZE

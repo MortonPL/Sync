@@ -162,12 +162,24 @@ void MainFrame::OnScan(wxCommandEvent& event)
     }
     LOG(INFO) << "Read file history.";
     // get remote nodes
-    auto remoteNodes = ssh.CallCLICreep(cfg.pathB);
+    std::vector<FileNode> remoteNodes;
+    int rc;
+    if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
+    {
+        LOG(ERROR) << "Failed to receive file info from the remote host. Error code: " << rc;
+        GenericPopup("Failed to receive file info from the remote host. Error code: " + rc).ShowModal();
+        return;
+    }
     LOG(INFO) << "Received remote file nodes.";
     
     //scan
     LOG(INFO) << "Beginning local scan.";
-    Creeper::CreepPath(cfg.pathA);
+    if (Creeper::CreepPath(cfg.pathA) != CREEP_OK)
+    {
+        LOG(ERROR) << "Failed to scan for files in the given directory.";
+        GenericPopup("Failed to scan for files in the given directory.").ShowModal();
+        return;
+    }
     auto scanNodes = Creeper::GetResults();
     //pair history
     for(auto history: historyNodes)

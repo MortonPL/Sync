@@ -11,7 +11,7 @@
 #define DB_EMPTY 1
 #define DB_GOOD 2
 
-/*A class that connects to a specific SQLite database file and CRUD queries.*/
+/*A class that connects to a specific SQLite database file and makes CRUD queries.*/
 class DBConnector
 {
 public:
@@ -25,7 +25,6 @@ public:
     bool UpdateConfig(Configuration config);
     bool DeleteConfig(int id);
     std::vector<Configuration> SelectAllConfigs();
-    Configuration SelectConfigByUUID(std::string uuid);
 
     static int EnsureCreatedHistory(std::string path);
     bool InsertFileNode(FileNode file);

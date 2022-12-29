@@ -12,6 +12,11 @@
 #define AUTH_STATUS_CHALLENGE   3
 #define AUTH_STATUS_OK          4
 
+#define CALLCLI_OK 0
+#define CALLCLI_ERROR -1
+#define CALLCLI_404 -2
+#define CALLCLI_NOANSWER -3
+
 typedef void (*genericMessengerType)(std::string prompt);
 typedef std::string (*passProviderType)(bool& isCanceled, std::string& prompt);
 typedef std::string (*interactiveProviderType)(bool& isCanceled, std::string& challenge, bool shouldBeHidden);
@@ -33,8 +38,7 @@ public:
     void EndSession();
     bool IsActiveSession();
 
-    int CallCLITest(std::string dirToCheck);
-    std::vector<FileNode> CallCLICreep(std::string dirToCreep);
+    int CallCLICreep(std::string dirToCreep, std::vector<FileNode>& nodes);
 
 private:
     ssh_channel_struct* GetChannel();

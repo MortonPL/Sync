@@ -153,14 +153,6 @@ std::vector<Configuration> DBConnector::SelectAllConfigs()
     return configs;
 }
 
-Configuration DBConnector::SelectConfigByUUID(std::string uuid)
-{
-    SQLite::Statement query(this->db, fmt::format("SELECT * from configs WHERE uuid = {}", uuid));
-    if (!query.executeStep())
-        return Configuration();
-    return query.getColumns<Configuration, 8>();
-}
-
 bool DBConnector::InsertFileNode(FileNode file)
 {
     try

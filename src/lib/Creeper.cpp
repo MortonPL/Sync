@@ -12,7 +12,7 @@ std::vector<std::regex> Creeper::blacklist;
 std::map<std::string, FileNode*> Creeper::mapPath;
 std::unordered_map<FileNode::devinode, FileNode*, FileNode::devinode::devinodeHasher> Creeper::mapInode;
 
-void Creeper::SearchForLists(std::string path)
+void Creeper::SearchForLists(std::string& path)
 {
     auto readList = [](std::string path, std::string filename, std::vector<std::regex>& rules)
     {
@@ -92,7 +92,27 @@ bool hashFile(XXH3_state_t* pState, void* pBuffer, std::string& path, const char
     return true;
 }
 
-void Creeper::PreCreepCleanup(std::string rootPath, XXH3_state_t*& pState, void*& pBuffer)
+int Creeper::CheckIfDirExists(std::string& path)
+{
+    struct stat ret;
+    int rc = stat(path.c_str(), &ret);
+    int err = errno;
+    if (rc == -1)
+    {
+        if (err == EACCES)
+            return CREEP_PERM;
+        if (err == ENOENT || err == ENOTDIR)
+            return CREEP_EXIST;
+        LOG(ERROR) << "An error occured while checking if a directory exists. Error code: " << err;
+        return CREEP_ERROR;
+    }
+    if (!S_ISDIR(ret.st_mode))
+        return CREEP_NOTDIR;
+    
+    return CREEP_OK;
+}
+
+void Creeper::PreCreepCleanup(std::string& rootPath, XXH3_state_t*& pState, void*& pBuffer)
 {
     fileNodes.clear();
     mapPath.clear();
@@ -132,68 +152,95 @@ int Creeper::MakeNode(const std::filesystem::__cxx11::directory_entry& entry,
     return RES_OK;
 }
 
-bool Creeper::CreepPathNoMap(std::string rootPath)
+int Creeper::CreepPathNoMap(std::string rootPath)
 {
     XXH3_state_t* pState;
     void* pBuffer;
+    int err;
+    if ((err = Creeper::CheckIfDirExists(rootPath)) != CREEP_OK)
+        return err;
     Creeper::PreCreepCleanup(rootPath, pState, pBuffer);
 
-    for (auto const& entry: std::filesystem::recursive_directory_iterator(
-        rootPath, std::filesystem::directory_options::follow_directory_symlink
-            | std::filesystem::directory_options::skip_permission_denied))
+    try
     {
-        FileNode node;      
-        switch(Creeper::MakeNode(entry, rootPath, pState, pBuffer, node))
+        for (auto const& entry: std::filesystem::recursive_directory_iterator(
+            rootPath, std::filesystem::directory_options::follow_directory_symlink
+                | std::filesystem::directory_options::skip_permission_denied))
         {
-        case RES_CONTINUE:
-            continue;
-        default:
-        case RES_ERROR:
-            free(pBuffer);
-            XXH3_freeState(pState);
-            return false;
-        case RES_OK:
-            break;
-        }
+            FileNode node;      
+            switch(Creeper::MakeNode(entry, rootPath, pState, pBuffer, node))
+            {
+            case RES_CONTINUE:
+                continue;
+            default:
+            case RES_ERROR:
+                free(pBuffer);
+                XXH3_freeState(pState);
+                return CREEP_ERROR;
+            case RES_OK:
+                break;
+            }
 
-        fileNodes.push_back(node);
+            fileNodes.push_back(node);
+        }
     }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        XXH3_freeState(pState);
+        free(pBuffer);
+        return CREEP_ERROR;
+    }
+
     XXH3_freeState(pState);
     free(pBuffer);
 
-    return true;
+    return CREEP_OK;
 }
 
-bool Creeper::CreepPath(std::string rootPath)
+int Creeper::CreepPath(std::string rootPath)
 {
     XXH3_state_t* pState;
     void* pBuffer;
+    int err;
+    if ((err = Creeper::CheckIfDirExists(rootPath)) != CREEP_OK)
+        return err;
     Creeper::PreCreepCleanup(rootPath, pState, pBuffer);
 
-    for (auto const& entry: std::filesystem::recursive_directory_iterator(
-        rootPath, std::filesystem::directory_options::follow_directory_symlink
-            | std::filesystem::directory_options::skip_permission_denied))
+    try
     {
-        FileNode node;      
-        switch(Creeper::MakeNode(entry, rootPath, pState, pBuffer, node))
+        for (auto const& entry: std::filesystem::recursive_directory_iterator(
+            rootPath, std::filesystem::directory_options::follow_directory_symlink
+                | std::filesystem::directory_options::skip_permission_denied))
         {
-        case RES_CONTINUE:
-            continue;
-        default:
-        case RES_ERROR:
-            free(pBuffer);
-            XXH3_freeState(pState);
-            return false;
-        case RES_OK:
-            break;
-        }
+            FileNode node;      
+            switch(Creeper::MakeNode(entry, rootPath, pState, pBuffer, node))
+            {
+            case RES_CONTINUE:
+                continue;
+            default:
+            case RES_ERROR:
+                free(pBuffer);
+                XXH3_freeState(pState);
+                return CREEP_ERROR;
+            case RES_OK:
+                break;
+            }
 
-        Creeper::AddNode(node);
+            Creeper::AddNode(node);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        XXH3_freeState(pState);
+        free(pBuffer);
+        return CREEP_ERROR;
     }
     XXH3_freeState(pState);
     free(pBuffer);
 
-    return true;
+    return CREEP_OK;
 }
 #undef BUFFER_SIZE
 #undef RES_ERROR

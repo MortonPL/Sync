@@ -38,35 +38,29 @@ void ParseArgs(int argc, char* argv[])
             GlobalCLI::remoteAddress = argv[i+1];
             GlobalCLI::remotePort = atoi(argv[i+2]);
             break;
-        case 't':
-            if ( i + 1 >= argc)
-                break;
-            GlobalCLI::dirToCheck = argv[i+1];
         default:
             break;
         }
     }
 }
 
-void CheckDir(std::string path)
-{
-    int rc = 0;
-    struct stat ret;
-    if (stat(path.c_str(), &ret) == -1)
-        rc = 1;
-    if (!S_ISDIR(ret.st_mode))
-        rc = 2;
-    std::cout << rc << '\n';
-}
-
 void CreepDir(std::string path)
 {
-    Creeper::CreepPathNoMap(path);
+    char rc = Creeper::CreepPathNoMap(path);
+    if(rc != CREEP_OK)
+    {
+        LOG(ERROR) << "Failed to scan for files in the given directory.";
+        std::cout << rc; // alternative to writeall --- in text mode
+        std::cout.flush();
+        return;
+    }
+    std::cout << rc;
+    std::cout.flush();
     auto nodes = Creeper::GetResults();
 
-    LOG(INFO) << "Connected.";
     unsigned char buf[FileNode::MaxBinarySize];
     std::size_t nnodes = nodes->size();
+    LOG(INFO) << "Writing " << nnodes << "nodes.";
     SocketListener::writeall(1, (char*)&nnodes, sizeof(nnodes));
     for (auto& node: *nodes)
     {
@@ -132,9 +126,6 @@ int main(int argc, char* argv[])
 
     if (!General::InitEverything("synccli.log"))
         return -1;
-    
-    if (GlobalCLI::dirToCheck != "")
-        CheckDir(GlobalCLI::dirToCheck);
 
     if (GlobalCLI::dirToCreep != "")
     {
