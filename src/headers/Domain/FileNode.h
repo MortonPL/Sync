@@ -23,10 +23,18 @@ public:
         dev_t dev;
         ino_t inode;
 
-        friend bool operator <(const devinode& one, const devinode& other)
+        bool operator==(const devinode& other) const
         {
-            return (one.dev < other.dev || (one.dev == other.dev && one.inode < other.inode));
+            return dev == other.dev && inode == other.inode;
         }
+
+        struct devinodeHasher
+        {
+            std::size_t operator()(const devinode& devinode) const
+            {
+                return std::hash<dev_t>()(devinode.dev) ^ (std::hash<ino_t>()(devinode.inode) << 1);
+            }
+        };
     };
 
     static const std::string StatusString[6];

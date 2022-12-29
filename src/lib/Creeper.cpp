@@ -10,7 +10,7 @@ std::list<FileNode> Creeper::fileNodes;
 std::vector<std::regex> Creeper::whitelist;
 std::vector<std::regex> Creeper::blacklist;
 std::map<std::string, FileNode*> Creeper::mapPath;
-std::map<FileNode::devinode, FileNode*> Creeper::mapInode;
+std::unordered_map<FileNode::devinode, FileNode*, FileNode::devinode::devinodeHasher> Creeper::mapInode;
 
 void Creeper::SearchForLists(std::string path)
 {

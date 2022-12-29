@@ -71,19 +71,11 @@ void ChangeConfigurationDialog::PopulateConfigDetails()
     ctrl.txtDetails->Clear();
     *ctrl.txtDetails << "General info:\n";
     *ctrl.txtDetails << "\tName: " << config.name << "\n";
-    *ctrl.txtDetails << "\tType: " << (config.isRemote ? "SSH" : "Local") << "\n";
     *ctrl.txtDetails << "\tPath A: " << config.pathA << "\n";
     *ctrl.txtDetails << "\tPath B: " << config.pathB << "\n";
     *ctrl.txtDetails << "\tLast config edit: " << Utils::TimestampToString(config.timestamp) << "\n";
-    if (config.isRemote)
-    {
-        *ctrl.txtDetails << "Connecting from A to B:\n";
-        *ctrl.txtDetails << "\tAddress/Hostname: " << config.pathBaddress << "\n";
-        *ctrl.txtDetails << "\tUser: " << config.pathBuser << "\n";
-        *ctrl.txtDetails << "Connecting from B to A:\n";
-        *ctrl.txtDetails << "\tAddress/Hostname: " << config.pathAaddress << "\n";
-        *ctrl.txtDetails << "\tUser: " << config.pathAuser << "\n";
-    }
+    *ctrl.txtDetails << "\tPath B Address/Hostname: " << config.pathBaddress << "\n";
+    *ctrl.txtDetails << "\tPath B User: " << config.pathBuser << "\n";
 }
 
 void ChangeConfigurationDialog::CheckIfConfigSelected()

@@ -31,5 +31,5 @@ private:
     static std::vector<std::regex> whitelist;
     static std::vector<std::regex> blacklist;
     static std::map<std::string, FileNode*> mapPath;
-    static std::map<FileNode::devinode, FileNode*> mapInode;
+    static std::unordered_map<FileNode::devinode, FileNode*, FileNode::devinode::devinodeHasher> mapInode;
 };

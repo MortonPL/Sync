@@ -7,26 +7,22 @@ class Configuration
 {
 public:
     Configuration();
-    Configuration(int id, std::string name, uuid_t uuid, std::string pathA, std::string pathB);
-    Configuration(int id, std::string name, uuid_t uuid, 
-                  std::string pathA, std::string pathAaddress, std::string pathAuser,
-                  std::string pathB, std::string pathBaddress, std::string pathBuser);
-    Configuration(int id, std::string name, std::string uuid, std::string timestamp, int isRemote,
-                  std::string pathA, std::string pathAaddress, std::string pathAuser,
-                  std::string pathB, std::string pathBaddress, std::string pathBuser);
+    Configuration(int id, std::string name, uuid_t uuid, std::string pathA,
+                  std::string pathB, std::string pathBaddress, std::string pathBuser);  // New Config CTOR
+    Configuration(int id, std::string name, std::string uuid, std::string timestamp, std::string pathA,
+                  std::string pathB, std::string pathBaddress, std::string pathBuser);  // DB Select CTOR
+    Configuration(int id, std::string name, uuid_t uuid, time_t timestamp, std::string pathA,
+                  std::string pathB, std::string pathBaddress, std::string pathBuser, int __unused);  // Full CTOR
     ~Configuration();
 
-    bool operator==(const Configuration& other)
+    bool operator==(const Configuration& other) const
     {
         return this->name == other.name
-            && this->uuid == other.uuid
+            && uuid_compare(this->uuid, other.uuid) == 0
             && this->pathA == other.pathA
-            && this->pathAaddress == other.pathAaddress
-            && this->pathAuser == other.pathAuser
             && this->pathB == other.pathB
             && this->pathBaddress == other.pathBaddress
             && this->pathBuser == other.pathBuser
-            && this->isRemote == other.isRemote
             && this->timestamp == other.timestamp;
     }
 
@@ -35,10 +31,7 @@ public:
     uuid_t uuid;
     time_t timestamp;
     std::string pathA;
-    std::string pathAaddress;
-    std::string pathAuser;
     std::string pathB;
     std::string pathBaddress;
     std::string pathBuser;
-    bool isRemote;
 };

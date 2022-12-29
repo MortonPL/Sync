@@ -121,7 +121,7 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
 
     if (DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)) != DB_GOOD)
     {
-        GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned for the first time\nor if it's corrupted. All files will be marked as new.").ShowModal();
+        GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned for the first time\nor if it's corrupted. All files will be marked as new or conflicting.").ShowModal();
     }
 }
 

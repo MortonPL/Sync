@@ -13,13 +13,9 @@ private:
     {
         wxTextCtrl* txtConfigName;
         wxDirPickerCtrl* dirRootA;
-        wxChoice* ddConfigType;
-        wxDirPickerCtrl* dirRootBLocal;
         wxTextCtrl* txtAddressB;
         wxTextCtrl* txtUserB;
         wxTextCtrl* txtRootB;
-        wxTextCtrl* txtAddressA;
-        wxTextCtrl* txtUserA;
         wxButton* btnOK;
         wxButton* btnCancel;
     };
@@ -29,13 +25,9 @@ private:
 
     // custom methods
     void CheckIfOK();
-    void EnableRemote();
-    void DisableRemote();
 
     // event handlers
-    void Update();
     void OnOK(wxCommandEvent &event);
-    void OnConfigTypeChange(wxCommandEvent &event);
     void OnAnyChange(wxCommandEvent &event);
     void OnAnyChange(wxFileDirPickerEvent &event);
 
