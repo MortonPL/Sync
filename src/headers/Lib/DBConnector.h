@@ -2,9 +2,10 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <string>
 #include <vector>
+#include <forward_list>
 
 #include "Domain/Configuration.h"
-#include "Domain/FileNode.h"
+#include "Domain/HistoryFileNode.h"
 
 #define NOID -1
 #define DB_FAIL 0
@@ -27,10 +28,10 @@ public:
     std::vector<Configuration> SelectAllConfigs();
 
     static int EnsureCreatedHistory(std::string path);
-    bool InsertFileNode(FileNode file);
-    bool UpdateFileNode(FileNode file);
+    bool InsertFileNode(HistoryFileNode file);
+    bool UpdateFileNode(HistoryFileNode file);
     bool DeleteFileNode(std::string& path);
-    std::vector<FileNode> SelectAllFileNodes();
+    std::forward_list<HistoryFileNode> SelectAllFileNodes();
 
 private:
     SQLite::Database db;

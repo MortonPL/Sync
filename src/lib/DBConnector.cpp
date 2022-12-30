@@ -63,6 +63,8 @@ int DBConnector::EnsureCreatedHistory(std::string path)
             "path TEXT PRIMARY KEY,"
             "dev INTEGER NOT NULL,"
             "inode INTEGER NOT NULL,"
+            "r_dev INTEGER NOT NULL,"
+            "r_inode INTEGER NOT NULL,"
             "mtime INTEGER NOT NULL,"
             "size INTEGER NOT NULL,"
             "hash_high BLOB NOT NULL,"
@@ -153,15 +155,15 @@ std::vector<Configuration> DBConnector::SelectAllConfigs()
     return configs;
 }
 
-bool DBConnector::InsertFileNode(FileNode file)
+bool DBConnector::InsertFileNode(HistoryFileNode file)
 {
     try
     {
         SQLite::Statement query(db, fmt::format(
             "INSERT INTO nodes "
-            "(path, dev, inode, mtime, size, hash_high, hash_low) "
-            "VALUES (\"{}\", {}, {}, {}, {}, ?, ?)",
-            file.path, file.dev, file.inode, file.mtime, file.size));
+            "(path, dev, inode, r_dev, r_inode, mtime, size, hash_high, hash_low) "
+            "VALUES (\"{}\", {}, {}, {}, {}, {}, {}, ?, ?)",
+            file.path, file.dev, file.inode, file.remoteDev, file.remoteInode, file.mtime, file.size));
         query.bind(1, &file.hashHigh, 8);
         query.bind(2, &file.hashLow, 8);
         query.exec();
@@ -175,11 +177,11 @@ bool DBConnector::InsertFileNode(FileNode file)
     return true;
 }
 
-bool DBConnector::UpdateFileNode(FileNode file)
+bool DBConnector::UpdateFileNode(HistoryFileNode file)
 {
     try
     {
-        if (file.status == STATUS_MOVED)
+        if (file.status == STATUS_MOVED) // is this necessary?
         {
             SQLite::Statement query(db, fmt::format(
                 "UPDATE nodes SET "
@@ -228,22 +230,23 @@ bool DBConnector::DeleteFileNode(std::string& path)
     return true;
 }
 
-std::vector<FileNode> DBConnector::SelectAllFileNodes()
+std::forward_list<HistoryFileNode> DBConnector::SelectAllFileNodes()
 {
-    std::vector<FileNode> nodes;
+    std::forward_list<HistoryFileNode> nodes;
     SQLite::Statement query(this->db, "SELECT * from nodes");
     while(query.executeStep())
     {
-        nodes.push_back(FileNode
+        nodes.push_front(HistoryFileNode
         (
             (std::string)query.getColumn(0),
-            "",
             (uint32_t)query.getColumn(1),
             (int64_t)query.getColumn(2),
             (uint32_t)query.getColumn(3),
-            (uint32_t)query.getColumn(4),
-            *(XXH64_hash_t*)query.getColumn(5).getBlob(),
-            *(XXH64_hash_t*)query.getColumn(6).getBlob()
+            (int64_t)query.getColumn(4),
+            (uint32_t)query.getColumn(5),
+            (uint32_t)query.getColumn(6),
+            *(XXH64_hash_t*)query.getColumn(7).getBlob(),
+            *(XXH64_hash_t*)query.getColumn(8).getBlob()
         ));
     }
     return nodes;

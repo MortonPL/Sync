@@ -8,14 +8,16 @@
 #define STATUS_CLEAN 2
 #define STATUS_DIRTY 3
 #define STATUS_MOVED 4
-#define STATUS_OLD 5
+#define STATUS_HISTORY_PRESENT 5
 
 /*A domain class representing a single file.*/
 class FileNode
 {
 public:
     FileNode();
-    FileNode(std::string path, std::string oldPath, dev_t dev, ino_t inode, time_t mtime, off_t size, XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
+    FileNode(std::string path);
+    FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t size,
+             XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
     ~FileNode();
 
     struct devinode
@@ -41,18 +43,16 @@ public:
     static const unsigned short MaxBinarySize;
 
     std::string path;
-    std::string oldPath;
     dev_t dev;
     ino_t inode;
-    time_t mtime;
-    off_t size;
+    time_t mtime = 0;
+    off_t size = 0;
     XXH64_hash_t hashHigh;
     XXH64_hash_t hashLow;
-    char status;
+    char status = STATUS_NEW;
 
     devinode GetDevInode() const;
     bool IsEqualHash(const FileNode& other) const;
-
-    unsigned short Serialize(unsigned char* buf);
+    unsigned short Serialize(unsigned char* buf) const;
     static FileNode Deserialize(unsigned char* buf);
 };

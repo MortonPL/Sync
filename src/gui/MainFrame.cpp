@@ -10,6 +10,7 @@
 #include "Lib/DBConnector.h"
 #include "Lib/Global.h"
 #include "Lib/Creeper.h"
+#include "Lib/Mapper.h"
 #include "Utils.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -141,7 +142,6 @@ void MainFrame::OnScan(wxCommandEvent& event)
     LOG(INFO) << "Successfully connected to the remote.";
 
     //read history
-    std::vector<FileNode> historyNodes;
     try
     {
         auto db = DBConnector(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
@@ -155,7 +155,6 @@ void MainFrame::OnScan(wxCommandEvent& event)
     }
     LOG(INFO) << "Read file history.";
     // get remote nodes
-    std::vector<FileNode> remoteNodes;
     int rc;
     if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
     {
@@ -167,85 +166,86 @@ void MainFrame::OnScan(wxCommandEvent& event)
     
     //scan
     LOG(INFO) << "Beginning local scan.";
-    if (Creeper::CreepPath(cfg.pathA) != CREEP_OK)
+    auto creeper = Creeper();
+    if (creeper.CreepPath(cfg.pathA) != CREEP_OK)
     {
         LOG(ERROR) << "Failed to scan for files in the given directory.";
         GenericPopup("Failed to scan for files in the given directory.").ShowModal();
         return;
     }
-    auto scanNodes = Creeper::GetResults();
-    //pair history
-    for(auto history: historyNodes)
+    scanNodes = creeper.GetResults();
+    //pair local
+    for (auto& scanNode: scanNodes)
     {
-        auto res = Creeper::FindMapPath(history.path);
-        if (res != nullptr)
+        pairedNodes.push_back(PairedNode(scanNode.path, &scanNode));
+        Mapper::EmplaceMapPath(scanNode.path, pairedNodes.back());
+        Mapper::EmplaceMapLocalInode(scanNode.GetDevInode(), pairedNodes.back());
+    }
+    //pair history
+    for(auto& historyNode: historyNodes)
+    {
+        if (creeper.CheckIfFileIsIgnored(historyNode.path))
+            continue;
+        auto pPair = Mapper::FindMapPath(historyNode.path);
+        if (pPair != nullptr)
         {
-            res->status = STATUS_OLD;
-            if (res->size == history.size)
-            {
-                if (res->IsEqualHash(history))
-                {
-                    res->status = STATUS_CLEAN;
-                }
-                else
-                {
-                    history.status = STATUS_DIRTY;
-                }
-            }
-            else
-            {
-                res->status = STATUS_DIRTY;
-            }
+            pPair->historyNode = &historyNode;
+            Mapper::EmplaceMapLocalInode(historyNode.GetDevInode(), *pPair);
+            Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
         }
         else
         {
-            auto res = Creeper::FindMapInode(history.GetDevInode());
-            if (res != nullptr)
+            pPair = Mapper::FindMapLocalInode(historyNode.GetDevInode());
+            if (pPair != nullptr)
             {
-                if (res->IsEqualHash(history))
-                {
-                    res->status = STATUS_MOVED;
-                    res->oldPath = history.path;
-                }
-                else
-                {
-                    history.status = STATUS_DELETED;
-                    Creeper::AddNode(history);
-                }
+                pPair->historyNode = &historyNode;
+                Mapper::EmplaceMapPath(historyNode.path, *pPair);
+                Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
             }
             else
             {
-                history.status = STATUS_DELETED;
-                Creeper::AddNode(history);
+                pairedNodes.push_back(PairedNode(historyNode.path, nullptr, &historyNode));
+                Mapper::EmplaceMapPath(historyNode.path, *pPair);
+                Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
             }
         }
     }
     //pair remote
-    for(auto remoteNode: remoteNodes)
+    for(auto& remoteNode: remoteNodes)
     {
-        if (Creeper::CheckIfFileIsIgnored(remoteNode.path))
+        if (creeper.CheckIfFileIsIgnored(remoteNode.path))
             continue;
-        auto res = Creeper::FindMapPath(remoteNode.path);
-        if (res != nullptr)
+        auto pPair = Mapper::FindMapPath(remoteNode.path);
+        if (pPair != nullptr)
         {
-            
+            pPair->remoteNode = &remoteNode;
         }
         else
         {
-            Creeper::AddNode(remoteNode);
+            pPair = Mapper::FindMapRemoteInode(remoteNode.GetDevInode());
+            if (pPair != nullptr)
+            {
+                pPair->remoteNode = &remoteNode;
+            }
+            else
+            {
+                pairedNodes.push_back(PairedNode(remoteNode.path, nullptr, nullptr, &remoteNode));
+            }
         }
     }
     LOG(INFO) << "Local scan finished.";
+
+    //display at the end
     int i = 0;
-    for(auto node = (*scanNodes).begin(); node != (*scanNodes).end(); ++node)
+    for(auto& pair: pairedNodes)
     {
-        ctrl.listMain->InsertItem(i, wxString::FromUTF8(node->path));
-        ctrl.listMain->SetItemData(i, (long)&(*node));
-        ctrl.listMain->SetItem(i, COL_STATUS, FileNode::StatusString[node->status]);
+        ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
+        ctrl.listMain->SetItemData(i, (long)&pair);
+        //ctrl.listMain->SetItem(i, COL_STATUS, FileNode::StatusString[node->status]);
         i++;
     }
 
-    //temp
+    //save data
     /*
     char uuidbuf[37];
     uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
@@ -277,22 +277,39 @@ void MainFrame::OnSync(wxCommandEvent& event)
 #define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
 void MainFrame::OnSelectNode(wxListEvent& event)
 {
-    auto pNode = (FileNode*)event.GetData();
+    auto writeNodeDetails = [this](FileNode* pNode)
+    {
+        if (pNode != nullptr)
+        {
+            *ctrl.txtDetails << "Status: " << FileNode::StatusString[pNode->status] << '\n';
+            *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode->mtime) << '\n';
+            *ctrl.txtDetails << "Size: " << LTOA(pNode->size) << '\n';
+            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow) << '\n';
+        }
+        else
+        {
+            *ctrl.txtDetails << "Status: " <<  "Absent" <<'\n';
+            *ctrl.txtDetails << "Modification time: " << '\n';
+            *ctrl.txtDetails << "Size: " << '\n';
+            *ctrl.txtDetails << "Hash: " << '\n';
+        }
+    };
+
+    auto pPair = (PairedNode*)event.GetData();
     ctrl.txtDetails->Clear();
-    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pNode->path).filename().string()) << '\n';
-    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pNode->path).parent_path().string()) << '\n';
+    //general
+    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
+    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
+    //local
     *ctrl.txtDetails << "== LOCAL ==\n";
-    *ctrl.txtDetails << "Status: " << '\n';
-    // if not absent
-    *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode->mtime) << '\n';
-    *ctrl.txtDetails << "Size: " << LTOA(pNode->size) << '\n';
-    *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow) << '\n';
+    writeNodeDetails(pPair->localNode);
+    //remote
     *ctrl.txtDetails << "== REMOTE ==\n";
-    *ctrl.txtDetails << "Status: " << '\n';
-    // if not absent
-    *ctrl.txtDetails << "Modification time: " << '\n';
-    *ctrl.txtDetails << "Size: " << '\n';
-    *ctrl.txtDetails << "Hash: " << '\n';
+    writeNodeDetails(pPair->remoteNode);
+    //history
+    *ctrl.txtDetails << "== HISTORY ==\n";
+    writeNodeDetails(pPair->historyNode);
+
 }
 #undef LTOA
 

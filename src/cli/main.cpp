@@ -46,7 +46,8 @@ void ParseArgs(int argc, char* argv[])
 
 void CreepDir(std::string path)
 {
-    char rc = Creeper::CreepPathNoMap(path);
+    auto creeper = Creeper();
+    char rc = creeper.CreepPath(path);
     if(rc != CREEP_OK)
     {
         LOG(ERROR) << "Failed to scan for files in the given directory.";
@@ -56,13 +57,13 @@ void CreepDir(std::string path)
     }
     std::cout << rc;
     std::cout.flush();
-    auto nodes = Creeper::GetResults();
+    auto nodes = creeper.GetResults();
 
     unsigned char buf[FileNode::MaxBinarySize];
-    std::size_t nnodes = nodes->size();
+    std::size_t nnodes = creeper.GetResultsCount();
     LOG(INFO) << "Writing " << nnodes << " nodes.";
     SocketListener::writeall(1, (char*)&nnodes, sizeof(nnodes));
-    for (auto& node: *nodes)
+    for (auto& node: nodes)
     {
         unsigned short size = node.Serialize(buf);
         SocketListener::writeall(1, (char*)buf, size);

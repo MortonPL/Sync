@@ -519,7 +519,7 @@ ssh_channel_struct* SSHConnector::CallCLI(std::string cmd)
     return pChannel;
 }
 
-int SSHConnector::CallCLICreep(std::string dirToCreep, std::vector<FileNode>& nodes)
+int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes)
 {
     ssh_channel_struct* pChannel;
     if ((pChannel = CallCLI(fmt::format("-c {}", dirToCreep))) == nullptr)
@@ -556,7 +556,7 @@ int SSHConnector::CallCLICreep(std::string dirToCreep, std::vector<FileNode>& no
         ssh_channel_read(pChannel, &len, sizeof(len), 0);
         ssh_channel_read(pChannel, &buf2, len, 0);
         auto node = FileNode::Deserialize(buf2);
-        nodes.push_back(node);
+        nodes.push_front(node);
         nnodes--;
     }
 

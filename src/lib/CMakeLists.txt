@@ -21,9 +21,12 @@ find_package(libssh REQUIRED)
 set(SRC_LIB_FILES
     domain/Configuration.cpp
     domain/FileNode.cpp
+    domain/HistoryFileNode.cpp
+    domain/PairedNode.cpp
     Global.cpp
     General.cpp
     SocketListener.cpp
+    Mapper.cpp
     Creeper.cpp
     DBConnector.cpp
     SSHConnector.cpp

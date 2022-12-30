@@ -1,7 +1,7 @@
 #pragma once
 #include <libssh/libssh.h>
 #include <string>
-#include <vector>
+#include <forward_list>
 
 #include "Domain/FileNode.h"
 
@@ -38,7 +38,7 @@ public:
     void EndSession();
     bool IsActiveSession();
 
-    int CallCLICreep(std::string dirToCreep, std::vector<FileNode>& nodes);
+    int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
 
 private:
     ssh_channel_struct* GetChannel();

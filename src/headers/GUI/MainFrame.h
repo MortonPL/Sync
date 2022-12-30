@@ -1,7 +1,9 @@
 #pragma once
 #include "wx.h"
 
+#include <list>
 #include "Lib/SSHConnector.h"
+#include "domain/PairedNode.h"
 
 class MainFrame : public wxFrame {
 public:
@@ -19,6 +21,12 @@ private:
     Controls ctrl;
     bool isFirstSelectedConfig = true;
     SSHConnector ssh;
+
+    //temp
+    std::list<PairedNode> pairedNodes;
+    std::forward_list<FileNode> scanNodes;
+    std::forward_list<HistoryFileNode> historyNodes;
+    std::forward_list<FileNode> remoteNodes;
 
     // custom methods
     void CreateReportList();
