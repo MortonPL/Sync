@@ -12,7 +12,7 @@ HistoryFileNode::HistoryFileNode(std::string path, dev_t dev, ino_t inode, dev_t
     this->size = size;
     this->hashHigh = hashHigh;
     this->hashLow = hashLow;
-    this->status = STATUS_HISTORY_PRESENT;
+    this->status = FileNode::Status::HistoryPresent;
 }
 
 FileNode::devinode HistoryFileNode::GetRemoteDevInode() const

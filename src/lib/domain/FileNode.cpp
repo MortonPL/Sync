@@ -8,14 +8,15 @@ const unsigned short FileNode::MaxBinarySize = sizeof(unsigned short) + sizeof(u
                                                + sizeof(FileNode::dev) + sizeof(FileNode::inode)
                                                + sizeof(FileNode::hashHigh) + sizeof(FileNode::hashLow);
 
-const std::string FileNode::StatusString[6] =
+const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
 {
-    "New",
-    "Deleted",
-    "Clean",
-    "Dirty",
-    "Moved",
-    "Present"
+    {FileNode::Status::New, "New"},
+    {FileNode::Status::Deleted, "Deleted"},
+    {FileNode::Status::Clean, "Clean"},
+    {FileNode::Status::Dirty, "Dirty"},
+    {FileNode::Status::Moved, "Moved"},
+    {FileNode::Status::HistoryPresent, "Present"},
+    {FileNode::Status::Absent, "Absent"},
 };
 
 FileNode::FileNode()

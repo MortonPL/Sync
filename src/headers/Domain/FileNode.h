@@ -1,14 +1,8 @@
 #pragma once
 #include <string>
 #include <sys/types.h>
+#include <map>
 #include "xxhash.h"
-
-#define STATUS_NEW 0
-#define STATUS_DELETED 1
-#define STATUS_CLEAN 2
-#define STATUS_DIRTY 3
-#define STATUS_MOVED 4
-#define STATUS_HISTORY_PRESENT 5
 
 /*A domain class representing a single file.*/
 class FileNode
@@ -19,6 +13,17 @@ public:
     FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t size,
              XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
     ~FileNode();
+
+    enum Status: char
+    {
+        New = 0,
+        Deleted,
+        Clean,
+        Dirty,
+        Moved, //???
+        Absent,
+        HistoryPresent,
+    };
 
     struct devinode
     {
@@ -39,8 +44,8 @@ public:
         };
     };
 
-    static const std::string StatusString[6];
     static const unsigned short MaxBinarySize;
+    static const std::map<Status, std::string> StatusAsString;
 
     std::string path;
     dev_t dev;
@@ -49,7 +54,7 @@ public:
     off_t size = 0;
     XXH64_hash_t hashHigh;
     XXH64_hash_t hashLow;
-    char status = STATUS_NEW;
+    Status status = Status::New;
 
     devinode GetDevInode() const;
     bool IsEqualHash(const FileNode& other) const;

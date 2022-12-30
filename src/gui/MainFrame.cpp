@@ -174,6 +174,8 @@ void MainFrame::OnScan(wxCommandEvent& event)
         return;
     }
     scanNodes = creeper.GetResults();
+    LOG(INFO) << "Local scan finished.";
+    LOG(INFO) << "Begin pairing.";
     //pair local
     for (auto& scanNode: scanNodes)
     {
@@ -182,7 +184,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
         Mapper::EmplaceMapLocalInode(scanNode.GetDevInode(), pairedNodes.back());
     }
     //pair history
-    for(auto& historyNode: historyNodes)
+    for (auto& historyNode: historyNodes)
     {
         if (creeper.CheckIfFileIsIgnored(historyNode.path))
             continue;
@@ -233,15 +235,16 @@ void MainFrame::OnScan(wxCommandEvent& event)
             }
         }
     }
-    LOG(INFO) << "Local scan finished.";
+    LOG(INFO) << "Pairing finished";
+    pairedNodes.sort();
 
     //display at the end
     int i = 0;
-    for(auto& pair: pairedNodes)
+    for (auto& pair: pairedNodes)
     {
         ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
         ctrl.listMain->SetItemData(i, (long)&pair);
-        //ctrl.listMain->SetItem(i, COL_STATUS, FileNode::StatusString[node->status]);
+        ctrl.listMain->SetItem(i, COL_STATUS, pair.GetStatusString());
         i++;
     }
 
@@ -277,11 +280,11 @@ void MainFrame::OnSync(wxCommandEvent& event)
 #define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
 void MainFrame::OnSelectNode(wxListEvent& event)
 {
-    auto writeNodeDetails = [this](FileNode* pNode)
+    auto writeNodeDetails = [this](const FileNode* pNode)
     {
         if (pNode != nullptr)
         {
-            *ctrl.txtDetails << "Status: " << FileNode::StatusString[pNode->status] << '\n';
+            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode->status) << '\n';
             *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode->mtime) << '\n';
             *ctrl.txtDetails << "Size: " << LTOA(pNode->size) << '\n';
             *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow) << '\n';

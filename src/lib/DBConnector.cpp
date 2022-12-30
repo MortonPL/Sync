@@ -181,7 +181,7 @@ bool DBConnector::UpdateFileNode(HistoryFileNode file)
 {
     try
     {
-        if (file.status == STATUS_MOVED) // is this necessary?
+        if (file.status == FileNode::Status::Moved) // is this necessary?
         {
             SQLite::Statement query(db, fmt::format(
                 "UPDATE nodes SET "

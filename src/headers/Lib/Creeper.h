@@ -13,7 +13,8 @@
 #define CREEP_PERM 2
 #define CREEP_EXIST 3
 #define CREEP_NOTDIR 4
-/*Recursively creeps through a directory and gathers FileNodes*/
+/*Recursively creeps through a directory and gathers FileNodes. Also provides an option to
+check a path against blacklist/whitelist rules.*/
 class Creeper
 {
 public:

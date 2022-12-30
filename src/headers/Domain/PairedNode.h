@@ -7,11 +7,18 @@ class PairedNode
 {
 public:
     PairedNode();
-    PairedNode(std::string path, FileNode* localNode=nullptr, HistoryFileNode* historyNode=nullptr, FileNode* remoteNode=nullptr);
+    PairedNode(const std::string path, const FileNode* localNode=nullptr, const HistoryFileNode* historyNode=nullptr, const FileNode* remoteNode=nullptr);
     ~PairedNode();
 
-    std::string path = "";
-    FileNode* localNode = nullptr;
-    HistoryFileNode* historyNode = nullptr;
-    FileNode* remoteNode = nullptr;
+    bool operator<(const PairedNode& other) const
+    {
+        return path < other.path;
+    }
+
+    std::string GetStatusString() const;
+
+    const std::string path;
+    const FileNode* localNode;
+    const HistoryFileNode* historyNode;
+    const FileNode* remoteNode;
 };
