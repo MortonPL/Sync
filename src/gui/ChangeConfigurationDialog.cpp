@@ -49,7 +49,7 @@ void ChangeConfigurationDialog::PopulateConfigList()
         this->configs = db.SelectAllConfigs();
         auto arrs = wxArrayString();
         for(auto config: this->configs)
-            arrs.Add(config.name);
+            arrs.Add(wxString::FromUTF8(config.name));
         ctrl.listConfigs->Clear();
         if (!arrs.IsEmpty())
             ctrl.listConfigs->InsertItems(arrs, 0);
@@ -70,12 +70,12 @@ void ChangeConfigurationDialog::PopulateConfigDetails()
     auto config = this->configs[this->selectedConfigIdx];
     ctrl.txtDetails->Clear();
     *ctrl.txtDetails << "General info:\n";
-    *ctrl.txtDetails << "\tName: " << config.name << "\n";
-    *ctrl.txtDetails << "\tPath A: " << config.pathA << "\n";
-    *ctrl.txtDetails << "\tPath B: " << config.pathB << "\n";
+    *ctrl.txtDetails << "\tName: " << wxString::FromUTF8(config.name) << "\n";
+    *ctrl.txtDetails << "\tPath A: " << wxString::FromUTF8(config.pathA) << "\n";
+    *ctrl.txtDetails << "\tPath B: " << wxString::FromUTF8(config.pathB) << "\n";
     *ctrl.txtDetails << "\tLast config edit: " << Utils::TimestampToString(config.timestamp) << "\n";
-    *ctrl.txtDetails << "\tPath B Address/Hostname: " << config.pathBaddress << "\n";
-    *ctrl.txtDetails << "\tPath B User: " << config.pathBuser << "\n";
+    *ctrl.txtDetails << "\tPath B Address/Hostname: " << wxString::FromUTF8(config.pathBaddress) << "\n";
+    *ctrl.txtDetails << "\tPath B User: " << wxString::FromUTF8(config.pathBuser) << "\n";
 }
 
 void ChangeConfigurationDialog::CheckIfConfigSelected()
@@ -101,21 +101,15 @@ void ChangeConfigurationDialog::CheckIfConfigSelected()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void ChangeConfigurationDialog::Update()
-{
-}
-
 void ChangeConfigurationDialog::OnListBoxChange(wxCommandEvent &event)
 {
     CheckIfConfigSelected();
-    Update();
 }
 
 void ChangeConfigurationDialog::OnNewConfig(wxCommandEvent &event)
 {
     NewConfigurationDialog().ShowModal();
     PopulateConfigList();
-    Update();
 }
 
 void ChangeConfigurationDialog::OnEditConfig(wxCommandEvent &event)
@@ -124,7 +118,6 @@ void ChangeConfigurationDialog::OnEditConfig(wxCommandEvent &event)
     {
         PopulateConfigList();
         PopulateConfigDetails();
-        Update();
     }
 }
 
@@ -153,7 +146,6 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
 
     PopulateConfigList();
     CheckIfConfigSelected();
-    Update();
 }
 
 void ChangeConfigurationDialog::OnOK(wxCommandEvent &event)

@@ -34,11 +34,11 @@ NewConfigurationDialog::NewConfigurationDialog(wxWindow* pParent)
 
 void NewConfigurationDialog::CheckIfOK()
 {
-    bool isOK = !ctrl.txtConfigName->GetValue().IsEmpty()
-                && !ctrl.dirRootA->GetPath().ToStdString().empty()
-                && !ctrl.txtRootB->GetValue().IsEmpty()
-                && !ctrl.txtAddressB->GetValue().IsEmpty()
-                && !ctrl.txtUserB->GetValue().IsEmpty();
+    bool isOK = !ctrl.txtConfigName->GetValue().utf8_string().empty()
+                && !ctrl.dirRootA->GetPath().utf8_string().empty()
+                && !ctrl.txtRootB->GetValue().utf8_string().empty()
+                && !ctrl.txtAddressB->GetValue().utf8_string().empty()
+                && !ctrl.txtUserB->GetValue().utf8_string().empty();
     ctrl.btnOK->Enable(isOK);
 }
 
@@ -46,8 +46,8 @@ void NewConfigurationDialog::CheckIfOK()
 
 void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    std::string pathA = ctrl.dirRootA->GetPath().ToStdString();
-    std::string pathB = ctrl.txtRootB->GetValue().ToStdString();
+    std::string pathA = ctrl.dirRootA->GetPath().utf8_string();
+    std::string pathB = ctrl.txtRootB->GetValue().utf8_string();
     if (pathA.empty() || pathB.empty())
     {
         GenericPopup("Root paths cannot be empty!").ShowModal();
@@ -60,12 +60,12 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 
     config = Configuration(
         NOID,
-        ctrl.txtConfigName->GetValue().ToStdString(),
+        ctrl.txtConfigName->GetValue().utf8_string(),
         uuid,
         Utils::CorrectDirPath(pathA),
         Utils::CorrectDirPath(pathB),
-        ctrl.txtAddressB->GetValue().ToStdString(),
-        ctrl.txtUserB->GetValue().ToStdString()
+        ctrl.txtAddressB->GetValue().utf8_string(),
+        ctrl.txtUserB->GetValue().utf8_string()
     );
 
     try

@@ -60,7 +60,7 @@ void CreepDir(std::string path)
 
     unsigned char buf[FileNode::MaxBinarySize];
     std::size_t nnodes = nodes->size();
-    LOG(INFO) << "Writing " << nnodes << "nodes.";
+    LOG(INFO) << "Writing " << nnodes << " nodes.";
     SocketListener::writeall(1, (char*)&nnodes, sizeof(nnodes));
     for (auto& node: *nodes)
     {

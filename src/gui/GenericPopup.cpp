@@ -16,7 +16,7 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "GenericPopup");
 
-    ((wxStaticText*)(this->FindWindow("lblMessage")))->SetLabelText(message);
+    ((wxStaticText*)(this->FindWindow("lblMessage")))->SetLabelText(wxString::FromUTF8(message));
 
     ctrl = Controls
     {
@@ -34,7 +34,7 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
         ctrl.btnCancel->Hide();
     if (this->input)
     {
-        ctrl.txtOutput->AppendText(*input);
+        ctrl.txtOutput->AppendText(wxString::FromUTF8(*input));
         ctrl.txtOutput->Show();
     }
     if (this->output)
@@ -53,9 +53,9 @@ void GenericPopup::OnOK(wxCommandEvent &event)
     if (this->output)
     {
         if (this->isPassword)
-            *(this->output) = ctrl.txtInputPass->GetValue().ToStdString();
+            *(this->output) = ctrl.txtInputPass->GetValue().utf8_string();
         else
-            *(this->output) = ctrl.txtInputStd->GetValue().ToStdString();
+            *(this->output) = ctrl.txtInputStd->GetValue().utf8_string();
     }
     EndModal(wxID_OK);
 }

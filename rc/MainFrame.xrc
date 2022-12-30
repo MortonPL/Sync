@@ -96,7 +96,7 @@
 				<object class="wxStaticBoxSizer">
 					<minsize>350,-1</minsize>
 					<orient>wxVERTICAL</orient>
-					<label>File Details</label>
+					<label>Details</label>
 					<object class="sizeritem">
 						<option>1</option>
 						<flag>wxEXPAND</flag>
@@ -106,132 +106,15 @@
 							<cols>2</cols>
 							<vgap>0</vgap>
 							<hgap>0</hgap>
-							<growablecols></growablecols>
-							<growablerows></growablerows>
+							<growablecols>0</growablecols>
+							<growablerows>0</growablerows>
 							<object class="sizeritem">
 								<option>0</option>
-								<flag>wxALL</flag>
+								<flag>wxALL|wxEXPAND</flag>
 								<border>5</border>
-								<object class="wxStaticText" name="m_staticText17">
-									<label>Name:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetName">
-									<label></label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="m_staticText19">
-									<label>Directory:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetPath">
-									<label></label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="m_staticText21">
-									<label>Device #:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetDev">
-									<label></label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="m_staticText24">
-									<label>Inode #:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetInode">
-									<label></label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="m_staticText25">
-									<label>Mod. Time:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetMtime">
-									<label></label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="m_staticText27">
-									<label>Size:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetSize">
-									<label></label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="m_staticText251">
-									<label>Hash:</label>
-									<wrap>-1</wrap>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxStaticText" name="lblDetHash">
-									<label></label>
-									<wrap>-1</wrap>
+								<object class="wxTextCtrl" name="txtDetails">
+									<style>wxTE_MULTILINE|wxTE_READONLY</style>
+									<value></value>
 								</object>
 							</object>
 						</object>

@@ -32,11 +32,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
     this->oldConfig = oldConfig;
 
     //fill in controls
-    ctrl.txtConfigName->AppendText(oldConfig.name);
-    ctrl.dirRootA->SetPath(oldConfig.pathA);
-    ctrl.txtRootB->AppendText(oldConfig.pathB);
-    ctrl.txtAddressB->AppendText(oldConfig.pathBaddress);
-    ctrl.txtUserB->AppendText(oldConfig.pathBuser);
+    ctrl.txtConfigName->AppendText(wxString::FromUTF8(oldConfig.name));
+    ctrl.dirRootA->SetPath(wxString::FromUTF8(oldConfig.pathA));
+    ctrl.txtRootB->AppendText(wxString::FromUTF8(oldConfig.pathB));
+    ctrl.txtAddressB->AppendText(wxString::FromUTF8(oldConfig.pathBaddress));
+    ctrl.txtUserB->AppendText(wxString::FromUTF8(oldConfig.pathBuser));
 
     ctrl.btnOK->SetLabel("Edit");
     ctrl.btnOK->Disable();
@@ -44,11 +44,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
 
 void EditConfigurationDialog::CheckIfOK()
 {
-    bool isOK = !ctrl.txtConfigName->GetValue().IsEmpty()
-                && !ctrl.dirRootA->GetPath().ToStdString().empty()
-                && !ctrl.txtRootB->GetValue().IsEmpty()
-                && !ctrl.txtAddressB->GetValue().IsEmpty()
-                && !ctrl.txtUserB->GetValue().IsEmpty();
+    bool isOK = !ctrl.txtConfigName->GetValue().utf8_string().empty()
+                && !ctrl.dirRootA->GetPath().utf8_string().empty()
+                && !ctrl.txtRootB->GetValue().utf8_string().empty()
+                && !ctrl.txtAddressB->GetValue().utf8_string().empty()
+                && !ctrl.txtUserB->GetValue().utf8_string().empty();
     ctrl.btnOK->Enable(isOK);
 }
 
@@ -56,8 +56,8 @@ void EditConfigurationDialog::CheckIfOK()
 
 void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    std::string pathA = ctrl.dirRootA->GetPath().ToStdString();
-    std::string pathB = ctrl.txtRootB->GetValue().ToStdString();
+    std::string pathA = ctrl.dirRootA->GetPath().utf8_string();
+    std::string pathB = ctrl.txtRootB->GetValue().utf8_string();
     if (pathA.empty() || pathB.empty())
     {
         GenericPopup("Root paths cannot be empty!").ShowModal();
@@ -67,13 +67,13 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
     Configuration config;
     config = Configuration(
         oldConfig.id,
-        ctrl.txtConfigName->GetValue().ToStdString(),
+        ctrl.txtConfigName->GetValue().utf8_string(),
         oldConfig.uuid,
         oldConfig.timestamp,
         Utils::CorrectDirPath(pathA),
         Utils::CorrectDirPath(pathB),
-        ctrl.txtAddressB->GetValue().ToStdString(),
-        ctrl.txtUserB->GetValue().ToStdString(),
+        ctrl.txtAddressB->GetValue().utf8_string(),
+        ctrl.txtUserB->GetValue().utf8_string(),
         0
     );
 

@@ -35,7 +35,6 @@ private:
     void PopulateConfigDetails();
 
     // event handlers
-    void Update();
     void OnListBoxChange(wxCommandEvent &event);
     void OnNewConfig(wxCommandEvent &event);
     void OnEditConfig(wxCommandEvent &event);

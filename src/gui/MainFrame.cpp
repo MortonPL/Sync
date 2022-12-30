@@ -60,16 +60,7 @@ MainFrame::MainFrame(wxWindow* pParent): ssh()
     ctrl = Controls
     {
         (wxListCtrl*)(FindWindow("listMain")),
-        Controls::Details
-        {
-            (wxStaticText*)(FindWindow("lblDetName")),
-            (wxStaticText*)(FindWindow("lblDetPath")),
-            (wxStaticText*)(FindWindow("lblDetDev")),
-            (wxStaticText*)(FindWindow("lblDetInode")),
-            (wxStaticText*)(FindWindow("lblDetMtime")),
-            (wxStaticText*)(FindWindow("lblDetSize")),
-            (wxStaticText*)(FindWindow("lblDetHash")),
-        }
+        (wxTextCtrl*)(FindWindow("txtDetails")),
     };
 
     isFirstSelectedConfig = true;
@@ -108,6 +99,8 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     {
         return;
     }
+    
+    ssh.EndSession();
 
     if (isFirstSelectedConfig)
     {
@@ -246,7 +239,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
     int i = 0;
     for(auto node = (*scanNodes).begin(); node != (*scanNodes).end(); ++node)
     {
-        ctrl.listMain->InsertItem(i, node->path);
+        ctrl.listMain->InsertItem(i, wxString::FromUTF8(node->path));
         ctrl.listMain->SetItemData(i, (long)&(*node));
         ctrl.listMain->SetItem(i, COL_STATUS, FileNode::StatusString[node->status]);
         i++;
@@ -285,13 +278,21 @@ void MainFrame::OnSync(wxCommandEvent& event)
 void MainFrame::OnSelectNode(wxListEvent& event)
 {
     auto pNode = (FileNode*)event.GetData();
-    ctrl.det.lblDetName->SetLabel(std::filesystem::path(pNode->path).filename().string());
-    ctrl.det.lblDetPath->SetLabel(std::filesystem::path(pNode->path).parent_path().string());
-    ctrl.det.lblDetDev->SetLabel(LTOA(pNode->dev));
-    ctrl.det.lblDetInode->SetLabel(LTOA(pNode->inode));
-    ctrl.det.lblDetMtime->SetLabel(Utils::TimestampToString(pNode->mtime));
-    ctrl.det.lblDetSize->SetLabel(LTOA(pNode->size));
-    ctrl.det.lblDetHash->SetLabel(fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow));
+    ctrl.txtDetails->Clear();
+    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pNode->path).filename().string()) << '\n';
+    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pNode->path).parent_path().string()) << '\n';
+    *ctrl.txtDetails << "== LOCAL ==\n";
+    *ctrl.txtDetails << "Status: " << '\n';
+    // if not absent
+    *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode->mtime) << '\n';
+    *ctrl.txtDetails << "Size: " << LTOA(pNode->size) << '\n';
+    *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow) << '\n';
+    *ctrl.txtDetails << "== REMOTE ==\n";
+    *ctrl.txtDetails << "Status: " << '\n';
+    // if not absent
+    *ctrl.txtDetails << "Modification time: " << '\n';
+    *ctrl.txtDetails << "Size: " << '\n';
+    *ctrl.txtDetails << "Hash: " << '\n';
 }
 #undef LTOA
 

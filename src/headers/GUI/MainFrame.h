@@ -12,17 +12,7 @@ private:
     struct Controls
     {
         wxListCtrl* listMain;
-        struct Details
-        {
-            wxStaticText* lblDetName;
-            wxStaticText* lblDetPath;
-            wxStaticText* lblDetDev;
-            wxStaticText* lblDetInode;
-            wxStaticText* lblDetMtime;
-            wxStaticText* lblDetSize;
-            wxStaticText* lblDetHash;
-        };
-        Details det;
+        wxTextCtrl* txtDetails;
     };
 
     // properties
