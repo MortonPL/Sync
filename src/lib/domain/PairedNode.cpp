@@ -16,6 +16,10 @@ PairedNode::~PairedNode()
 const std::map<PairedNode::Action, std::string> PairedNode::ActionAsString =
 {
     {PairedNode::Action::None, "None"},
+    {PairedNode::Action::DoNothing, "None"},
+    {PairedNode::Action::LocalToRemote, "===>"},
+    {PairedNode::Action::RemoteToLocal, "<==="},
+    {PairedNode::Action::Ignore, "Ignore"},
     {PairedNode::Action::Conflict, "Conflict"},
     {PairedNode::Action::FastForward, "Fast Forward"},
 };

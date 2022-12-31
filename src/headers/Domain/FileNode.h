@@ -18,13 +18,13 @@ public:
     {
         None = 0,
         New,
-        Deleted,
+        DeletedLocal,
+        DeletedRemote,
+        DeletedBoth,
         Clean,
         Dirty,
         MovedClean,
         MovedDirty,
-        Conflict,
-        FastForward,
         Absent,
         HistoryPresent,
     };

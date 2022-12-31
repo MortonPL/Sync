@@ -18,6 +18,10 @@ public:
     enum Action: char
     {
         None = 0,
+        DoNothing,
+        Ignore,
+        LocalToRemote,
+        RemoteToLocal,
         Conflict,
         FastForward,
     };

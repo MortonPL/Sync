@@ -51,7 +51,7 @@ void PairingManager::PairAllHistory(std::forward_list<HistoryFileNode>& historyN
                 pairedNodes.push_back(PairedNode(historyNode.path, nullptr, &historyNode));
                 mapper.EmplaceMapPath(historyNode.path, *pPair);
                 mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
-                pPair->historyNode->status = FileNode::Status::Deleted;
+                pPair->historyNode->status = FileNode::Status::DeletedLocal;
             }
         }
     }
@@ -87,7 +87,14 @@ for(auto& remoteNode: remoteNodes)
                 pPair->remoteNode->status = FileNode::Status::Dirty;
                 if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
                 {
-                    pPair->SetDefaultAction(PairedNode::Action::FastForward);
+                    if (pPair->localNode->status != FileNode::Status::Dirty)
+                    {
+                        pPair->SetDefaultAction(PairedNode::Action::Conflict);
+                    }
+                    else
+                    {
+                        pPair->SetDefaultAction(PairedNode::Action::FastForward);
+                    }
                 }
                 else
                 {
@@ -165,6 +172,63 @@ for(auto& remoteNode: remoteNodes)
     }
 }
 
+void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
+{
+    for (auto& pair: pairedNodes)
+    {
+        if (pair.action == PairedNode::Action::FastForward
+            || pair.action == PairedNode::Action::Conflict)
+            continue;
+        
+        if (pair.remoteNode)
+        {
+            if (pair.remoteNode->status == FileNode::Status::New)
+            {
+                pair.action = PairedNode::Action::RemoteToLocal;
+            }
+            else
+            {
+                if (pair.localNode && pair.localNode->status == FileNode::Status::Clean)
+                {
+                    if (pair.remoteNode->status == FileNode::Status::Clean)
+                    {
+                        pair.action = PairedNode::Action::DoNothing;
+                    }
+                    else
+                    {
+                        pair.action = PairedNode::Action::RemoteToLocal;
+                    }
+                }
+                else if (pair.localNode)
+                {
+                    pair.action = PairedNode::Action::LocalToRemote;
+                }
+                else if (pair.historyNode)
+                {
+                    pair.historyNode->status = FileNode::Status::DeletedBoth;
+                    pair.action = PairedNode::Action::FastForward;
+                }
+            }
+            continue;
+        }
+
+        if (!pair.localNode)
+        {
+            pair.historyNode->status = FileNode::Status::DeletedBoth;
+            pair.action = PairedNode::Action::FastForward;
+        }
+        else if (pair.localNode->status == FileNode::Status::New)
+        {
+            pair.action = PairedNode::Action::LocalToRemote;
+        }
+        else
+        {
+            pair.historyNode->status = FileNode::Status::DeletedRemote;
+            pair.action = pair.localNode->status == FileNode::Status::Clean? PairedNode::Action::RemoteToLocal: PairedNode::Action::Conflict;
+        }
+    }
+}
+
 void PairingManager::PairAll(std::forward_list<FileNode>& scanNodes, std::forward_list<HistoryFileNode>& historyNodes,
                              std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {
@@ -176,4 +240,7 @@ void PairingManager::PairAll(std::forward_list<FileNode>& scanNodes, std::forwar
 
     //pair remote
     PairingManager::PairAllRemote(remoteNodes, pairedNodes, creeper, mapper);
+
+    //final reconciliation
+    PairingManager::SolveFinalAction(pairedNodes);
 }
