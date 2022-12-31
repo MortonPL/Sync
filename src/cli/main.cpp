@@ -3,7 +3,6 @@
 
 #include "Lib/General.h"
 #include "Lib/Creeper.h"
-#include "Lib/DBConnector.h"
 #include "Lib/SSHConnector.h"
 #include "Lib/SocketListener.h"
 #include "CLI/Global.h"
@@ -46,8 +45,9 @@ void ParseArgs(int argc, char* argv[])
 
 void CreepDir(std::string path)
 {
+    std::forward_list<FileNode> nodes;
     auto creeper = Creeper();
-    char rc = creeper.CreepPath(path);
+    char rc = creeper.CreepPath(path, nodes);
     if(rc != CREEP_OK)
     {
         LOG(ERROR) << "Failed to scan for files in the given directory.";
@@ -57,7 +57,6 @@ void CreepDir(std::string path)
     }
     std::cout << rc;
     std::cout.flush();
-    auto nodes = creeper.GetResults();
 
     unsigned char buf[FileNode::MaxBinarySize];
     std::size_t nnodes = creeper.GetResultsCount();

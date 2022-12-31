@@ -31,7 +31,7 @@ public:
     bool InsertFileNode(HistoryFileNode file);
     bool UpdateFileNode(HistoryFileNode file);
     bool DeleteFileNode(std::string& path);
-    std::forward_list<HistoryFileNode> SelectAllFileNodes();
+    void SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes);
 
 private:
     SQLite::Database db;

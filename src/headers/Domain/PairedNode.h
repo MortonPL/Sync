@@ -15,16 +15,28 @@ public:
     PairedNode(const std::string path, FileNode* localNode=nullptr, HistoryFileNode* historyNode=nullptr, FileNode* remoteNode=nullptr);
     ~PairedNode();
 
+    enum Action: char
+    {
+        None = 0,
+        Conflict,
+        FastForward,
+    };
+
     bool operator<(const PairedNode& other) const
     {
         return path < other.path;
     }
 
+    void SetDefaultAction(Action action);
     std::string GetStatusString() const;
+    std::string GetActionString() const;
     static int CompareNodeHashes(const FileNode* one, const FileNode* other);
+    
+    static const std::map<Action, std::string> ActionAsString;
 
     const std::string path;
-    FileNode::Status status = FileNode::Status::None;
+    Action action = Action::None;
+    Action defaultAction = Action::None;
     FileNode* localNode;
     HistoryFileNode* historyNode;
     FileNode* remoteNode;

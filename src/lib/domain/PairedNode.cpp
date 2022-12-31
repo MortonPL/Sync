@@ -13,11 +13,32 @@ PairedNode::~PairedNode()
 {
 }
 
+const std::map<PairedNode::Action, std::string> PairedNode::ActionAsString =
+{
+    {PairedNode::Action::None, "None"},
+    {PairedNode::Action::Conflict, "Conflict"},
+    {PairedNode::Action::FastForward, "Fast Forward"},
+};
+
+void PairedNode::SetDefaultAction(Action action)
+{
+    this->action = action;
+    this->defaultAction = action;
+}
+
 std::string PairedNode::GetStatusString() const
 {
     return (localNode? FileNode::StatusAsString.at(localNode->status): FileNode::StatusAsString.at(FileNode::Status::Absent))
            + " <-> "
            + (remoteNode? FileNode::StatusAsString.at(remoteNode->status): FileNode::StatusAsString.at(FileNode::Status::Absent));
+}
+
+std::string PairedNode::GetActionString() const
+{
+    if (action != FileNode::Status::None)
+        return ActionAsString.at(action);
+    else
+        return "";
 }
 
 int PairedNode::CompareNodeHashes(const FileNode* one, const FileNode* other)

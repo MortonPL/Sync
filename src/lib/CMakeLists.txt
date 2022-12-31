@@ -28,6 +28,7 @@ set(SRC_LIB_FILES
     SocketListener.cpp
     Mapper.cpp
     Creeper.cpp
+    PairingManager.cpp
     DBConnector.cpp
     SSHConnector.cpp
 )

@@ -230,9 +230,8 @@ bool DBConnector::DeleteFileNode(std::string& path)
     return true;
 }
 
-std::forward_list<HistoryFileNode> DBConnector::SelectAllFileNodes()
+void DBConnector::SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes)
 {
-    std::forward_list<HistoryFileNode> nodes;
     SQLite::Statement query(this->db, "SELECT * from nodes");
     while(query.executeStep())
     {
@@ -249,5 +248,5 @@ std::forward_list<HistoryFileNode> DBConnector::SelectAllFileNodes()
             *(XXH64_hash_t*)query.getColumn(8).getBlob()
         ));
     }
-    return nodes;
+    return;
 }

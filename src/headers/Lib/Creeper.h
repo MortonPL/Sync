@@ -20,8 +20,7 @@ class Creeper
 public:
     Creeper();
     ~Creeper();
-    int CreepPath(std::string rootPath);
-    std::forward_list<FileNode>& GetResults();
+    int CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes);
     size_t GetResultsCount();
 
     bool CheckIfFileIsIgnored(std::string path);

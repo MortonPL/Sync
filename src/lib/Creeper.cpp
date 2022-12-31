@@ -152,13 +152,14 @@ int Creeper::MakeNode(const std::filesystem::__cxx11::directory_entry& entry,
     return RES_OK;
 }
 
-int Creeper::CreepPath(std::string rootPath)
+int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes)
 {
     XXH3_state_t* pState;
     void* pBuffer;
     int err;
     if ((err = CheckIfDirExists(rootPath)) != CREEP_OK)
         return err;
+    this->fileNodes = fileNodes;
     PreCreepCleanup(rootPath, pState, pBuffer);
 
     try
@@ -205,9 +206,4 @@ int Creeper::CreepPath(std::string rootPath)
 size_t Creeper::GetResultsCount()
 {
     return fileNodesCount;
-}
-
-std::forward_list<FileNode>& Creeper::GetResults()
-{
-    return fileNodes;
 }
