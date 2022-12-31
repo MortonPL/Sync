@@ -64,7 +64,7 @@ bool hashFile(XXH3_state_t* pState, void* pBuffer, std::string& path, const char
 {
     if(XXH3_128bits_reset(pState) == XXH_ERROR)
     {
-        LOG(ERROR) << "Failed to reset hashing machine while processing file '" << path << "'.";\
+        LOG(ERROR) << "Failed to reset hashing machine while processing file '" << path << "'.";
         return false;
     }
     ssize_t size = 0;

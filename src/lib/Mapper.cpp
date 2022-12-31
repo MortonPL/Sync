@@ -1,8 +1,12 @@
 #include "Lib/Mapper.h"
 
-std::map<std::string, PairedNode*> Mapper::mapPath;
-Mapper::umap Mapper::mapLocalInode;
-Mapper::umap Mapper::mapRemoteInode;
+Mapper::Mapper()
+{
+}
+
+Mapper::~Mapper()
+{
+}
 
 void Mapper::Clear()
 {

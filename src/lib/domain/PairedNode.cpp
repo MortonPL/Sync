@@ -35,7 +35,7 @@ std::string PairedNode::GetStatusString() const
 
 std::string PairedNode::GetActionString() const
 {
-    if (action != FileNode::Status::None)
+    if (action != PairedNode::Action::None)
         return ActionAsString.at(action);
     else
         return "";

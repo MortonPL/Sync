@@ -1,27 +1,25 @@
 #include "Lib/PairingManager.h"
 
-#include "Lib/Mapper.h"
-
-void PairLocal(std::forward_list<FileNode>& scanNodes, std::list<PairedNode>& pairedNodes)
+void PairingManager::PairAllLocal(std::forward_list<FileNode>& scanNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
 {
     for (auto& scanNode: scanNodes)
     {
         pairedNodes.push_back(PairedNode(scanNode.path, &scanNode));
-        Mapper::EmplaceMapPath(scanNode.path, pairedNodes.back());
-        Mapper::EmplaceMapLocalInode(scanNode.GetDevInode(), pairedNodes.back());
+        mapper.EmplaceMapPath(scanNode.path, pairedNodes.back());
+        mapper.EmplaceMapLocalInode(scanNode.GetDevInode(), pairedNodes.back());
     }
 }
 
-void PairHistory(std::forward_list<HistoryFileNode>& historyNodes, std::list<PairedNode>& pairedNodes)
+void PairingManager::PairAllHistory(std::forward_list<HistoryFileNode>& historyNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
 {
     for (auto& historyNode: historyNodes)
     {
-        auto pPair = Mapper::FindMapPath(historyNode.path);
+        auto pPair = mapper.FindMapPath(historyNode.path);
         if (pPair)
         {
             pPair->historyNode = &historyNode;
-            Mapper::EmplaceMapLocalInode(historyNode.GetDevInode(), *pPair);
-            Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+            mapper.EmplaceMapLocalInode(historyNode.GetDevInode(), *pPair);
+            mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
             if (historyNode.IsEqualHash(*pPair->localNode))
             {
                 pPair->localNode->status = FileNode::Status::Clean;
@@ -33,12 +31,12 @@ void PairHistory(std::forward_list<HistoryFileNode>& historyNodes, std::list<Pai
         }
         else
         {
-            pPair = Mapper::FindMapLocalInode(historyNode.GetDevInode());
+            pPair = mapper.FindMapLocalInode(historyNode.GetDevInode());
             if (pPair)
             {
                 pPair->historyNode = &historyNode;
-                Mapper::EmplaceMapPath(historyNode.path, *pPair);
-                Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+                mapper.EmplaceMapPath(historyNode.path, *pPair);
+                mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
                 if (historyNode.IsEqualHash(*pPair->localNode))
                 {
                     pPair->localNode->status = FileNode::Status::MovedClean;
@@ -51,21 +49,21 @@ void PairHistory(std::forward_list<HistoryFileNode>& historyNodes, std::list<Pai
             else
             {
                 pairedNodes.push_back(PairedNode(historyNode.path, nullptr, &historyNode));
-                Mapper::EmplaceMapPath(historyNode.path, *pPair);
-                Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+                mapper.EmplaceMapPath(historyNode.path, *pPair);
+                mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
                 pPair->historyNode->status = FileNode::Status::Deleted;
             }
         }
     }
 }
 
-void PairRemote(std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper)
+void PairingManager::PairAllRemote(std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {
 for(auto& remoteNode: remoteNodes)
     {
         if (creeper.CheckIfFileIsIgnored(remoteNode.path))
             continue;
-        auto pPair = Mapper::FindMapPath(remoteNode.path);
+        auto pPair = mapper.FindMapPath(remoteNode.path);
         if (pPair)
         {
             pPair->remoteNode = &remoteNode;
@@ -107,7 +105,7 @@ for(auto& remoteNode: remoteNodes)
         }
         else
         {
-            pPair = Mapper::FindMapRemoteInode(remoteNode.GetDevInode());
+            pPair = mapper.FindMapRemoteInode(remoteNode.GetDevInode());
             if (pPair)
             {
                 pPair->remoteNode = &remoteNode;
@@ -167,15 +165,15 @@ for(auto& remoteNode: remoteNodes)
     }
 }
 
-void PairingManager::DoEverything(std::forward_list<FileNode>& scanNodes, std::forward_list<HistoryFileNode>& historyNodes,
-                                  std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper)
+void PairingManager::PairAll(std::forward_list<FileNode>& scanNodes, std::forward_list<HistoryFileNode>& historyNodes,
+                             std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {
     //pair local
-    PairLocal(scanNodes, pairedNodes);
+    PairingManager::PairAllLocal(scanNodes, pairedNodes, mapper);
 
     //pair history
-    PairHistory(historyNodes, pairedNodes);
+    PairingManager::PairAllHistory(historyNodes, pairedNodes, mapper);
 
     //pair remote
-    PairRemote(remoteNodes, pairedNodes, creeper);
+    PairingManager::PairAllRemote(remoteNodes, pairedNodes, creeper, mapper);
 }

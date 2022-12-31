@@ -11,10 +11,11 @@ include(GoogleTest)
 
 # sources
 set(TEST_FILES
-    example_test.cpp
+    main.cpp
+    Pairing.cpp
 )
 
 add_executable(${TEST_NAME} ${TEST_FILES})
+target_include_directories(${TEST_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
 target_link_libraries(${TEST_NAME} GTest::gtest_main ${LIB_NAME})
-#gtest_discover_tests(${TEST_NAME})
-add_test(NAME example_test COMMAND example)
+gtest_discover_tests(${TEST_NAME})

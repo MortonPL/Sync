@@ -180,7 +180,8 @@ void MainFrame::OnScan(wxCommandEvent& event)
 
     //pairing
     LOG(INFO) << "Begin pairing...";
-    PairingManager::DoEverything(scanNodes, historyNodes, remoteNodes, pairedNodes, creeper);
+    Mapper mapper;
+    PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, creeper, mapper);
     LOG(INFO) << "Pairing finished.";
     
     //display at the end
