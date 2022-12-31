@@ -16,11 +16,15 @@ public:
 
     enum Status: char
     {
-        New = 0,
+        None = 0,
+        New,
         Deleted,
         Clean,
         Dirty,
-        Moved, //???
+        MovedClean,
+        MovedDirty,
+        Conflict,
+        FastForward,
         Absent,
         HistoryPresent,
     };

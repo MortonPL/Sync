@@ -10,11 +10,15 @@ const unsigned short FileNode::MaxBinarySize = sizeof(unsigned short) + sizeof(u
 
 const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
 {
+    {FileNode::Status::None, "None"},
     {FileNode::Status::New, "New"},
     {FileNode::Status::Deleted, "Deleted"},
     {FileNode::Status::Clean, "Clean"},
     {FileNode::Status::Dirty, "Dirty"},
-    {FileNode::Status::Moved, "Moved"},
+    {FileNode::Status::MovedClean, "Clean (Moved)"},
+    {FileNode::Status::MovedDirty, "Dirty (Moved)"},
+    {FileNode::Status::Conflict, "Conflict"},
+    {FileNode::Status::FastForward, "Fast Forward"},
     {FileNode::Status::HistoryPresent, "Present"},
     {FileNode::Status::Absent, "Absent"},
 };
@@ -51,7 +55,7 @@ FileNode::devinode FileNode::GetDevInode() const
 
 bool FileNode::IsEqualHash(const FileNode& other) const
 {
-    return this->hashHigh == other.hashHigh && this->hashLow == other.hashLow;
+    return hashHigh == other.hashHigh && hashLow == other.hashLow;
 }
 
 #define SERIALIZE(type, field)\

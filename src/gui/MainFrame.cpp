@@ -164,8 +164,9 @@ void MainFrame::OnScan(wxCommandEvent& event)
     }
     LOG(INFO) << "Received remote file nodes.";
     
+    pairedNodes.clear();
     //scan
-    LOG(INFO) << "Beginning local scan.";
+    LOG(INFO) << "Begin local scan...";
     auto creeper = Creeper();
     if (creeper.CreepPath(cfg.pathA) != CREEP_OK)
     {
@@ -175,7 +176,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
     }
     scanNodes = creeper.GetResults();
     LOG(INFO) << "Local scan finished.";
-    LOG(INFO) << "Begin pairing.";
+    LOG(INFO) << "Begin pairing...";
     //pair local
     for (auto& scanNode: scanNodes)
     {
@@ -189,26 +190,43 @@ void MainFrame::OnScan(wxCommandEvent& event)
         if (creeper.CheckIfFileIsIgnored(historyNode.path))
             continue;
         auto pPair = Mapper::FindMapPath(historyNode.path);
-        if (pPair != nullptr)
+        if (pPair)
         {
             pPair->historyNode = &historyNode;
             Mapper::EmplaceMapLocalInode(historyNode.GetDevInode(), *pPair);
             Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+            if (historyNode.IsEqualHash(*pPair->localNode))
+            {
+                pPair->localNode->status = FileNode::Status::Clean;
+            }
+            else
+            {
+                pPair->localNode->status = FileNode::Status::Dirty;
+            }
         }
         else
         {
             pPair = Mapper::FindMapLocalInode(historyNode.GetDevInode());
-            if (pPair != nullptr)
+            if (pPair)
             {
                 pPair->historyNode = &historyNode;
                 Mapper::EmplaceMapPath(historyNode.path, *pPair);
                 Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+                if (historyNode.IsEqualHash(*pPair->localNode))
+                {
+                    pPair->localNode->status = FileNode::Status::MovedClean;
+                }
+                else
+                {
+                    pPair->localNode->status = FileNode::Status::MovedDirty;
+                }
             }
             else
             {
                 pairedNodes.push_back(PairedNode(historyNode.path, nullptr, &historyNode));
                 Mapper::EmplaceMapPath(historyNode.path, *pPair);
                 Mapper::EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+                pPair->historyNode->status = FileNode::Status::Deleted;
             }
         }
     }
@@ -218,16 +236,98 @@ void MainFrame::OnScan(wxCommandEvent& event)
         if (creeper.CheckIfFileIsIgnored(remoteNode.path))
             continue;
         auto pPair = Mapper::FindMapPath(remoteNode.path);
-        if (pPair != nullptr)
+        if (pPair)
         {
             pPair->remoteNode = &remoteNode;
+            switch (pPair->CompareNodeHashes(&remoteNode, pPair->historyNode))
+            {
+            case HASHCMP_EQ:
+                pPair->remoteNode->status = FileNode::Status::Clean;
+                break;
+            case HASHCMP_OTHERNULL:
+                pPair->remoteNode->status = FileNode::Status::New;
+                if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
+                {
+                    pPair->status = FileNode::Status::FastForward;
+                }
+                else
+                {
+                    pPair->status = FileNode::Status::Conflict;
+                }
+                break;
+            case HASHCMP_NE:
+                pPair->remoteNode->status = FileNode::Status::Dirty;
+                if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
+                {
+                    pPair->status = FileNode::Status::FastForward;
+                }
+                else
+                {
+                    if (pPair->localNode->status != FileNode::Status::Clean)
+                    {
+                        pPair->remoteNode->status = FileNode::Status::Conflict;
+                    }
+                }
+                break;
+            case HASHCMP_ONENULL:
+            case HASHCMP_EQPTR:
+            default:
+                break;
+            }
         }
         else
         {
             pPair = Mapper::FindMapRemoteInode(remoteNode.GetDevInode());
-            if (pPair != nullptr)
+            if (pPair)
             {
                 pPair->remoteNode = &remoteNode;
+                if (pPair->CompareNodeHashes(&remoteNode, pPair->historyNode))
+                {
+                    pPair->remoteNode->status = FileNode::Status::MovedClean;
+                    switch (pPair->CompareNodeHashes(&remoteNode, pPair->localNode))
+                    {
+                    case HASHCMP_EQ:
+                        if (pPair->localNode->status != FileNode::Status::Clean)
+                        {
+                            pPair->status = FileNode::Status::Conflict;
+                        }
+                        break;
+                    case HASHCMP_NE:
+                    case HASHCMP_OTHERNULL:
+                        pPair->status = FileNode::Status::Conflict;
+                        break;
+                    case HASHCMP_ONENULL:
+                    case HASHCMP_EQPTR:
+                    default:
+                        break;
+                    }
+                }
+                else
+                {
+                    switch (pPair->CompareNodeHashes(&remoteNode, pPair->localNode))
+                    {
+                    case HASHCMP_EQ:
+                        pPair->remoteNode->status = FileNode::Status::MovedDirty;
+                        if (pPair->localNode->status = FileNode::Status::MovedDirty)
+                        {
+                            pPair->status = FileNode::Status::FastForward;
+                        }
+                        else
+                        {
+                            pPair->status = FileNode::Status::Conflict;
+                        }
+                        break;
+                    case HASHCMP_NE:
+                    case HASHCMP_OTHERNULL:
+                        pPair->remoteNode->status = FileNode::Status::MovedDirty;
+                        pPair->status = FileNode::Status::Conflict;
+                        break;
+                    case HASHCMP_ONENULL:
+                    case HASHCMP_EQPTR:
+                    default:
+                        break;
+                    }
+                }
             }
             else
             {
@@ -235,10 +335,37 @@ void MainFrame::OnScan(wxCommandEvent& event)
             }
         }
     }
-    LOG(INFO) << "Pairing finished";
-    pairedNodes.sort();
-
+    LOG(INFO) << "Pairing finished.";
+    /*LOG(INFO) << "Detecting changes...";
+    for (auto& pair: pairedNodes)
+    {
+        if (pair.CompareNodeHashes(pair.localNode, pair.historyNode))
+        {
+            if (pair.CompareNodeHashes(pair.remoteNode, pair.historyNode))
+            {
+                // hA == hB == hH
+            }
+            else
+            {
+                // (hA == hH) != hB
+            }
+        }
+        else if (pair.CompareNodeHashes(pair.remoteNode, pair.historyNode))
+        {
+            // (hB == hH) != hA
+        }
+        else if (pair.CompareNodeHashes(pair.localNode, pair.remoteNode))
+        {
+            // (hA == hB) != hH
+        }
+        else
+        {
+            // hA != hB != hH
+        }
+    }*/
+    
     //display at the end
+    pairedNodes.sort();
     int i = 0;
     for (auto& pair: pairedNodes)
     {
@@ -303,6 +430,7 @@ void MainFrame::OnSelectNode(wxListEvent& event)
     //general
     *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
     *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
+    *ctrl.txtDetails << "Pair Status: " << FileNode::StatusAsString.at(pPair->status) << '\n';
     //local
     *ctrl.txtDetails << "== LOCAL ==\n";
     writeNodeDetails(pPair->localNode);
