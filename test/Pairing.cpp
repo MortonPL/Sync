@@ -42,6 +42,7 @@ T* GetNodeAt(C<T>& list, int index)
 void ExpectPairedNode(PairedNode* pair, PairedNode* expected)
 {
     EXPECT_NE(pair, nullptr) << "PairedNode does not exist!";
+    EXPECT_NE(expected, nullptr) << "Too many PairedNodes!";
     EXPECT_EQ(pair->path, expected->path) << "PairedNode " << expected->path << " has wrong path!";
     EXPECT_EQ(pair->action, expected->action) << "PairedNode " << expected->path << " has wrong action!";
     if (expected->localNode)
@@ -66,10 +67,10 @@ COMMONLY USED NAMES:
     mneq - moved not equal (moved dirty)
     old - saved in history
 */
-class PairingTest: public ::testing::Test
+class PairingBasicTest: public ::testing::Test
 {
 protected:
-    PairingTest()
+    PairingBasicTest()
     {
     };
 
@@ -78,9 +79,17 @@ protected:
     Mapper mapper;
 };
 
-#define EXPECT_ALL_NODES()\
+#define EXPECT_ALL_NODES(pairedNodes, expectedResult)\
+{\
+    auto pit = pairedNodes.begin();\
+    auto eit = expectedResult.begin();\
     for (int i = 0; i < expectedResult.size(); i++)\
-        ExpectPairedNode(GetNodeAt(pairedNodes, i), GetNodeAt(expectedResult, i));
+    {\
+        ExpectPairedNode(pit != pairedNodes.end()? &*pit: nullptr, eit != expectedResult.end()? &*eit: nullptr);\
+        pit++;\
+        eit++;\
+    }\
+}
 
 /*
 LOCAL               HISTORY             REMOTE
@@ -90,7 +99,7 @@ LOCAL               HISTORY             REMOTE
     loc(0x00)           -                   -
     -                   -                   rem(0x00)
 */
-TEST_F(PairingTest, NoHistory)
+TEST_F(PairingBasicTest, NoHistory)
 {
     // IN
     std::forward_list<FileNode> scanNodes =
@@ -132,7 +141,7 @@ TEST_F(PairingTest, NoHistory)
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
     // asserts
     EXPECT_EQ(pairedNodes.size(), expectedResult.size());
-    EXPECT_ALL_NODES();
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
 }
 
 /*
@@ -143,7 +152,7 @@ LOCAL               HISTORY             REMOTE
     mneq(0x01)          old2(0x00)          old2(0x00)
     -                   old3(0x00)          old3(0x00)
 */
-TEST_F(PairingTest, LocalToRemote)
+TEST_F(PairingBasicTest, LocalToRemote)
 {
     // IN
     std::forward_list<FileNode> scanNodes =
@@ -198,7 +207,7 @@ TEST_F(PairingTest, LocalToRemote)
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
     // asserts
     EXPECT_EQ(pairedNodes.size(), expectedResult.size());
-    EXPECT_ALL_NODES();
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
 }
 
 /*
@@ -209,7 +218,7 @@ LOCAL               HISTORY             REMOTE
     old2(0x00)          old2(0x00)          mneq(0x01)
     old3(0x00)          old3(0x00)          -
 */
-TEST_F(PairingTest, RemoteToLocal)
+TEST_F(PairingBasicTest, RemoteToLocal)
 {
     // IN
     std::forward_list<FileNode> scanNodes =
@@ -264,7 +273,7 @@ TEST_F(PairingTest, RemoteToLocal)
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
     // asserts
     EXPECT_EQ(pairedNodes.size(), expectedResult.size());
-    EXPECT_ALL_NODES();
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
 }
 
 /*
@@ -276,7 +285,7 @@ LOCAL               HISTORY             REMOTE
     mneq(0x01)          old2(0x00)          mneq(0x01)
     -                   old3(0x00)          -
 */
-TEST_F(PairingTest, FastForwards)
+TEST_F(PairingBasicTest, FastForwards)
 {
     // IN
     std::forward_list<FileNode> scanNodes =
@@ -337,7 +346,7 @@ TEST_F(PairingTest, FastForwards)
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
     // asserts
     EXPECT_EQ(pairedNodes.size(), expectedResult.size());
-    EXPECT_ALL_NODES();
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
 }
 
 /*
@@ -351,7 +360,7 @@ LOCAL               HISTORY             REMOTE
     meq (0x00)          old1(0x00)          -
     mneq(0x01)          old2(0x00)          -
 */
-TEST_F(PairingTest, Deletions)
+TEST_F(PairingBasicTest, Deletions)
 {
     // IN
     std::forward_list<FileNode> scanNodes =
@@ -415,7 +424,7 @@ TEST_F(PairingTest, Deletions)
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
     // asserts
     EXPECT_EQ(pairedNodes.size(), expectedResult.size());
-    EXPECT_ALL_NODES();
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
 }
 
 /*
@@ -427,7 +436,7 @@ LOCAL               HISTORY             REMOTE
     mne3(0x01)          old4(0x00)          old4(0x02)          
     mne4(0x01)          old5(0x00)          new2(0x00)
 */
-TEST_F(PairingTest, MovesLocal)
+TEST_F(PairingBasicTest, MovesLocal)
 {
     // IN
     std::forward_list<FileNode> scanNodes =
@@ -490,11 +499,83 @@ TEST_F(PairingTest, MovesLocal)
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
     // asserts
     EXPECT_EQ(pairedNodes.size(), expectedResult.size());
-    EXPECT_ALL_NODES();
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
 }
 
-// TODO MovesRemote
 /*
 LOCAL               HISTORY             REMOTE
   mov2/               mov2/               mov2/
+    old1(0x00)          old1(0x00)          meq (0x00)
+    old2(0x02)          old2(0x00)          mne1(0x01)
+    new1(0x00)          old3(0x00)          mne2(0x01)
+    old4(0x02)          old4(0x00)          mne3(0x01)
+    new2(0x00)          old5(0x00)          mne4(0x01)
 */
+TEST_F(PairingBasicTest, MovesRemote)
+{
+    // IN
+    std::forward_list<FileNode> scanNodes =
+    {
+        MakeFileNode("mov1/old1", 0, 0, 0x0, 0x1),
+        MakeFileNode("mov1/old2", 0, 1, 0x0, 0x2),
+        MakeFileNode("mov1/new1", 0, 2, 0x0, 0x0),
+        MakeFileNode("mov1/old4", 0, 3, 0x0, 0x2),
+        MakeFileNode("mov1/new2", 0, 4, 0x0, 0x0),
+    };
+    std::forward_list<HistoryFileNode> historyNodes =
+    {
+        MakeHistoryFileNode("mov1/old1", 0, 0, 0, 0, 0x0, 0x0),
+        MakeHistoryFileNode("mov1/old2", 0, 1, 0, 1, 0x0, 0x0),
+        MakeHistoryFileNode("mov1/old3", 0, 2, 0, 2, 0x0, 0x0),
+        MakeHistoryFileNode("mov1/old4", 0, 3, 0, 3, 0x0, 0x0),
+        MakeHistoryFileNode("mov1/old5", 0, 4, 0, 4, 0x0, 0x0),
+    };
+    std::forward_list<FileNode> remoteNodes =
+    {
+        MakeFileNode("mov1/meq", 0, 0, 0x0, 0x0),
+        MakeFileNode("mov1/mne1", 0, 1, 0x0, 0x1),
+        MakeFileNode("mov1/mne2", 0, 2, 0x0, 0x1),
+        MakeFileNode("mov1/mne3", 0, 3, 0x0, 0x1),
+        MakeFileNode("mov1/mne4", 0, 4, 0x0, 0x1),
+    };
+
+    // OUT
+    std::vector<FileNode> expectedNodes = 
+    {
+        MakeFileNode("mov1/old1", 0, 0, 0x0, 0x1, FileNode::Dirty), // L
+        MakeFileNode("mov1/meq", 0, 0, 0x0, 0x0, FileNode::MovedClean), // R
+        MakeFileNode("mov1/old2", 0, 1, 0x0, 0x2, FileNode::Dirty), // L
+        MakeFileNode("mov1/mne1", 0, 1, 0x0, 0x1, FileNode::MovedDirty), // R
+        MakeFileNode("mov1/new1", 0, 2, 0x0, 0x0, FileNode::MovedClean), // L
+        MakeFileNode("mov1/mne2", 0, 2, 0x0, 0x1, FileNode::MovedDirty), // R
+        MakeFileNode("mov1/old4", 0, 3, 0x0, 0x2, FileNode::Dirty), // L
+        MakeFileNode("mov1/mne3", 0, 3, 0x0, 0x1, FileNode::MovedDirty), // R
+        MakeFileNode("mov1/new2", 0, 4, 0x0, 0x0, FileNode::MovedClean), // L
+        MakeFileNode("mov1/mne4", 0, 4, 0x0, 0x1, FileNode::MovedDirty), // R
+        
+    };
+    std::vector<HistoryFileNode> expectedHistory = 
+    {
+        MakeHistoryFileNode("mov1/old1", 0, 0, 0, 0, 0x0, 0x0, FileNode::HistoryPresent),
+        MakeHistoryFileNode("mov1/old2", 0, 1, 0, 1, 0x0, 0x0, FileNode::HistoryPresent),
+        MakeHistoryFileNode("mov1/old3", 0, 2, 0, 2, 0x0, 0x0, FileNode::HistoryPresent),
+        MakeHistoryFileNode("mov1/old4", 0, 3, 0, 3, 0x0, 0x0, FileNode::HistoryPresent),
+        MakeHistoryFileNode("mov1/old5", 0, 4, 0, 4, 0x0, 0x0, FileNode::HistoryPresent),
+    };
+    std::list<PairedNode> expectedResult = 
+    {
+        MakePairedNode("mov1/old1", &expectedNodes[0], &expectedHistory[0], &expectedNodes[1], PairedNode::Conflict),
+        MakePairedNode("mov1/old2", &expectedNodes[2], &expectedHistory[1], &expectedNodes[3], PairedNode::Conflict),
+        MakePairedNode("mov1/new1", &expectedNodes[4], &expectedHistory[2], &expectedNodes[5], PairedNode::Conflict),
+        MakePairedNode("mov1/old4", &expectedNodes[6], &expectedHistory[3], &expectedNodes[7], PairedNode::Conflict),
+        MakePairedNode("mov1/new2", &expectedNodes[8], &expectedHistory[4], &expectedNodes[9], PairedNode::Conflict),
+    };
+    
+    // run
+    PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, emptyCreeper, mapper);
+    // asserts
+    EXPECT_EQ(pairedNodes.size(), expectedResult.size());
+    EXPECT_ALL_NODES(pairedNodes, expectedResult);
+}
+
+#undef EXPECT_ALL_NODES

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "Utils.h"
 
@@ -110,6 +111,8 @@ int Creeper::CheckIfDirExists(std::string& path)
     }
     if (!S_ISDIR(ret.st_mode))
         return CREEP_NOTDIR;
+    if ((ret.st_mode & S_IRWXU) != S_IRWXU)
+        return CREEP_PERM;
     
     return CREEP_OK;
 }
@@ -165,8 +168,10 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
     try
     {
         for (auto const& entry: std::filesystem::recursive_directory_iterator(
+            rootPath, std::filesystem::directory_options::skip_permission_denied))
+        /*for (auto const& entry: std::filesystem::recursive_directory_iterator(
             rootPath, std::filesystem::directory_options::follow_directory_symlink
-                | std::filesystem::directory_options::skip_permission_denied))
+                | std::filesystem::directory_options::skip_permission_denied))*/
         {
             FileNode node;      
             switch(MakeNode(entry, rootPath, pState, pBuffer, node))

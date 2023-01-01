@@ -55,7 +55,7 @@
             "program": "${workspaceRoot}/debug/test/sync_test",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}/debug/test",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

@@ -12,6 +12,8 @@ include(GoogleTest)
 # sources
 set(TEST_FILES
     main.cpp
+    Creeping.cpp
+    Mapping.cpp
     Pairing.cpp
 )
 

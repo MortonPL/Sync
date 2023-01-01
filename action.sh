@@ -148,7 +148,9 @@ do_remote() {
 do_tests() {
     if [ $TEST -eq 1 ]; then
         echo "Running tests...";
-        test/Sync_test;
+        cd test;
+        ./sync_test;
+        cd ..;
         rc=$?;
         if [ $rc -eq 0 ]; then
             echo "Tests finished.";

@@ -39,17 +39,17 @@ PairedNode* Mapper::FindMapRemoteInode(FileNode::devinode inode)
     return it->second;
 }
 
-void Mapper::EmplaceMapPath(std::string& path, PairedNode& node)
+void Mapper::EmplaceMapPath(const std::string& path, PairedNode& node)
 {
     mapPath.emplace(path, &node);
 }
 
-void Mapper::EmplaceMapLocalInode(FileNode::devinode inode, PairedNode& node)
+void Mapper::EmplaceMapLocalInode(const FileNode::devinode inode, PairedNode& node)
 {
     mapLocalInode.emplace(inode, &node);
 }
 
-void Mapper::EmplaceMapRemoteInode(FileNode::devinode inode, PairedNode& node)
+void Mapper::EmplaceMapRemoteInode(const FileNode::devinode inode, PairedNode& node)
 {
     mapRemoteInode.emplace(inode, &node);
 }
