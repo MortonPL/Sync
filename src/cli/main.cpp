@@ -5,8 +5,9 @@
 #include "Lib/Creeper.h"
 #include "Lib/SSHConnector.h"
 #include "Lib/SocketListener.h"
+#include "Lib/Announcer.h"
 #include "CLI/Global.h"
-#include "CLI/MainLoop.h"
+#include "CLI/CLIAnnouncer.h"
 #include "Utils.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -48,9 +49,8 @@ void CreepDir(std::string path)
     std::forward_list<FileNode> nodes;
     auto creeper = Creeper();
     char rc = creeper.CreepPath(path, nodes);
-    if(rc != CREEP_OK)
+    if (!Announcer::CreeperResult(rc, CLIAnnouncer::Log))
     {
-        LOG(ERROR) << "Failed to scan for files in the given directory.";
         std::cout << rc; // alternative to writeall --- in text mode
         std::cout.flush();
         return;
@@ -58,6 +58,7 @@ void CreepDir(std::string path)
     std::cout << rc;
     std::cout.flush();
 
+    //start sending node data
     unsigned char buf[FileNode::MaxBinarySize];
     std::size_t nnodes = creeper.GetResultsCount();
     LOG(INFO) << "Writing " << nnodes << " nodes.";

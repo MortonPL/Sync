@@ -21,7 +21,17 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
                    interactiveProviderType interactiveProvider, keyProviderType keyProvider)
 {
     if (session != NULL)
-        return false;
+    {
+        if (!(ssh_is_connected(session) && (authStatus == AUTH_STATUS_OK)))
+        {
+            EndSession();
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 
     if (!BeginSession(address, user))
     {
@@ -95,11 +105,6 @@ void SSHConnector::EndSession()
         ssh_free(session);
         session = NULL;
     }
-}
-
-bool SSHConnector::IsActiveSession()
-{
-    return authStatus == AUTH_STATUS_OK;
 }
 
 bool SSHConnector::AuthenticateServer(serverHashCallbackType unknownCallback,

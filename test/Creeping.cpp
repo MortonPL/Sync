@@ -185,4 +185,72 @@ TEST_F(CreepingTest, HardLinks)
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
 
+TEST_F(CreepingTest, SyncBlockedPresent)
+{
+    const std::filesystem::path sandbox{"sandbox"};
+    std::filesystem::create_directory(sandbox);
+    std::ofstream{sandbox/Creeper::SyncBlockedFile};
+    std::ofstream{sandbox/"a"};
+    std::ofstream{sandbox/"b"};
+
+    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+
+    EXPECT_EQ(rc, CREEP_BLOCK);
+    EXPECT_EQ(scanNodes.begin(), scanNodes.end());
+    EXPECT_EQ(creeper.GetResultsCount(), 0);
+}
+
+TEST_F(CreepingTest, SyncBlackListPresent)
+{
+    const std::filesystem::path sandbox{"sandbox"};
+    std::filesystem::create_directory(sandbox);
+    std::filesystem::create_directories(sandbox/"dir1");
+    std::filesystem::create_directories(sandbox/"dir2"/"dir3");
+    std::ofstream{sandbox/Creeper::SyncBlackListFile} << "dir*";
+    std::ofstream{sandbox/"a"};
+    std::ofstream{sandbox/"dir1"/"b"};
+    std::ofstream{sandbox/"dir2"/"dir3"/"c"};
+
+    std::list<FileNode> expectedResult =
+    {
+        // no dir*!
+        FileNode("a"),
+        FileNode(Creeper::SyncBlackListFile),
+    };
+
+    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+
+    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(creeper.GetResultsCount(), 2);
+    EXPECT_ALL_NODES(scanNodes, expectedResult);
+}
+
+TEST_F(CreepingTest, SyncWhiteListPresent)
+{
+    const std::filesystem::path sandbox{"sandbox"};
+    std::filesystem::create_directory(sandbox);
+    std::filesystem::create_directories(sandbox/"dir1");
+    std::filesystem::create_directories(sandbox/"dir2"/"dir3");
+    std::ofstream{sandbox/Creeper::SyncBlackListFile} << "dir*";
+    std::ofstream{sandbox/Creeper::SyncWhiteListFile} << "dir2/dir3/*";
+    std::ofstream{sandbox/"a"};
+    std::ofstream{sandbox/"dir1"/"b"};
+    std::ofstream{sandbox/"dir2"/"dir3"/"c"};
+
+    std::list<FileNode> expectedResult =
+    {
+        // no dir*!
+        FileNode("dir2/dir3/c"),
+        FileNode("a"),
+        FileNode(Creeper::SyncWhiteListFile),
+        FileNode(Creeper::SyncBlackListFile),
+    };
+
+    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+
+    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(creeper.GetResultsCount(), 4);
+    EXPECT_ALL_NODES(scanNodes, expectedResult);
+}
+
 #undef EXPECT_ALL_NODES

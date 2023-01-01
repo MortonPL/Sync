@@ -23,6 +23,7 @@ set(SRC_LIB_FILES
     domain/FileNode.cpp
     domain/HistoryFileNode.cpp
     domain/PairedNode.cpp
+    Announcer.cpp
     Global.cpp
     General.cpp
     SocketListener.cpp

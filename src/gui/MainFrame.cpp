@@ -7,6 +7,8 @@
 #include "GUI/GenericPopup.h"
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/ChangeConfigurationDialog.h"
+#include "GUI/GUIAnnouncer.h"
+#include "Lib/Announcer.h"
 #include "Lib/DBConnector.h"
 #include "Lib/Global.h"
 #include "Lib/Creeper.h"
@@ -115,7 +117,8 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
 
     if (DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)) != DB_GOOD)
     {
-        GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned for the first time\nor if it's corrupted. All files will be marked as new or conflicting.").ShowModal();
+        GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned "
+                     "for the first time\nor if it's corrupted. All files will be marked as new or conflicting.").ShowModal();
     }
 }
 
@@ -131,18 +134,26 @@ void MainFrame::OnScan(wxCommandEvent& event)
     LOG(INFO) << "Loaded config " << cfg.name << ".";
 
     //establish session
-    if (!ssh.IsActiveSession())
+    if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
     {
-        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
-        {
-            LOG(ERROR) << "Failed to connect to the remote.";
-            return;
-        }
+        //NOTE: SSHConnectorWrap already handles GUI popups, so we only need to log here.
+        LOG(ERROR) << "Failed to connect to the remote.";
+        return;
     }
     LOG(INFO) << "Successfully connected to the remote.";
 
-    //read history
+    // remove all previous data
     pairedNodes.clear();
+
+    //scan
+    scanNodes.clear();
+    LOG(INFO) << "Begin local scan...";
+    auto creeper = Creeper();
+    if (!Announcer::CreeperResult(creeper.CreepPath(cfg.pathA, scanNodes), GUIAnnouncer::LogPopup))
+        return;
+    LOG(INFO) << "Local scan finished.";
+
+    //read history
     historyNodes.clear();
     try
     {
@@ -151,11 +162,11 @@ void MainFrame::OnScan(wxCommandEvent& event)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << "Failed to read file history.";
-        GenericPopup("Failed to read file history.").ShowModal();
+        GUIAnnouncer::LogPopup("Failed to read file history.", SEV_ERROR);
         return;
     }
     LOG(INFO) << "Read file history.";
+
     // get remote nodes
     remoteNodes.clear();
     int rc;
@@ -166,17 +177,6 @@ void MainFrame::OnScan(wxCommandEvent& event)
         return;
     }
     LOG(INFO) << "Received remote file nodes.";
-
-    //scan
-    LOG(INFO) << "Begin local scan...";
-    auto creeper = Creeper();
-    if (creeper.CreepPath(cfg.pathA, scanNodes) != CREEP_OK)
-    {
-        LOG(ERROR) << "Failed to scan for files in the given directory.";
-        GenericPopup("Failed to scan for files in the given directory.").ShowModal();
-        return;
-    }
-    LOG(INFO) << "Local scan finished.";
 
     //pairing
     LOG(INFO) << "Begin pairing...";

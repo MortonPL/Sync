@@ -36,7 +36,6 @@ public:
                  serverHashCallbackType errorCallback, passProviderType passwordProvider,
                  interactiveProviderType interactiveProvider, keyProviderType keyProvider);
     void EndSession();
-    bool IsActiveSession();
 
     int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
 

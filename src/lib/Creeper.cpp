@@ -7,6 +7,10 @@
 
 #include "Utils.h"
 
+std::string Creeper::SyncBlackListFile = ".SyncBlackList";
+std::string Creeper::SyncWhiteListFile = ".SyncWhiteList";
+std::string Creeper::SyncBlockedFile = ".SyncBLOCKED";
+
 Creeper::Creeper()
 {
 }
@@ -43,8 +47,8 @@ void Creeper::SearchForLists(std::string& path)
 
     whitelist.clear();
     blacklist.clear();
-    readList(path, ".SyncWhitelist", whitelist);
-    readList(path, ".SyncBlacklist", blacklist);
+    readList(path, Creeper::SyncWhiteListFile, whitelist);
+    readList(path, Creeper::SyncBlackListFile, blacklist);
 }
 
 bool Creeper::CheckIfFileIsIgnored(std::string path)
@@ -119,7 +123,6 @@ int Creeper::CheckIfDirExists(std::string& path)
 
 void Creeper::PreCreepCleanup(std::string& rootPath, XXH3_state_t*& pState, void*& pBuffer)
 {
-    fileNodes.clear();
     SearchForLists(rootPath);
     pBuffer = malloc(BUFFER_SIZE);
     pState = XXH3_createState();
@@ -162,7 +165,6 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
     int err;
     if ((err = CheckIfDirExists(rootPath)) != CREEP_OK)
         return err;
-    this->fileNodes = fileNodes;
     PreCreepCleanup(rootPath, pState, pBuffer);
 
     try
@@ -173,7 +175,10 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
             rootPath, std::filesystem::directory_options::follow_directory_symlink
                 | std::filesystem::directory_options::skip_permission_denied))*/
         {
-            FileNode node;      
+            if (entry.path().filename().string() == Creeper::SyncBlockedFile)
+                return CREEP_BLOCK;
+
+            FileNode node;     
             switch(MakeNode(entry, rootPath, pState, pBuffer, node))
             {
             case RES_CONTINUE:
