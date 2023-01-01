@@ -10,165 +10,189 @@ void PairingManager::PairAllLocal(std::forward_list<FileNode>& scanNodes, std::l
     }
 }
 
+void PairHistoryNotMoved(HistoryFileNode& historyNode, PairedNode* pPair)
+{
+    if (historyNode.IsEqualHash(*pPair->localNode))
+    {
+        pPair->localNode->status = FileNode::Status::Clean;
+    }
+    else
+    {
+        pPair->localNode->status = FileNode::Status::Dirty;
+    }
+};
+
+void PairHistoryMoved(HistoryFileNode& historyNode, PairedNode* pPair)
+{
+    if (historyNode.IsEqualHash(*pPair->localNode))
+    {
+        pPair->localNode->status = FileNode::Status::MovedClean;
+    }
+    else
+    {
+        pPair->localNode->status = FileNode::Status::MovedDirty;
+    }
+}
+
 void PairingManager::PairAllHistory(std::forward_list<HistoryFileNode>& historyNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
 {
     for (auto& historyNode: historyNodes)
     {
-        auto pPair = mapper.FindMapPath(historyNode.path);
+        auto pPair = mapper.FindMapLocalInode(historyNode.GetDevInode());
         if (pPair)
         {
-            pPair->historyNode = &historyNode;
-            mapper.EmplaceMapLocalInode(historyNode.GetDevInode(), *pPair);
-            mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
-            if (historyNode.IsEqualHash(*pPair->localNode))
+            if (historyNode.path == pPair->localNode->path)
             {
-                pPair->localNode->status = FileNode::Status::Clean;
+                PairHistoryNotMoved(historyNode, pPair);
             }
             else
             {
-                pPair->localNode->status = FileNode::Status::Dirty;
+                PairHistoryMoved(historyNode, pPair);
             }
         }
         else
         {
-            pPair = mapper.FindMapLocalInode(historyNode.GetDevInode());
+            pPair = mapper.FindMapPath(historyNode.path);
             if (pPair)
             {
-                pPair->historyNode = &historyNode;
-                mapper.EmplaceMapPath(historyNode.path, *pPair);
-                mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
-                if (historyNode.IsEqualHash(*pPair->localNode))
-                {
-                    pPair->localNode->status = FileNode::Status::MovedClean;
-                }
-                else
-                {
-                    pPair->localNode->status = FileNode::Status::MovedDirty;
-                }
+                PairHistoryNotMoved(historyNode, pPair);
             }
             else
             {
                 pairedNodes.push_back(PairedNode(historyNode.path, nullptr, &historyNode));
-                mapper.EmplaceMapPath(historyNode.path, *pPair);
-                mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+                pPair = &pairedNodes.back();
                 pPair->historyNode->status = FileNode::Status::DeletedLocal;
             }
         }
+        pPair->historyNode = &historyNode;
+        mapper.EmplaceMapPath(historyNode.path, *pPair);
+        mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
+    }
+}
+
+void PairRemoteNotMoved(FileNode& remoteNode, PairedNode* pPair)
+{
+    switch (pPair->CompareNodeHashes(&remoteNode, pPair->historyNode))
+    {
+    case HASHCMP_EQ:
+        remoteNode.status = FileNode::Status::Clean;
+        break;
+    case HASHCMP_OTHERNULL:
+        remoteNode.status = FileNode::Status::New;
+        if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
+        {
+            pPair->SetDefaultAction(PairedNode::Action::FastForward);
+        }
+        else
+        {
+            pPair->SetDefaultAction(PairedNode::Action::Conflict);
+        }
+        break;
+    case HASHCMP_NE:
+    default:
+        remoteNode.status = FileNode::Status::Dirty;
+        if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
+        {
+            if (remoteNode.path == pPair->localNode->path)
+            {
+                pPair->SetDefaultAction(PairedNode::Action::FastForward);
+            }
+            else
+            {
+                pPair->SetDefaultAction(PairedNode::Action::Conflict);
+            }
+        }
+        else
+        {
+            if (pPair->localNode && pPair->localNode->status == FileNode::Status::Clean)
+            {
+            }
+            else
+            {
+                pPair->SetDefaultAction(PairedNode::Action::Conflict);
+            }
+        }
+        break;
+    }
+};
+
+void PairRemoteMovedSub(FileNode& remoteNode, PairedNode* pPair, FileNode::Status status)
+{
+    remoteNode.status = status;
+    if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
+    {
+        if (remoteNode.path == pPair->localNode->path)
+        {
+            pPair->action = PairedNode::Action::FastForward;
+        }
+        else
+        {
+            if (pPair->localNode && pPair->localNode->status == FileNode::Status::Clean)
+            {
+            }
+            else
+            {
+                pPair->action = PairedNode::Action::Conflict;
+            }
+        }
+    }
+    else
+    {
+        if (pPair->localNode && pPair->localNode->status == FileNode::Status::Clean)
+        {
+        }
+        else
+        {
+            pPair->action = PairedNode::Action::Conflict;
+        }
+    }
+}
+
+void PairRemoteMoved(FileNode& remoteNode, PairedNode* pPair)
+{
+    if (pPair->CompareNodeHashes(&remoteNode, pPair->historyNode) == HASHCMP_EQ)
+    {
+        PairRemoteMovedSub(remoteNode, pPair, FileNode::Status::MovedClean);
+    }
+    else
+    {
+        PairRemoteMovedSub(remoteNode, pPair, FileNode::Status::MovedDirty);
     }
 }
 
 void PairingManager::PairAllRemote(std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {
-for(auto& remoteNode: remoteNodes)
+    for(auto& remoteNode: remoteNodes)
     {
         if (creeper.CheckIfFileIsIgnored(remoteNode.path))
             continue;
-        auto pPair = mapper.FindMapPath(remoteNode.path);
+        //auto pPair = mapper.FindMapPath(remoteNode.path);
+        auto pPair = mapper.FindMapRemoteInode(remoteNode.GetDevInode());
         if (pPair)
         {
-            pPair->remoteNode = &remoteNode;
-            switch (pPair->CompareNodeHashes(&remoteNode, pPair->historyNode))
+            if (remoteNode.path == pPair->historyNode->path)
             {
-            case HASHCMP_EQ:
-                pPair->remoteNode->status = FileNode::Status::Clean;
-                break;
-            case HASHCMP_OTHERNULL:
-                pPair->remoteNode->status = FileNode::Status::New;
-                if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
-                {
-                    pPair->SetDefaultAction(PairedNode::Action::FastForward);
-                }
-                else
-                {
-                    pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                }
-                break;
-            case HASHCMP_NE:
-                pPair->remoteNode->status = FileNode::Status::Dirty;
-                if (pPair->CompareNodeHashes(&remoteNode, pPair->localNode) == HASHCMP_EQ)
-                {
-                    if (pPair->localNode->status != FileNode::Status::Dirty)
-                    {
-                        pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                    }
-                    else
-                    {
-                        pPair->SetDefaultAction(PairedNode::Action::FastForward);
-                    }
-                }
-                else
-                {
-                    if (pPair->localNode->status != FileNode::Status::Clean)
-                    {
-                        pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                    }
-                }
-                break;
-            case HASHCMP_ONENULL:
-            case HASHCMP_EQPTR:
-            default:
-                break;
+                PairRemoteNotMoved(remoteNode, pPair);
+            }
+            else
+            {
+                PairRemoteMoved(remoteNode, pPair);
             }
         }
         else
         {
-            pPair = mapper.FindMapRemoteInode(remoteNode.GetDevInode());
+            pPair = mapper.FindMapPath(remoteNode.path);
             if (pPair)
             {
-                pPair->remoteNode = &remoteNode;
-                if (pPair->CompareNodeHashes(&remoteNode, pPair->historyNode))
-                {
-                    pPair->remoteNode->status = FileNode::Status::MovedClean;
-                    switch (pPair->CompareNodeHashes(&remoteNode, pPair->localNode))
-                    {
-                    case HASHCMP_EQ:
-                        if (pPair->localNode->status != FileNode::Status::Clean)
-                        {
-                            pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                        }
-                        break;
-                    case HASHCMP_NE:
-                    case HASHCMP_OTHERNULL:
-                        pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                        break;
-                    case HASHCMP_ONENULL:
-                    case HASHCMP_EQPTR:
-                    default:
-                        break;
-                    }
-                }
-                else
-                {
-                    switch (pPair->CompareNodeHashes(&remoteNode, pPair->localNode))
-                    {
-                    case HASHCMP_EQ:
-                        pPair->remoteNode->status = FileNode::Status::MovedDirty;
-                        if (pPair->localNode->status = FileNode::Status::MovedDirty)
-                        {
-                            pPair->SetDefaultAction(PairedNode::Action::FastForward);
-                        }
-                        else
-                        {
-                            pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                        }
-                        break;
-                    case HASHCMP_NE:
-                    case HASHCMP_OTHERNULL:
-                        pPair->remoteNode->status = FileNode::Status::MovedDirty;
-                        pPair->SetDefaultAction(PairedNode::Action::Conflict);
-                        break;
-                    case HASHCMP_ONENULL:
-                    case HASHCMP_EQPTR:
-                    default:
-                        break;
-                    }
-                }
+                PairRemoteNotMoved(remoteNode, pPair);
             }
             else
             {
                 pairedNodes.push_back(PairedNode(remoteNode.path, nullptr, nullptr, &remoteNode));
+                pPair = &pairedNodes.back();
             }
         }
+        pPair->remoteNode = &remoteNode;
     }
 }
 
@@ -205,8 +229,7 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
                 }
                 else if (pair.historyNode)
                 {
-                    pair.historyNode->status = FileNode::Status::DeletedBoth;
-                    pair.action = PairedNode::Action::FastForward;
+                    pair.action = PairedNode::Action::LocalToRemote;
                 }
             }
             continue;
