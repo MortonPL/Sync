@@ -2,6 +2,7 @@
 #include "wx.h"
 
 #include <list>
+#include <set>
 #include "Lib/SSHConnector.h"
 #include "domain/PairedNode.h"
 
@@ -21,6 +22,8 @@ private:
     Controls ctrl;
     bool isFirstSelectedConfig = true;
     SSHConnector ssh;
+    std::set<long> selectedItems;
+    bool hasSelectedEverything = false;
 
     //temp
     std::list<PairedNode> pairedNodes;
@@ -30,15 +33,25 @@ private:
 
     // custom methods
     void CreateReportList();
+    void OnAction(PairedNode::Action action);
 
     // event handlers
     void OnNewConfig(wxCommandEvent& event);
     void OnChangeConfig(wxCommandEvent& event);
     void OnScan(wxCommandEvent& event);
     void OnSync(wxCommandEvent& event);
+    void OnActionSelectAll(wxCommandEvent& event);
+    void OnActionDeselectAll(wxCommandEvent& event);
+    void OnActionDefault(wxCommandEvent& event);
+    void OnActionLtoR(wxCommandEvent& event);
+    void OnActionIgnore(wxCommandEvent& event);
+    void OnActionRtoL(wxCommandEvent& event);
+    void OnActionResolve(wxCommandEvent& event);
     void OnSelectNode(wxListEvent& event);
+    void OnDeselectNode(wxListEvent& event);
     void OnExit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
+    void CharHook(wxKeyEvent& event);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();

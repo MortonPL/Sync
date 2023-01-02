@@ -30,9 +30,44 @@
 					<enabled>0</enabled>
 				</object>
 				<object class="wxMenuItem" name="menu_edit_sync">
-					<label>Synchronize!\tCtrl+S</label>
+					<label>Go Synchronize!\tCtrl+G</label>
 					<help>Synchronize the changes.</help>
 					<enabled>0</enabled>
+				</object>
+			</object>
+			<object class="wxMenu" name="menu_action">
+				<label>Actions</label>
+				<object class="wxMenuItem" name="menu_action_all">
+					<label>Select All\tCtrl+A</label>
+					<help>Select all paths.</help>
+				</object>
+				<object class="wxMenuItem" name="menu_action_none">
+					<label>Select None\tCtrl+Shift+A</label>
+					<help>Remove all paths from selection.</help>
+				</object>
+				<object class="separator" />
+				<object class="wxMenuItem" name="menu_action_def">
+					<label>Default Sync Action\tShift+D</label>
+					<help>Revert back to the default action.</help>
+				</object>
+				<object class="separator" />
+				<object class="wxMenuItem" name="menu_action_ltor">
+					<label>Propagate Local to Remote\t&gt;</label>
+					<help>Propagate Local version to the Remote.</help>
+				</object>
+				<object class="wxMenuItem" name="menu_action_rtol">
+					<label>Propagate Remote to Local\t&lt;</label>
+					<help>Propagate Remote version to the Local.</help>
+				</object>
+				<object class="separator" />
+				<object class="wxMenuItem" name="menu_action_ignore">
+					<label>Ignore\tShift+S</label>
+					<help>Ignore this file during this synchronization.</help>
+				</object>
+				<object class="separator" />
+				<object class="wxMenuItem" name="menu_action_tool">
+					<label>Resolve Conflict with a tool\tShift+C</label>
+					<help>Launch a third party tool to resolve conflicting changes.</help>
 				</object>
 			</object>
 			<object class="wxMenu" name="menu_help">
@@ -52,7 +87,7 @@
 			<bitmapsize></bitmapsize>
 			<margins></margins>
 			<packing>1</packing>
-			<separation>5</separation>
+			<separation>0</separation>
 			<object class="tool" name="tlb_changec">
 				<label>Change Configuration</label>
 				<tooltip>Change Configuration</tooltip>
@@ -67,10 +102,35 @@
 				<bitmap stock_id="wxART_FIND" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
 			</object>
 			<object class="tool" name="tlb_sync">
-				<label>Synchronize!</label>
+				<label>Go Synchronize!</label>
 				<tooltip>Synchronize the changes.</tooltip>
 				<longhelp>Synchronize the changes.</longhelp>
 				<bitmap>ico/sync.png</bitmap>
+			</object>
+			<object class="separator" />
+			<object class="tool" name="tlb_ltor">
+				<label>Left to Right</label>
+				<tooltip>Propagate Local version to the Remote.</tooltip>
+				<longhelp>Propagate Local version to the Remote.</longhelp>
+				<bitmap stock_id="wxART_GO_FORWARD" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="tlb_ignore">
+				<label>Ignore</label>
+				<tooltip>Ignore this file during this synchronization.</tooltip>
+				<longhelp>Ignore this file during this synchronization.</longhelp>
+				<bitmap stock_id="wxART_DELETE" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="tlb_rtol">
+				<label>Right to Left</label>
+				<tooltip>Propagate Remote version to the Local.</tooltip>
+				<longhelp>Propagate Remote version to the Local.</longhelp>
+				<bitmap stock_id="wxART_GO_BACK" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+			</object>
+			<object class="tool" name="mtlb_tool">
+				<label>Resolve Conflict</label>
+				<tooltip>Launch a third party tool to resolve conflicting changes.</tooltip>
+				<longhelp>Launch a third party tool to resolve conflicting changes.</longhelp>
+				<bitmap stock_id="wxART_FIND_AND_REPLACE" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
 			</object>
 		</object>
 		<object class="wxFlexGridSizer">

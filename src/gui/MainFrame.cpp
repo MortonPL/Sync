@@ -20,12 +20,25 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_file_changec"), MainFrame::OnChangeConfig)
     EVT_MENU(XRCID("menu_edit_scan"), MainFrame::OnScan)
     EVT_MENU(XRCID("menu_edit_sync"), MainFrame::OnSync)
+    EVT_MENU(XRCID("menu_action_all"), MainFrame::OnActionSelectAll)
+    EVT_MENU(XRCID("menu_action_none"), MainFrame::OnActionDeselectAll)
+    EVT_MENU(XRCID("menu_action_def"), MainFrame::OnActionDefault)
+    EVT_MENU(XRCID("menu_action_ltor"), MainFrame::OnActionLtoR)
+    EVT_MENU(XRCID("menu_action_rtol"), MainFrame::OnActionRtoL)
+    EVT_MENU(XRCID("menu_action_ignore"), MainFrame::OnActionIgnore)
+    EVT_MENU(XRCID("menu_action_tool"), MainFrame::OnActionResolve)
     EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
     EVT_TOOL(XRCID("tlb_scan"), MainFrame::OnScan)
     EVT_TOOL(XRCID("tlb_sync"), MainFrame::OnSync)
+    EVT_TOOL(XRCID("tlb_ltor"), MainFrame::OnActionLtoR)
+    EVT_TOOL(XRCID("tlb_ignore"), MainFrame::OnActionIgnore)
+    EVT_TOOL(XRCID("tlb_rtol"), MainFrame::OnActionRtoL)
+    EVT_TOOL(XRCID("tlb_tool"), MainFrame::OnActionResolve)
     EVT_LIST_ITEM_SELECTED(XRCID("listMain"), MainFrame::OnSelectNode)
+    EVT_LIST_ITEM_DESELECTED(XRCID("listMain"), MainFrame::OnDeselectNode)
     EVT_MENU(wxID_ABOUT, MainFrame::OnAbout)
     EVT_MENU(wxID_EXIT, MainFrame::OnExit)
+    EVT_CHAR_HOOK(MainFrame::CharHook)
 wxEND_EVENT_TABLE()
 
 #define COL_NAME        0
@@ -37,15 +50,27 @@ wxEND_EVENT_TABLE()
 //      TOOLBAR_DIVIDER 1
 #define TOOLBAR_SCAN    2
 #define TOOLBAR_SYNC    3
+//      TOOLBAR_DIVIDER 4
+#define TOOLBAR_LTOR    5
+#define TOOLBAR_IGNORE  6
+#define TOOLBAR_RTOL    7
+#define TOOLBAR_RESOLVE 8
 
 #define MENU_FILE           0
 #define MENU_EDIT           1
-#define MENU_HELP           2
+#define MENU_ACTIONS        2
+#define MENU_HELP           3
+
 #define MENU_FILE_NEW       0
 #define MENU_FILE_CHANGE    1
 #define MENU_FILE_EXIT      2
 #define MENU_EDIT_SCAN      0
 #define MENU_EDIT_SYNC      1
+#define MENU_ACTION_DEFAULT 0
+#define MENU_ACTION_LTOR    1
+#define MENU_ACTION_RTOL    2
+#define MENU_ACTION_IGNORE  3
+#define MENU_ACTION_RESOLVE 4
 #define MENU_HELP_ABOUT     0
 
 #define ENABLE_MENU_ITEM(menu, item)\
@@ -225,6 +250,61 @@ void MainFrame::OnSync(wxCommandEvent& event)
 {
 }
 
+void MainFrame::OnAction(PairedNode::Action action)
+{
+    if (action == PairedNode::Action::None)
+    {
+        for (auto index: selectedItems)
+        {
+            PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            pPair->action = pPair->defaultAction;
+            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+        }
+    }
+    else if (action == PairedNode::Action::Conflict)
+    {
+        if (selectedItems.size() > 0)
+        {
+            // launch only for the first file?
+            //selectedItems.begin()
+        }
+    }
+    else
+    {
+        for (auto index: selectedItems)
+        {
+            PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            pPair->action = action;
+            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+        }
+    }
+}
+
+void MainFrame::OnActionDefault(wxCommandEvent& event)
+{
+    OnAction(PairedNode::Action::None);
+}
+
+void MainFrame::OnActionLtoR(wxCommandEvent& event)
+{
+    OnAction(PairedNode::Action::LocalToRemote);
+}
+
+void MainFrame::OnActionIgnore(wxCommandEvent& event)
+{
+    OnAction(PairedNode::Action::Ignore);
+}
+
+void MainFrame::OnActionRtoL(wxCommandEvent& event)
+{
+    OnAction(PairedNode::Action::RemoteToLocal);
+}
+
+void MainFrame::OnActionResolve(wxCommandEvent& event)
+{
+    OnAction(PairedNode::Action::Conflict);
+}
+
 #define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
 void MainFrame::OnSelectNode(wxListEvent& event)
 {
@@ -246,6 +326,10 @@ void MainFrame::OnSelectNode(wxListEvent& event)
         }
     };
 
+    selectedItems.insert(event.GetIndex());
+    if (selectedItems.size() == ctrl.listMain->GetItemCount())
+        hasSelectedEverything = true;
+
     auto pPair = (PairedNode*)event.GetData();
     ctrl.txtDetails->Clear();
     //general
@@ -265,6 +349,32 @@ void MainFrame::OnSelectNode(wxListEvent& event)
 }
 #undef LTOA
 
+void MainFrame::OnDeselectNode(wxListEvent& event)
+{
+    selectedItems.erase(event.GetIndex());
+    hasSelectedEverything = false;
+}
+
+void MainFrame::OnActionSelectAll(wxCommandEvent& event)
+{
+    for (long i = 0; i < ctrl.listMain->GetItemCount(); i++)
+    {
+        ctrl.listMain->SetItemState(i, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+        selectedItems.insert(i);
+    }
+    hasSelectedEverything = true;
+}
+
+void MainFrame::OnActionDeselectAll(wxCommandEvent& event)
+{
+    for (long i = 0; i < ctrl.listMain->GetItemCount(); i++)
+    {
+        ctrl.listMain->SetItemState(i, 0, wxLIST_STATE_SELECTED);
+    }    
+    selectedItems.clear();
+    hasSelectedEverything = false;
+}
+
 void MainFrame::OnAbout(wxCommandEvent& event)
 {
     wxMessageBox("This is a message box.", "About...",
@@ -276,6 +386,35 @@ void MainFrame::OnExit(wxCommandEvent& event)
     Close(true);
 }
 
+void MainFrame::CharHook(wxKeyEvent& event)
+{
+    switch (event.GetKeyCode())
+    {
+    case WXK_LEFT:
+        OnAction(PairedNode::Action::RemoteToLocal);
+        break;
+    case WXK_RIGHT:
+        OnAction(PairedNode::Action::LocalToRemote);
+        break;
+    case 'S':
+        if (event.GetModifiers() == wxMOD_SHIFT)
+            OnAction(PairedNode::Action::Ignore);
+        break;
+    case 'D':
+        if (event.GetModifiers() == wxMOD_SHIFT)
+            OnAction(PairedNode::Action::None);
+        break;
+    case 'C':
+        if (event.GetModifiers() == wxMOD_SHIFT)
+            OnAction(PairedNode::Action::Conflict);
+        break;
+    default:
+        event.DoAllowNextEvent();
+        ctrl.listMain->HandleOnChar(event);
+        break;
+    }
+}
+
 #undef COL_NAME
 #undef COL_STATUS
 #undef COL_ACTION
@@ -284,15 +423,25 @@ void MainFrame::OnExit(wxCommandEvent& event)
 #undef TOOLBAR_CONFIG
 #undef TOOLBAR_SCAN
 #undef TOOLBAR_SYNC
+#undef TOOLBAR_LTOR
+#undef TOOLBAR_IGNORE
+#undef TOOLBAR_RTOL
+#undef TOOLBAR_RESOLVE
 
 #undef MENU_FILE
 #undef MENU_EDIT
+#undef MENU_ACTION
 #undef MENU_HELP
 #undef MENU_FILE_NEW
 #undef MENU_FILE_CHANGE
 #undef MENU_FILE_EXIT
 #undef MENU_EDIT_SCAN
 #undef MENU_EDIT_SYNC
+#undef MENU_ACTION_DEFAULT
+#undef MENU_ACTION_LTOR
+#undef MENU_ACTION_RTOL
+#undef MENU_ACTION_IGNORE
+#undef MENU_ACTION_RESOLVE
 #undef MENU_HELP_ABOUT
 
 #undef ENABLE_MENU_ITEM

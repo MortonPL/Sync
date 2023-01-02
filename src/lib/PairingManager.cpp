@@ -123,7 +123,7 @@ void PairRemoteMovedSub(FileNode& remoteNode, PairedNode* pPair, FileNode::Statu
     {
         if (remoteNode.path == pPair->localNode->path)
         {
-            pPair->action = PairedNode::Action::FastForward;
+            pPair->SetDefaultAction(PairedNode::Action::FastForward);
         }
         else
         {
@@ -132,7 +132,7 @@ void PairRemoteMovedSub(FileNode& remoteNode, PairedNode* pPair, FileNode::Statu
             }
             else
             {
-                pPair->action = PairedNode::Action::Conflict;
+                pPair->SetDefaultAction(PairedNode::Action::Conflict);
             }
         }
     }
@@ -143,7 +143,7 @@ void PairRemoteMovedSub(FileNode& remoteNode, PairedNode* pPair, FileNode::Statu
         }
         else
         {
-            pPair->action = PairedNode::Action::Conflict;
+            pPair->SetDefaultAction(PairedNode::Action::Conflict);
         }
     }
 }
@@ -208,7 +208,7 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
         {
             if (pair.remoteNode->status == FileNode::Status::New)
             {
-                pair.action = PairedNode::Action::RemoteToLocal;
+                pair.SetDefaultAction(PairedNode::Action::RemoteToLocal);
             }
             else
             {
@@ -216,20 +216,20 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
                 {
                     if (pair.remoteNode->status == FileNode::Status::Clean)
                     {
-                        pair.action = PairedNode::Action::DoNothing;
+                        pair.SetDefaultAction(PairedNode::Action::DoNothing);
                     }
                     else
                     {
-                        pair.action = PairedNode::Action::RemoteToLocal;
+                        pair.SetDefaultAction(PairedNode::Action::RemoteToLocal);
                     }
                 }
                 else if (pair.localNode)
                 {
-                    pair.action = PairedNode::Action::LocalToRemote;
+                    pair.SetDefaultAction(PairedNode::Action::LocalToRemote);
                 }
                 else if (pair.historyNode)
                 {
-                    pair.action = PairedNode::Action::LocalToRemote;
+                    pair.SetDefaultAction(PairedNode::Action::LocalToRemote);
                 }
             }
             continue;
@@ -238,16 +238,19 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
         if (!pair.localNode)
         {
             pair.historyNode->status = FileNode::Status::DeletedBoth;
-            pair.action = PairedNode::Action::FastForward;
+            pair.SetDefaultAction(PairedNode::Action::FastForward);
         }
         else if (pair.localNode->status == FileNode::Status::New)
         {
-            pair.action = PairedNode::Action::LocalToRemote;
+            pair.SetDefaultAction(PairedNode::Action::LocalToRemote);
         }
         else
         {
             pair.historyNode->status = FileNode::Status::DeletedRemote;
-            pair.action = pair.localNode->status == FileNode::Status::Clean? PairedNode::Action::RemoteToLocal: PairedNode::Action::Conflict;
+            pair.SetDefaultAction(
+                pair.localNode->status == FileNode::Status::Clean?
+                PairedNode::Action::RemoteToLocal:
+                PairedNode::Action::Conflict);
         }
     }
 }

@@ -22,6 +22,7 @@ PairedNode MakePairedNode(std::string path, FileNode* fileNode, HistoryFileNode*
 {
     PairedNode p(path, fileNode, historyNode, remoteNode);
     p.action = action;
+    p.defaultAction = action;
     return p;
 }
 
@@ -45,6 +46,7 @@ void ExpectPairedNode(PairedNode* pair, PairedNode* expected)
     EXPECT_NE(expected, nullptr) << "Too many PairedNodes!";
     EXPECT_EQ(pair->path, expected->path) << "PairedNode " << expected->path << " has wrong path!";
     EXPECT_EQ(pair->action, expected->action) << "PairedNode " << expected->path << " has wrong action!";
+    EXPECT_EQ(pair->defaultAction, expected->defaultAction) << "PairedNode " << expected->path << " has wrong default action!";
     if (expected->localNode)
         EXPECT_EQ(pair->localNode->status, expected->localNode->status) << "PairedNode " << expected->path << " has local status mismatch!";
     else

@@ -57,7 +57,7 @@
             <property name="window_name"></property>
             <property name="window_style">wxTAB_TRAVERSAL</property>
             <property name="xrc_skip_sizer">1</property>
-            <object class="wxMenuBar" expanded="0">
+            <object class="wxMenuBar" expanded="1">
                 <property name="bg"></property>
                 <property name="context_help"></property>
                 <property name="context_menu">1</property>
@@ -126,7 +126,7 @@
                         <property name="unchecked_bitmap"></property>
                     </object>
                 </object>
-                <object class="wxMenu" expanded="0">
+                <object class="wxMenu" expanded="1">
                     <property name="label">Edit</property>
                     <property name="name">menu_edit</property>
                     <property name="permission">protected</property>
@@ -150,10 +150,122 @@
                         <property name="help">Synchronize the changes.</property>
                         <property name="id">wxID_ANY</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">Synchronize!</property>
+                        <property name="label">Go Synchronize!</property>
                         <property name="name">menu_edit_sync</property>
                         <property name="permission">none</property>
-                        <property name="shortcut">Ctrl+S</property>
+                        <property name="shortcut">Ctrl+G</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                </object>
+                <object class="wxMenu" expanded="1">
+                    <property name="label">Actions</property>
+                    <property name="name">menu_action</property>
+                    <property name="permission">protected</property>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Select all paths.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Select All</property>
+                        <property name="name">menu_action_all</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">Ctrl+A</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Remove all paths from selection.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Select None</property>
+                        <property name="name">menu_action_none</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">Ctrl+Shift+A</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                    <object class="separator" expanded="1">
+                        <property name="name">m_separator6</property>
+                        <property name="permission">none</property>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Revert back to the default action.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Default Sync Action</property>
+                        <property name="name">menu_action_def</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">Shift+D</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                    <object class="separator" expanded="1">
+                        <property name="name">m_separator21</property>
+                        <property name="permission">none</property>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Propagate Local version to the Remote.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Propagate Local to Remote</property>
+                        <property name="name">menu_action_ltor</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">&gt;</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Propagate Remote version to the Local.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Propagate Remote to Local</property>
+                        <property name="name">menu_action_rtol</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">&lt;</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                    <object class="separator" expanded="1">
+                        <property name="name">m_separator3</property>
+                        <property name="permission">none</property>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Ignore this file during this synchronization.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Ignore</property>
+                        <property name="name">menu_action_ignore</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">Shift+S</property>
+                        <property name="unchecked_bitmap"></property>
+                    </object>
+                    <object class="separator" expanded="1">
+                        <property name="name">m_separator4</property>
+                        <property name="permission">none</property>
+                    </object>
+                    <object class="wxMenuItem" expanded="1">
+                        <property name="bitmap"></property>
+                        <property name="checked">0</property>
+                        <property name="enabled">1</property>
+                        <property name="help">Launch a third party tool to resolve conflicting changes.</property>
+                        <property name="id">wxID_ANY</property>
+                        <property name="kind">wxITEM_NORMAL</property>
+                        <property name="label">Resolve Conflict with a tool</property>
+                        <property name="name">menu_action_tool</property>
+                        <property name="permission">none</property>
+                        <property name="shortcut">Shift+C</property>
                         <property name="unchecked_bitmap"></property>
                     </object>
                 </object>
@@ -245,7 +357,7 @@
                 <property name="pin_button">1</property>
                 <property name="pos"></property>
                 <property name="resize">Resizable</property>
-                <property name="separation">5</property>
+                <property name="separation">0</property>
                 <property name="show">1</property>
                 <property name="size"></property>
                 <property name="style">wxTB_HORIZONTAL|wxTB_TEXT</property>
@@ -285,11 +397,58 @@
                     <property name="context_menu">0</property>
                     <property name="id">8059</property>
                     <property name="kind">wxITEM_NORMAL</property>
-                    <property name="label">Synchronize!</property>
+                    <property name="label">Go Synchronize!</property>
                     <property name="name">tlb_sync</property>
                     <property name="permission">protected</property>
                     <property name="statusbar">Synchronize the changes.</property>
                     <property name="tooltip">Synchronize the changes.</property>
+                </object>
+                <object class="toolSeparator" expanded="1">
+                    <property name="permission">protected</property>
+                </object>
+                <object class="tool" expanded="1">
+                    <property name="bitmap">Load From Art Provider; wxART_GO_FORWARD; wxART_TOOLBAR</property>
+                    <property name="context_menu">0</property>
+                    <property name="id">wxID_ANY</property>
+                    <property name="kind">wxITEM_NORMAL</property>
+                    <property name="label">Left to Right</property>
+                    <property name="name">tlb_ltor</property>
+                    <property name="permission">protected</property>
+                    <property name="statusbar">Propagate Local version to the Remote.</property>
+                    <property name="tooltip">Propagate Local version to the Remote.</property>
+                </object>
+                <object class="tool" expanded="1">
+                    <property name="bitmap">Load From Art Provider; wxART_DELETE; wxART_TOOLBAR</property>
+                    <property name="context_menu">0</property>
+                    <property name="id">wxID_ANY</property>
+                    <property name="kind">wxITEM_NORMAL</property>
+                    <property name="label">Ignore</property>
+                    <property name="name">tlb_ignore</property>
+                    <property name="permission">protected</property>
+                    <property name="statusbar">Ignore this file during this synchronization.</property>
+                    <property name="tooltip">Ignore this file during this synchronization.</property>
+                </object>
+                <object class="tool" expanded="1">
+                    <property name="bitmap">Load From Art Provider; wxART_GO_BACK; wxART_TOOLBAR</property>
+                    <property name="context_menu">0</property>
+                    <property name="id">wxID_ANY</property>
+                    <property name="kind">wxITEM_NORMAL</property>
+                    <property name="label">Right to Left</property>
+                    <property name="name">tlb_rtol</property>
+                    <property name="permission">protected</property>
+                    <property name="statusbar">Propagate Remote version to the Local.</property>
+                    <property name="tooltip">Propagate Remote version to the Local.</property>
+                </object>
+                <object class="tool" expanded="1">
+                    <property name="bitmap">Load From Art Provider; wxART_FIND_AND_REPLACE; wxART_TOOLBAR</property>
+                    <property name="context_menu">0</property>
+                    <property name="id">wxID_ANY</property>
+                    <property name="kind">wxITEM_NORMAL</property>
+                    <property name="label">Resolve Conflict</property>
+                    <property name="name">mtlb_tool</property>
+                    <property name="permission">protected</property>
+                    <property name="statusbar">Launch a third party tool to resolve conflicting changes.</property>
+                    <property name="tooltip">Launch a third party tool to resolve conflicting changes.</property>
                 </object>
             </object>
             <object class="wxBoxSizer" expanded="1">
