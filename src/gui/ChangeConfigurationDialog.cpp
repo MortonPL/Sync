@@ -1,5 +1,6 @@
 #include "GUI/ChangeConfigurationDialog.h"
 
+#include <cstdio>
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/EditConfigurationDialog.h"
 #include "GUI/GenericPopup.h"
@@ -128,6 +129,7 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
         DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);
         if (db.DeleteConfig(configs[selectedConfigIdx].id))
         {
+            remove(Utils::UUIDToDBPath(configs[selectedConfigIdx].uuid).c_str());
             GenericPopup("Configuration removed successfully.").ShowModal();
         }
         else

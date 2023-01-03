@@ -22,6 +22,7 @@ private:
     Controls ctrl;
     bool isFirstSelectedConfig = true;
     SSHConnector ssh;
+    long viewedItemIndex;
     std::set<long> selectedItems;
     bool hasSelectedEverything = false;
 
@@ -34,6 +35,7 @@ private:
     // custom methods
     void CreateReportList();
     void OnAction(PairedNode::Action action);
+    void ShowDetails(long itemIndex);
 
     // event handlers
     void OnNewConfig(wxCommandEvent& event);

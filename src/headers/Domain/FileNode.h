@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <sys/types.h>
+#include <sys/stat.h>
 #include <map>
 #include "xxhash.h"
 
@@ -49,6 +49,7 @@ public:
     };
 
     static const unsigned short MaxBinarySize;
+    static const unsigned short MiniStatBinarySize;
     static const std::map<Status, std::string> StatusAsString;
 
     std::string path;
@@ -58,10 +59,14 @@ public:
     off_t size = 0;
     XXH64_hash_t hashHigh;
     XXH64_hash_t hashLow;
-    Status status = Status::New;
+    Status status = Status::Absent;
 
     devinode GetDevInode() const;
     bool IsEqualHash(const FileNode& other) const;
+    bool IsEmpty() const;
+
     unsigned short Serialize(unsigned char* buf) const;
     static FileNode Deserialize(unsigned char* buf);
+    static void SerializeStat(struct stat* in, unsigned char* out);
+    static void DeserializeStat(unsigned char* in, struct stat* out);
 };

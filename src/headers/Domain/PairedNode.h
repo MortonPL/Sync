@@ -3,16 +3,15 @@
 #include "domain/FileNode.h"
 #include "Domain/HistoryFileNode.h"
 
-#define HASHCMP_EQPTR 0
-#define HASHCMP_ONENULL 1
-#define HASHCMP_OTHERNULL 2
+#define HASHCMP_ONENULL 0
+#define HASHCMP_OTHERNULL 1
+#define HASHCMP_NE 2
 #define HASHCMP_EQ 3
-#define HASHCMP_NE 4
 class PairedNode
 {
 public:
     PairedNode();
-    PairedNode(const std::string path, FileNode* localNode=nullptr, HistoryFileNode* historyNode=nullptr, FileNode* remoteNode=nullptr);
+    PairedNode(const std::string path, FileNode localNode=FileNode(), HistoryFileNode historyNode=HistoryFileNode(), FileNode remoteNode=FileNode());
     ~PairedNode();
 
     enum Action: char
@@ -24,6 +23,7 @@ public:
         RemoteToLocal,
         Conflict,
         FastForward,
+        Cancel,
     };
 
     bool operator<(const PairedNode& other) const
@@ -34,14 +34,16 @@ public:
     void SetDefaultAction(Action action);
     std::string GetStatusString() const;
     std::string GetActionString() const;
-    static int CompareNodeHashes(const FileNode* one, const FileNode* other);
+    std::string GetDefaultActionString() const;
+    static int CompareNodeHashes(const FileNode& one, const FileNode& other);
     
     static const std::map<Action, std::string> ActionAsString;
 
     const std::string path;
+    bool deleted = false;
     Action action = Action::None;
     Action defaultAction = Action::None;
-    FileNode* localNode;
-    HistoryFileNode* historyNode;
-    FileNode* remoteNode;
+    FileNode localNode;
+    HistoryFileNode historyNode;
+    FileNode remoteNode;
 };

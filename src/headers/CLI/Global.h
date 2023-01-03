@@ -15,4 +15,5 @@ public:
     static std::string remoteAddress;
     static int remotePort;
     static std::string dirToCreep;
+    static std::string pathToStat;
 };

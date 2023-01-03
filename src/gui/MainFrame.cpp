@@ -13,6 +13,7 @@
 #include "Lib/Global.h"
 #include "Lib/Creeper.h"
 #include "Lib/PairingManager.h"
+#include "Lib/SyncManager.h"
 #include "Utils.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -130,13 +131,14 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     
     ssh.EndSession();
 
+    auto toolBar = GetToolBar();
     if (isFirstSelectedConfig)
     {
-        auto toolBar = GetToolBar();
-        ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SCAN)
-        ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, true)
+        ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SCAN);
+        ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, true);
         isFirstSelectedConfig = false;
     }
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false);
 
     ctrl.listMain->DeleteAllItems();
 
@@ -153,6 +155,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
         return;
 
     ctrl.listMain->DeleteAllItems();
+    ctrl.txtDetails->Clear();
 
     //get current config
     auto cfg = Global::GetCurrentConfig();
@@ -207,6 +210,9 @@ void MainFrame::OnScan(wxCommandEvent& event)
     LOG(INFO) << "Begin pairing...";
     Mapper mapper;
     PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, creeper, mapper);
+    scanNodes.clear();
+    historyNodes.clear();
+    remoteNodes.clear();
     LOG(INFO) << "Pairing finished.";
     
     //display at the end
@@ -221,33 +227,68 @@ void MainFrame::OnScan(wxCommandEvent& event)
         i++;
     }
 
-    //save data
-    /*
-    char uuidbuf[37];
-    uuid_unparse(Global::GetCurrentConfig().uuid, uuidbuf);
-    try
-    {
-        auto db = DBConnector(std::string(uuidbuf) + ".db3", SQLite::OPEN_READWRITE);
-        for(int i = 0; i < nodes->size(); i++)
-        {
-            db.InsertFileNode((*nodes)[i]);
-        }
-    }
-    catch(const std::exception& e)
-    {
-        LOG(ERROR) << "Failed to update file history.";
-        GenericPopup("Failed to update file history.").ShowModal();
-        return;
-    }
-    */
-
     auto toolBar = GetToolBar();
-    ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SYNC)
-    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, true)
+    ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SYNC);
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, true);
 }
 
 void MainFrame::OnSync(wxCommandEvent& event)
 {
+    try
+    {
+        auto cfg = Global::GetCurrentConfig();
+        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
+        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser) || !ssh.StartSFTPSession())
+        {
+            LOG(ERROR) << "Failed to connect to the remote.";
+            return;
+        }
+
+        if (hasSelectedEverything || selectedItems.size() == 0)
+        {
+            for (auto& pair: pairedNodes)
+            {
+                SyncManager::Sync(&pair, ssh, db);
+            }
+        }
+        else
+        {
+            for (auto index: selectedItems)
+            {
+                SyncManager::Sync((PairedNode*)(ctrl.listMain->GetItemData(index)), ssh, db);
+            }
+        }
+    }
+    catch(const std::exception& e)
+    {
+        GUIAnnouncer::LogPopup("Failed to sync.", SEV_ERROR);
+        ssh.EndSFTPSession();
+        return;
+    }
+    ssh.EndSFTPSession();
+
+    int index = 0;
+    for (auto it = pairedNodes.begin(); it != pairedNodes.end();)
+    {
+        if (it->deleted)
+        {
+            pairedNodes.erase(it++);
+            ctrl.listMain->DeleteItem(index);
+            if (index == viewedItemIndex)
+                viewedItemIndex = -1;
+        }
+        else
+        {
+            ctrl.listMain->SetItem(index, COL_STATUS, it->GetStatusString());
+            ctrl.listMain->SetItem(index, COL_ACTION, it->GetActionString());
+            it++;
+            index++;
+        }
+    }
+
+    ctrl.txtDetails->Clear();
+    if (viewedItemIndex != -1)
+        ShowDetails(viewedItemIndex);
 }
 
 void MainFrame::OnAction(PairedNode::Action action)
@@ -280,6 +321,59 @@ void MainFrame::OnAction(PairedNode::Action action)
     }
 }
 
+#define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
+void MainFrame::ShowDetails(long itemIndex)
+{
+    auto writeNodeDetails = [this](const FileNode& pNode)
+    {
+        if (!pNode.IsEmpty())
+        {
+            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
+            *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode.mtime) << '\n';
+            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
+            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+        }
+        else
+        {
+            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\n Hash:";
+        }
+    };
+
+    auto writeHistoryNodeDetails = [this](const HistoryFileNode& pNode)
+    {
+        if (!pNode.IsEmpty())
+        {
+            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
+            *ctrl.txtDetails << "Local Mtime: " << Utils::TimestampToString(pNode.mtime) << '\n';
+            *ctrl.txtDetails << "Remote Mtime: " << Utils::TimestampToString(pNode.remoteMtime) << '\n';
+            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
+            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+        }
+        else
+        {
+            *ctrl.txtDetails << "Status: Absent\nLocal Mtime:\nRemote Mtime:\nSize:\nHash:";
+        }
+    };
+
+    auto pPair = (PairedNode*)ctrl.listMain->GetItemData(itemIndex);
+    ctrl.txtDetails->Clear();
+    //general
+    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
+    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
+    *ctrl.txtDetails << "Pair Action: " << pPair->GetActionString() << '\n';
+    *ctrl.txtDetails << "Pair Default Action: " << pPair->GetDefaultActionString() << '\n';
+    //local
+    *ctrl.txtDetails << "== LOCAL ==\n";
+    writeNodeDetails(pPair->localNode);
+    //remote
+    *ctrl.txtDetails << "== REMOTE ==\n";
+    writeNodeDetails(pPair->remoteNode);
+    //history
+    *ctrl.txtDetails << "== HISTORY ==\n";
+    writeHistoryNodeDetails(pPair->historyNode);
+}
+#undef LTOA
+
 void MainFrame::OnActionDefault(wxCommandEvent& event)
 {
     OnAction(PairedNode::Action::None);
@@ -305,54 +399,23 @@ void MainFrame::OnActionResolve(wxCommandEvent& event)
     OnAction(PairedNode::Action::Conflict);
 }
 
-#define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
 void MainFrame::OnSelectNode(wxListEvent& event)
 {
-    auto writeNodeDetails = [this](const FileNode* pNode)
-    {
-        if (pNode != nullptr)
-        {
-            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode->status) << '\n';
-            *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode->mtime) << '\n';
-            *ctrl.txtDetails << "Size: " << LTOA(pNode->size) << '\n';
-            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode->hashHigh, (unsigned long)pNode->hashLow) << '\n';
-        }
-        else
-        {
-            *ctrl.txtDetails << "Status: " <<  "Absent" <<'\n';
-            *ctrl.txtDetails << "Modification time: " << '\n';
-            *ctrl.txtDetails << "Size: " << '\n';
-            *ctrl.txtDetails << "Hash: " << '\n';
-        }
-    };
-
-    selectedItems.insert(event.GetIndex());
+    viewedItemIndex = event.GetIndex();
+    selectedItems.insert(viewedItemIndex);
     if (selectedItems.size() == ctrl.listMain->GetItemCount())
         hasSelectedEverything = true;
 
-    auto pPair = (PairedNode*)event.GetData();
-    ctrl.txtDetails->Clear();
-    //general
-    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
-    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
-    *ctrl.txtDetails << "Pair Default Action: " << pPair->GetActionString() << '\n';
-    //local
-    *ctrl.txtDetails << "== LOCAL ==\n";
-    writeNodeDetails(pPair->localNode);
-    //remote
-    *ctrl.txtDetails << "== REMOTE ==\n";
-    writeNodeDetails(pPair->remoteNode);
-    //history
-    *ctrl.txtDetails << "== HISTORY ==\n";
-    writeNodeDetails(pPair->historyNode);
-
+    ShowDetails(viewedItemIndex);
 }
-#undef LTOA
 
 void MainFrame::OnDeselectNode(wxListEvent& event)
 {
     selectedItems.erase(event.GetIndex());
     hasSelectedEverything = false;
+    viewedItemIndex = -1;
+    
+    ctrl.txtDetails->Clear();
 }
 
 void MainFrame::OnActionSelectAll(wxCommandEvent& event)

@@ -7,6 +7,7 @@ const unsigned short FileNode::MaxBinarySize = sizeof(unsigned short) + sizeof(u
                                                + PATH_MAX + sizeof(FileNode::size) + sizeof(FileNode::mtime)
                                                + sizeof(FileNode::dev) + sizeof(FileNode::inode)
                                                + sizeof(FileNode::hashHigh) + sizeof(FileNode::hashLow);
+const unsigned short FileNode::MiniStatBinarySize = sizeof(dev_t) + sizeof(ino_t) + sizeof(timespec);
 
 const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
 {
@@ -30,6 +31,7 @@ FileNode::FileNode()
 FileNode::FileNode(std::string path)
 {
     this->path = path;
+    this->status = FileNode::Status::New;
 }
 
 FileNode::FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t size,
@@ -42,6 +44,7 @@ FileNode::FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t
     this->size = size;
     this->hashHigh = hashHigh;
     this->hashLow = hashLow;
+    this->status = FileNode::Status::New;
 }
 
 FileNode::~FileNode()
@@ -58,19 +61,32 @@ bool FileNode::IsEqualHash(const FileNode& other) const
     return hashHigh == other.hashHigh && hashLow == other.hashLow;
 }
 
-#define SERIALIZE(type, field)\
+bool FileNode::IsEmpty() const
+{
+    return status == FileNode::Status::Absent;
+}
+
+#define SERIALIZE(buf, type, field)\
     *(type*)(buf + i) = field;\
     i += sizeof(type);
 
-#define SERIALIZE_STRING(field, size)\
+#define SERIALIZE_STRING(buf, field, size)\
     memcpy(buf + i, field.c_str(), size);\
     i += size;
 
-#define DESERIALIZE(type, field)\
+#define DESERIALIZE(buf, type, field)\
+    field = *reinterpret_cast<type*>(buf + i);\
+    i += sizeof(type);
+
+#define DESERIALIZE_DECL(buf, type, field)\
     type field = *reinterpret_cast<type*>(buf + i);\
     i += sizeof(type);
 
-#define DESERIALIZE_STRING(field, size)\
+#define DESERIALIZE_STRING(buf, field, size)\
+    field((char*)(buf + i), size);\
+    i += size;
+
+#define DESERIALIZE_DECL_STRING(buf, field, size)\
     std::string field((char*)(buf + i), size);\
     i += size;
 
@@ -80,16 +96,16 @@ unsigned short FileNode::Serialize(unsigned char* buf) const
     unsigned short pathSize = path.size();
     unsigned short dataSize = sizeof(pathSize) + pathSize + sizeof(size) + sizeof(mtime) + sizeof(dev) + sizeof(inode) + sizeof(hashHigh) + sizeof(hashLow);
 
-    SERIALIZE(unsigned short, dataSize)
+    SERIALIZE(buf, unsigned short, dataSize);
 
-    SERIALIZE(unsigned short, pathSize)
-    SERIALIZE_STRING(path, pathSize)
-    SERIALIZE(off_t, size)
-    SERIALIZE(time_t, mtime)
-    SERIALIZE(dev_t, dev)
-    SERIALIZE(ino_t, inode)
-    SERIALIZE(XXH64_hash_t, hashHigh)
-    SERIALIZE(XXH64_hash_t, hashLow)
+    SERIALIZE(buf, unsigned short, pathSize);
+    SERIALIZE_STRING(buf, path, pathSize);
+    SERIALIZE(buf, off_t, size);
+    SERIALIZE(buf, time_t, mtime);
+    SERIALIZE(buf, dev_t, dev);
+    SERIALIZE(buf, ino_t, inode);
+    SERIALIZE(buf, XXH64_hash_t, hashHigh);
+    SERIALIZE(buf, XXH64_hash_t, hashLow);
     return sizeof(dataSize) + dataSize;
 }
 
@@ -97,15 +113,33 @@ FileNode FileNode::Deserialize(unsigned char* buf)
 {
     unsigned short i = 0;
 
-    DESERIALIZE(unsigned short, pathSize)
-    DESERIALIZE_STRING(_path, pathSize)
-    DESERIALIZE(off_t, size)
-    DESERIALIZE(time_t, mtime)
-    DESERIALIZE(dev_t, dev)
-    DESERIALIZE(ino_t, inode)
-    DESERIALIZE(XXH64_hash_t, hashHigh)
-    DESERIALIZE(XXH64_hash_t, hashLow)
+    DESERIALIZE_DECL(buf, unsigned short, pathSize);
+    DESERIALIZE_DECL_STRING(buf, _path, pathSize);
+    DESERIALIZE_DECL(buf, off_t, size);
+    DESERIALIZE_DECL(buf, time_t, mtime);
+    DESERIALIZE_DECL(buf, dev_t, dev);
+    DESERIALIZE_DECL(buf, ino_t, inode);
+    DESERIALIZE_DECL(buf, XXH64_hash_t, hashHigh);
+    DESERIALIZE_DECL(buf, XXH64_hash_t, hashLow);
     return FileNode(_path, dev, inode, mtime, size, hashHigh, hashLow);
+}
+
+void FileNode::SerializeStat(struct stat* in, unsigned char* out)
+{
+    unsigned short i = 0;
+
+    SERIALIZE(out, dev_t, in->st_dev);
+    SERIALIZE(out, ino_t, in->st_ino);
+    SERIALIZE(out, timespec, in->st_mtim);
+}
+
+void FileNode::DeserializeStat(unsigned char* in, struct stat* out)
+{
+    unsigned short i = 0;
+
+    DESERIALIZE(in, dev_t, out->st_dev);
+    DESERIALIZE(in, ino_t, out->st_ino);
+    DESERIALIZE(in, timespec, out->st_mtim);
 }
 
 #undef SERIALIZE

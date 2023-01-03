@@ -1,5 +1,4 @@
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #include "Lib/General.h"
 #include "Lib/Creeper.h"
@@ -38,10 +37,31 @@ void ParseArgs(int argc, char* argv[])
             GlobalCLI::remoteAddress = argv[i+1];
             GlobalCLI::remotePort = atoi(argv[i+2]);
             break;
+        case 's':
+            if (i + 1 >= argc)
+                break;
+            GlobalCLI::pathToStat = argv[i+1];
+            break;
         default:
             break;
         }
     }
+}
+
+void StatPath(std::string path)
+{
+    struct stat buf;
+    if (stat(path.c_str(), &buf) != 0)
+    {
+        std::cout << 1;
+        std::cout.flush();
+        return;
+    }
+    std::cout << 0;
+    std::cout.flush();
+    unsigned char buf2[FileNode::MiniStatBinarySize];
+    FileNode::SerializeStat(&buf, buf2);
+    SocketListener::writeall(1, (char*)&buf2, sizeof(buf2));
 }
 
 void CreepDir(std::string path)
@@ -127,6 +147,11 @@ int main(int argc, char* argv[])
 
     if (!General::InitEverything("synccli.log"))
         return -1;
+
+    if (GlobalCLI::pathToStat != "")
+    {
+        StatPath(GlobalCLI::pathToStat);
+    }
 
     if (GlobalCLI::dirToCreep != "")
     {

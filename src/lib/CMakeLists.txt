@@ -30,6 +30,7 @@ set(SRC_LIB_FILES
     Mapper.cpp
     Creeper.cpp
     PairingManager.cpp
+    SyncManager.cpp
     DBConnector.cpp
     SSHConnector.cpp
 )

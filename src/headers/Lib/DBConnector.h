@@ -22,15 +22,15 @@ public:
     static std::string GetMainFileName();
 
     static int EnsureCreatedMain();
-    bool InsertConfig(Configuration config);
-    bool UpdateConfig(Configuration config);
+    bool InsertConfig(const Configuration config);
+    bool UpdateConfig(const Configuration config);
     bool DeleteConfig(int id);
     std::vector<Configuration> SelectAllConfigs();
 
-    static int EnsureCreatedHistory(std::string path);
-    bool InsertFileNode(HistoryFileNode file);
-    bool UpdateFileNode(HistoryFileNode file);
-    bool DeleteFileNode(std::string& path);
+    static int EnsureCreatedHistory(const std::string path);
+    bool InsertFileNode(const HistoryFileNode& file);
+    bool UpdateFileNode(const HistoryFileNode& file);
+    bool DeleteFileNode(const std::string path);
     void SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes);
 
 private:

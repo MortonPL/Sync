@@ -105,6 +105,30 @@ void SSHConnector::EndSession()
         ssh_free(session);
         session = NULL;
     }
+    EndSFTPSession();
+}
+
+bool SSHConnector::StartSFTPSession()
+{
+    if ((sftp = sftp_new(session)) == NULL)
+        return false;
+    
+    if (sftp_init(sftp) != SSH_OK)
+    {
+        sftp_free(sftp);
+        return false;
+    }
+    
+    return true;
+}
+
+void SSHConnector::EndSFTPSession()
+{
+    if (sftp != NULL)
+    {
+        sftp_free(sftp);
+        sftp = NULL;
+    }
 }
 
 bool SSHConnector::AuthenticateServer(serverHashCallbackType unknownCallback,
@@ -469,6 +493,7 @@ void SSHConnector::FreeChannel(ssh_channel_struct* pChannel)
     ssh_channel_free(pChannel);
 }
 
+// TODO DELETE
 bool SSHConnector::CreateTunnels()
 {
     auto pForwardChannel = ssh_channel_new(session);
@@ -497,6 +522,7 @@ bool SSHConnector::CreateTunnels()
     return true;
 }
 
+//TODO DELETE
 ssh_channel_struct* SSHConnector::PrepareReverseTunnel()
 {
     if (ssh_channel_listen_forward(session, NULL, 40405, NULL) != SSH_OK)
@@ -569,3 +595,33 @@ int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNod
     return CALLCLI_OK;
 }
 #undef BUFFER_SIZE
+
+int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
+{
+    ssh_channel_struct* pChannel;
+    if ((pChannel = CallCLI(fmt::format("-s {}", pathToStat))) == nullptr)
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_NOANSWER;
+    }
+    unsigned char buf[FileNode::MiniStatBinarySize];
+    char rc;
+    if (ssh_channel_read(pChannel, &rc, sizeof(rc), 0) != sizeof(rc))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_404;
+    }
+    if (rc != 0)
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_ERROR;
+    }
+    if (ssh_channel_read(pChannel, buf, sizeof(buf), 0) != sizeof(buf))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_404;
+    }
+    FileNode::DeserializeStat(buf, pBuf);
+    FreeChannel(pChannel);
+    return CALLCLI_OK;
+}

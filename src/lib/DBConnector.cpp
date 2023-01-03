@@ -66,6 +66,7 @@ int DBConnector::EnsureCreatedHistory(std::string path)
             "r_dev INTEGER NOT NULL,"
             "r_inode INTEGER NOT NULL,"
             "mtime INTEGER NOT NULL,"
+            "r_mtime INTEGER NOT NULL,"
             "size INTEGER NOT NULL,"
             "hash_high BLOB NOT NULL,"
             "hash_low BLOB NOT NULL)"
@@ -155,15 +156,15 @@ std::vector<Configuration> DBConnector::SelectAllConfigs()
     return configs;
 }
 
-bool DBConnector::InsertFileNode(HistoryFileNode file)
+bool DBConnector::InsertFileNode(const HistoryFileNode& file)
 {
     try
     {
         SQLite::Statement query(db, fmt::format(
             "INSERT INTO nodes "
-            "(path, dev, inode, r_dev, r_inode, mtime, size, hash_high, hash_low) "
-            "VALUES (\"{}\", {}, {}, {}, {}, {}, {}, ?, ?)",
-            file.path, file.dev, file.inode, file.remoteDev, file.remoteInode, file.mtime, file.size));
+            "(path, dev, inode, r_dev, r_inode, mtime, r_mtime, size, hash_high, hash_low) "
+            "VALUES (\"{}\", {}, {}, {}, {}, {}, {}, {}, ?, ?)",
+            file.path, file.dev, file.inode, file.remoteDev, file.remoteInode, file.mtime, file.remoteMtime, file.size));
         query.bind(1, &file.hashHigh, 8);
         query.bind(2, &file.hashLow, 8);
         query.exec();
@@ -177,11 +178,11 @@ bool DBConnector::InsertFileNode(HistoryFileNode file)
     return true;
 }
 
-bool DBConnector::UpdateFileNode(HistoryFileNode file)
+bool DBConnector::UpdateFileNode(const HistoryFileNode& file)
 {
     try
     {
-        if (file.status == FileNode::Status::MovedClean || file.status == FileNode::Status::MovedDirty) // is this necessary?
+        /*if (file.status == FileNode::Status::MovedClean || file.status == FileNode::Status::MovedDirty) // is this necessary?
         {
             SQLite::Statement query(db, fmt::format(
                 "UPDATE nodes SET "
@@ -193,14 +194,13 @@ bool DBConnector::UpdateFileNode(HistoryFileNode file)
             query.bind(2, &file.hashLow, 8);
             query.exec();
         }
-        else
+        else*/
         {
             SQLite::Statement query(db, fmt::format(
-                "UPDATE nodes SET "
-                "dev = {}, inode = {}, mtime = {}, size = {}, "
-                "hash_high = ?, hash_low = ?"
-                "WHERE path = \"{}\"",
-                file.dev, file.inode, file.mtime, file.size, file.path));
+                "REPLACE INTO nodes "
+                "(path, dev, inode, r_dev, r_inode, mtime, r_mtime, size, hash_high, hash_low) "
+                "VALUES (\"{}\", {}, {}, {}, {}, {}, {}, {}, ?, ?)",
+                file.path, file.dev, file.inode, file.remoteDev, file.remoteInode, file.mtime, file.remoteMtime, file.size));
             query.bind(1, &file.hashHigh, 8);
             query.bind(2, &file.hashLow, 8);
             query.exec();
@@ -215,11 +215,11 @@ bool DBConnector::UpdateFileNode(HistoryFileNode file)
     return true;
 }
 
-bool DBConnector::DeleteFileNode(std::string& path)
+bool DBConnector::DeleteFileNode(const std::string path)
 {
     try
     {
-        this->db.exec(fmt::format("DELETE FROM nodes WHERE path = {}", path));
+        this->db.exec(fmt::format("DELETE FROM nodes WHERE path = \"{}\"", path));
     }
     catch(const std::exception& e)
     {
@@ -237,15 +237,16 @@ void DBConnector::SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes)
     {
         nodes.push_front(HistoryFileNode
         (
-            (std::string)query.getColumn(0),
-            (uint32_t)query.getColumn(1),
-            (int64_t)query.getColumn(2),
-            (uint32_t)query.getColumn(3),
-            (int64_t)query.getColumn(4),
-            (uint32_t)query.getColumn(5),
-            (uint32_t)query.getColumn(6),
-            *(XXH64_hash_t*)query.getColumn(7).getBlob(),
-            *(XXH64_hash_t*)query.getColumn(8).getBlob()
+            (std::string)query.getColumn(0),                // path
+            (uint32_t)query.getColumn(1),                   // dev
+            (int64_t)query.getColumn(2),                    // inode
+            (uint32_t)query.getColumn(3),                   // r_dev
+            (int64_t)query.getColumn(4),                    // r_inode
+            (uint32_t)query.getColumn(5),                   // mtime
+            (uint32_t)query.getColumn(6),                   // r_mtime
+            (uint32_t)query.getColumn(7),                   // size
+            *(XXH64_hash_t*)query.getColumn(8).getBlob(),   // hash_high
+            *(XXH64_hash_t*)query.getColumn(9).getBlob()    // hash_low
         ));
     }
     return;

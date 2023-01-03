@@ -13,14 +13,14 @@ FileNode MakeFileNode(std::string path, dev_t dev, ino_t inode, XXH64_hash_t has
 
 HistoryFileNode MakeHistoryFileNode(std::string path, dev_t dev, ino_t inode, dev_t rdev, ino_t rinode, XXH64_hash_t hashHigh, XXH64_hash_t hashLow, FileNode::Status status=FileNode::Status::HistoryPresent)
 {
-    HistoryFileNode h(path, dev, inode, rdev, rinode, 0, 0, hashHigh, hashLow);
+    HistoryFileNode h(path, dev, inode, rdev, rinode, 0, 0, 0, hashHigh, hashLow);
     h.status = status;
     return h;
 }
 
 PairedNode MakePairedNode(std::string path, FileNode* fileNode, HistoryFileNode* historyNode, FileNode* remoteNode, PairedNode::Action action=PairedNode::Action::None)
 {
-    PairedNode p(path, fileNode, historyNode, remoteNode);
+    PairedNode p(path, fileNode? *fileNode: FileNode(), historyNode? *historyNode: HistoryFileNode(), remoteNode? *remoteNode: FileNode());
     p.action = action;
     p.defaultAction = action;
     return p;
@@ -47,18 +47,18 @@ void ExpectPairedNode(PairedNode* pair, PairedNode* expected)
     EXPECT_EQ(pair->path, expected->path) << "PairedNode " << expected->path << " has wrong path!";
     EXPECT_EQ(pair->action, expected->action) << "PairedNode " << expected->path << " has wrong action!";
     EXPECT_EQ(pair->defaultAction, expected->defaultAction) << "PairedNode " << expected->path << " has wrong default action!";
-    if (expected->localNode)
-        EXPECT_EQ(pair->localNode->status, expected->localNode->status) << "PairedNode " << expected->path << " has local status mismatch!";
+    if (!expected->localNode.IsEmpty())
+        EXPECT_EQ(pair->localNode.status, expected->localNode.status) << "PairedNode " << expected->path << " has local status mismatch!";
     else
-        EXPECT_EQ(pair->localNode, nullptr);
-    if (expected->historyNode)
-        EXPECT_EQ(pair->historyNode->status, expected->historyNode->status) << "PairedNode " << expected->path << " has history status mismatch!";
+        EXPECT_EQ(pair->localNode.IsEmpty(), true);
+    if (!expected->historyNode.IsEmpty())
+        EXPECT_EQ(pair->historyNode.status, expected->historyNode.status) << "PairedNode " << expected->path << " has history status mismatch!";
     else
-        EXPECT_EQ(pair->historyNode, nullptr);
-    if (expected->remoteNode)
-        EXPECT_EQ(pair->remoteNode->status, expected->remoteNode->status) << "PairedNode " << expected->path << " has remote status mismatch!";
+        EXPECT_EQ(pair->historyNode.IsEmpty(), true);
+    if (!expected->remoteNode.IsEmpty())
+        EXPECT_EQ(pair->remoteNode.status, expected->remoteNode.status) << "PairedNode " << expected->path << " has remote status mismatch!";
     else
-        EXPECT_EQ(pair->remoteNode, nullptr);
+        EXPECT_EQ(pair->remoteNode.IsEmpty(), true);
 }
 
 /*

@@ -4,9 +4,12 @@ PairedNode::PairedNode()
 {
 }
 
-PairedNode::PairedNode(const std::string path, FileNode* localNode, HistoryFileNode* historyNode, FileNode* remoteNode)
-: path(path), localNode(localNode), historyNode(historyNode), remoteNode(remoteNode)
+PairedNode::PairedNode(const std::string path, FileNode localNode, HistoryFileNode historyNode, FileNode remoteNode)
+: path(path)
 {
+    this->localNode = localNode;
+    this->historyNode = historyNode;
+    this->remoteNode = remoteNode;
 }
 
 PairedNode::~PairedNode()
@@ -22,6 +25,7 @@ const std::map<PairedNode::Action, std::string> PairedNode::ActionAsString =
     {PairedNode::Action::Ignore, "Ignore"},
     {PairedNode::Action::Conflict, "Conflict"},
     {PairedNode::Action::FastForward, "Fast Forward"},
+    {PairedNode::Action::Cancel, "Cancel"},
 };
 
 void PairedNode::SetDefaultAction(Action action)
@@ -32,9 +36,9 @@ void PairedNode::SetDefaultAction(Action action)
 
 std::string PairedNode::GetStatusString() const
 {
-    return (localNode? FileNode::StatusAsString.at(localNode->status): FileNode::StatusAsString.at(FileNode::Status::Absent))
+    return FileNode::StatusAsString.at(localNode.status)
            + " <-> "
-           + (remoteNode? FileNode::StatusAsString.at(remoteNode->status): FileNode::StatusAsString.at(FileNode::Status::Absent));
+           + FileNode::StatusAsString.at(remoteNode.status);
 }
 
 std::string PairedNode::GetActionString() const
@@ -45,13 +49,19 @@ std::string PairedNode::GetActionString() const
         return "";
 }
 
-int PairedNode::CompareNodeHashes(const FileNode* one, const FileNode* other)
+std::string PairedNode::GetDefaultActionString() const
 {
-    if (one == other)
-        return HASHCMP_EQPTR;
-    if (!one && other)
+    if (defaultAction != PairedNode::Action::None)
+        return ActionAsString.at(defaultAction);
+    else
+        return "";
+}
+
+int PairedNode::CompareNodeHashes(const FileNode& one, const FileNode& other)
+{
+    if (one.IsEmpty() && !other.IsEmpty())
         return HASHCMP_ONENULL;
-    if (one && !other)
+    if (!one.IsEmpty() && other.IsEmpty())
         return HASHCMP_OTHERNULL;
-    return one->IsEqualHash(*other)? HASHCMP_EQ: HASHCMP_NE;
+    return one.IsEqualHash(other)? HASHCMP_EQ: HASHCMP_NE;
 }

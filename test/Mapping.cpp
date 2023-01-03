@@ -34,7 +34,7 @@ void EmplaceLocalInodes(Mapper& mapper, std::vector<PairedNode>& nodes)
 {
     for (auto& node: nodes)
     {
-        mapper.EmplaceMapLocalInode(node.localNode->GetDevInode(), node);
+        mapper.EmplaceMapLocalInode(node.localNode.GetDevInode(), node);
     }
 }
 
@@ -42,7 +42,7 @@ void EmplaceRemoteInodes(Mapper& mapper, std::vector<PairedNode>& nodes)
 {
     for (auto& node: nodes)
     {
-        mapper.EmplaceMapRemoteInode(node.remoteNode->GetDevInode(), node);
+        mapper.EmplaceMapRemoteInode(node.remoteNode.GetDevInode(), node);
     }
 }
 
@@ -99,8 +99,8 @@ TEST_F(MappingTest, SimpleLocalInode)
 
     std::vector<PairedNode> pairedNodes =
     {
-        PairedNode("", &nodes[0]),
-        PairedNode("", &nodes[1]),
+        PairedNode("", nodes[0]),
+        PairedNode("", nodes[1]),
     };
 
     std::vector<std::pair<FileNode::devinode, PairedNode*>> expectedResult =
@@ -124,8 +124,8 @@ TEST_F(MappingTest, SimpleRemoteInode)
 
     std::vector<PairedNode> pairedNodes =
     {
-        PairedNode("", nullptr, nullptr, &nodes[0]),
-        PairedNode("", nullptr, nullptr, &nodes[1]),
+        PairedNode("", FileNode(), HistoryFileNode(), nodes[0]),
+        PairedNode("", FileNode(), HistoryFileNode(), nodes[1]),
     };
 
     std::vector<std::pair<FileNode::devinode, PairedNode*>> expectedResult =
@@ -150,9 +150,9 @@ TEST_F(MappingTest, InodeCollision)
 
     std::vector<PairedNode> pairedNodes =
     {
-        PairedNode("", &nodes[0]),
-        PairedNode("", &nodes[1]),
-        PairedNode("", &nodes[2]),
+        PairedNode("", nodes[0]),
+        PairedNode("", nodes[1]),
+        PairedNode("", nodes[2]),
     };
 
     std::vector<std::pair<FileNode::devinode, PairedNode*>> expectedResult =

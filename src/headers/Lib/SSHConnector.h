@@ -1,5 +1,6 @@
 #pragma once
 #include <libssh/libssh.h>
+#include <libssh/sftp.h>
 #include <string>
 #include <forward_list>
 
@@ -36,8 +37,11 @@ public:
                  serverHashCallbackType errorCallback, passProviderType passwordProvider,
                  interactiveProviderType interactiveProvider, keyProviderType keyProvider);
     void EndSession();
+    bool StartSFTPSession();
+    void EndSFTPSession();
 
     int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
+    int StatRemote(std::string pathToStat, struct stat* pBuf);
 
 private:
     ssh_channel_struct* GetChannel();
@@ -66,6 +70,7 @@ private:
     bool AuthenticateResult(int rc);
 
     ssh_session session = NULL;
+    sftp_session sftp = NULL;
     int authStatus = AUTH_STATUS_NONE;
     int authMethods = 0;
     bool isAuthDenied = false;

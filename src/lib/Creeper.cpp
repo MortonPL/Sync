@@ -158,6 +158,44 @@ int Creeper::MakeNode(const std::filesystem::__cxx11::directory_entry& entry,
     return RES_OK;
 }
 
+int Creeper::MakeNode(std::string& path, FileNode& node)
+{
+    auto cstr = path.c_str();
+    struct stat ret;
+    int rc = stat(cstr, &ret);
+    int err = errno;
+    if (rc == -1)
+    {
+        if (err == EACCES)
+            return CREEP_PERM;
+        if (err == ENOENT || err == ENOTDIR)
+            return CREEP_EXIST;
+        LOG(ERROR) << "An error occured while checking if a path exists. Error code: " << err;
+        return CREEP_ERROR;
+    }
+    if (!S_ISREG(ret.st_mode))
+        return CREEP_NOTDIR;
+    if ((ret.st_mode & S_IRWXU) != S_IRWXU)
+        return CREEP_PERM;
+
+    // calculate hash
+    auto pBuffer = malloc(BUFFER_SIZE);
+    auto pState = XXH3_createState();
+    XXH128_hash_t hash;
+    if (!hashFile(pState, pBuffer, path, cstr, &hash))
+    {
+        free(pBuffer);
+        XXH3_freeState(pState);
+        return CREEP_ERROR;
+    }
+    free(pBuffer);
+    XXH3_freeState(pState);
+
+    // create a new file entry
+    node = FileNode(path, ret.st_dev, ret.st_ino, ret.st_mtim.tv_sec, ret.st_size, hash.high64, hash.low64);
+    return CREEP_OK;
+}
+
 int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes)
 {
     XXH3_state_t* pState;

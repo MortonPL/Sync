@@ -15,6 +15,7 @@ set(TEST_FILES
     Creeping.cpp
     Mapping.cpp
     Pairing.cpp
+    Syncing.cpp
 )
 
 add_executable(${TEST_NAME} ${TEST_FILES})

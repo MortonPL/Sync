@@ -15,7 +15,7 @@ print_help() {
     echo "Usage: action.sh build|debug [OPTIONS]...";
     echo "All options (except help) require a valid target (build|debug)!"
     echo "Options:";
-    echo "\t-c, --configure                 \t (Re)Generate CMake configuration files";
+    echo "\t-c, --configure                 \t Force (re)generate CMake configuration files";
     echo "\t-h, --help                      \t Display this message";
     echo "\t-i, --install                   \t Install program (to /usr/bin) after build";
     echo "\t-r [USER], --remote [...]       \t Copy results to a remote location";
@@ -101,11 +101,9 @@ do_xrs() {
 
 do_config() {
     if [ $CONFIGURE -eq 1 ]; then
-        echo "Generating build configuration...";
+        echo "Force regenerating build configuration...";
         cmake ../ -DCMAKE_BUILD_TYPE=$BUILD_TYPE;
         echo "Done.";
-    else
-        echo "Omitting build configuration.";
     fi
 }
 
