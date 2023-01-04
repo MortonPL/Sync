@@ -46,5 +46,8 @@ bool General::InitEverything(std::string logName)
         return false;
     }
 
+    if (!ensureDirectory(Utils::GetTempPath(), "Failed to make sure that the temporary directory exists! Exiting."))
+        return false;
+
     return true;
 }

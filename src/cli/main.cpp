@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "Lib/General.h"
 #include "Lib/Creeper.h"
@@ -28,8 +29,10 @@ void ParseArgs(int argc, char* argv[])
         case 'd':
             GlobalCLI::mode |= GlobalCLI::CLIMode::DaemonServant;
             break;
-        case 'D':
-            GlobalCLI::mode |= GlobalCLI::CLIMode::DaemonMaster;
+        case 'p':
+            if (i + 1 >= argc)
+                break;
+            GlobalCLI::rootDir = Utils::CorrectDirPath(argv[i+1]);
             break;
         case 'r':
             if (i + 2 >= argc)
@@ -37,10 +40,8 @@ void ParseArgs(int argc, char* argv[])
             GlobalCLI::remoteAddress = argv[i+1];
             GlobalCLI::remotePort = atoi(argv[i+2]);
             break;
-        case 's':
-            if (i + 1 >= argc)
-                break;
-            GlobalCLI::pathToStat = argv[i+1];
+        case 'h':
+            GlobalCLI::mode |= GlobalCLI::CLIMode::HomePath;
             break;
         default:
             break;
@@ -91,53 +92,55 @@ void CreepDir(std::string path)
     LOG(INFO) << "Done.";
 }
 
-int Serve()
+int GetHomePath()
 {
-    auto s = SocketListener();
-    if (!s.Init(GlobalCLI::remoteAddress, GlobalCLI::remotePort))
-    {
-        s.DeInit();
-        LOG(ERROR) << "Failed to initialize socket";
-    }
-    if (!s.Bind())
-    {
-        s.DeInit();
-        LOG(ERROR) << "Failed to bind socket";
-    }
-    if (!s.Listen())
-    {
-        s.DeInit();
-        LOG(ERROR) << "Failed to listen to the socket";
-    }
+    auto home = Utils::GetHomePath();
+    unsigned short len = home.length();
 
-    char buff[32];
-    bool isDone = false;
-    while (!isDone)
-    {
-        LOG(INFO) << "Loop";
-        if (!s.Accept())
-        {
-            s.DeInit();
-            LOG(ERROR) << "Failed to accept a connection";
-            continue;
-        }
-        if (s.Read(buff, 32) == -1)
-        {
-            s.DeInit();
-            LOG(ERROR) << "Error receiving data";
-            s.EndAccept();
-            return 4;
-        }
+    SocketListener::writeall(1, (char*)&len, sizeof(len));
 
-        s.EndAccept();
-        isDone = true;
-    }
-    s.DeInit();
+    std::cout << home;
+    std::cout.flush();
+
     return 0;
 }
 
-int Master()
+int Serve()
 {
+    char buff[32];
+    bool isDone = false;
+    char mode = 0;
+
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds);
+
+    std::cout << 0;
+    std::cout.flush();
+
+    while (!isDone)
+    {
+        tv = {60, 0};
+        retval = select(1, &rfds, NULL, NULL, &tv);
+
+        if (retval == -1)
+        {
+            break;
+        }
+        else if (retval)
+        {
+            read(0, &mode, sizeof(mode));
+        }
+        else
+        {
+            mode = 0;
+        }
+
+        if (mode == 0)
+            isDone = true;
+    }
     return 0;
 }
 
@@ -147,10 +150,13 @@ int main(int argc, char* argv[])
 
     if (!General::InitEverything("synccli.log"))
         return -1;
+    
+    if (GlobalCLI::rootDir != "")
+        std::filesystem::current_path(GlobalCLI::rootDir);
 
-    if (GlobalCLI::pathToStat != "")
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::HomePath)
     {
-        StatPath(GlobalCLI::pathToStat);
+        GetHomePath();
     }
 
     if (GlobalCLI::dirToCreep != "")
@@ -160,15 +166,7 @@ int main(int argc, char* argv[])
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::DaemonServant)
     {
-        if (fork() == 0) // parent kills itself here, child becomes a daemon
-            Serve();
-        return 0;
-    }
-
-    if (GlobalCLI::mode & GlobalCLI::CLIMode::DaemonMaster)
-    {
-        if (fork() == 0) // parent kills itself here, child becomes a daemon
-            Master();
+        Serve();
         return 0;
     }
 

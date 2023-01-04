@@ -33,7 +33,9 @@ private:
     std::forward_list<FileNode> remoteNodes;
 
     // custom methods
-    void CreateReportList();
+    void CreateColumns();
+    void PopulateList();
+    void RefreshList();
     void OnAction(PairedNode::Action action);
     void ShowDetails(long itemIndex);
 

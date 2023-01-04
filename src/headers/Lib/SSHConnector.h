@@ -17,6 +17,7 @@
 #define CALLCLI_ERROR -1
 #define CALLCLI_404 -2
 #define CALLCLI_NOANSWER -3
+#define CALLCLI_BLOCKED -4
 
 typedef void (*genericMessengerType)(std::string prompt);
 typedef std::string (*passProviderType)(bool& isCanceled, std::string& prompt);
@@ -37,16 +38,21 @@ public:
                  serverHashCallbackType errorCallback, passProviderType passwordProvider,
                  interactiveProviderType interactiveProvider, keyProviderType keyProvider);
     void EndSession();
-    bool StartSFTPSession();
-    void EndSFTPSession();
+    sftp_session MakeSFTPSession();
 
     int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
+    int CallCLIHomeAndBlock(std::string pathToCheck, std::string* result);
+    int CallCLIServe();
+    int EndCLIServe();
     int StatRemote(std::string pathToStat, struct stat* pBuf);
+    int ReplaceFile(std::string pathFrom, std::string pathTo);
+
+    std::string GetError();
 
 private:
     ssh_channel_struct* GetChannel();
     void FreeChannel(ssh_channel_struct* pChannel);
-    ssh_channel_struct* CallCLI(std::string cmd);
+    ssh_channel_struct* CallCLI(std::string flag, std::string cmd);
     ssh_channel_struct* PrepareReverseTunnel();
     bool CreateTunnels();
 
@@ -70,7 +76,8 @@ private:
     bool AuthenticateResult(int rc);
 
     ssh_session session = NULL;
-    sftp_session sftp = NULL;
+    ssh_channel channel = NULL;
+
     int authStatus = AUTH_STATUS_NONE;
     int authMethods = 0;
     bool isAuthDenied = false;

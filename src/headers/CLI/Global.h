@@ -7,7 +7,7 @@ public:
     enum CLIMode
     {
         Default = 0x000,
-        DaemonMaster = 0x010,
+        HomePath = 0x010,
         DaemonServant = 0x100,
     };
 
@@ -16,4 +16,5 @@ public:
     static int remotePort;
     static std::string dirToCreep;
     static std::string pathToStat;
+    static std::string rootDir;
 };

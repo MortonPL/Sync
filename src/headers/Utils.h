@@ -12,9 +12,12 @@ namespace Utils
 
     std::string GetHomePath();
     std::string GetRootPath();
+    std::string GetRootPath(std::string home);
     std::string GetResourcePath();
     std::string GetLogsPath();
     std::string GetDatabasePath();
+    std::string GetTempPath();
+    std::string GetTempPath(std::string home);
     
     std::string CorrectDirPath(const std::string& path);
     

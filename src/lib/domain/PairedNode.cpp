@@ -18,14 +18,21 @@ PairedNode::~PairedNode()
 
 const std::map<PairedNode::Action, std::string> PairedNode::ActionAsString =
 {
-    {PairedNode::Action::None, "None"},
-    {PairedNode::Action::DoNothing, "None"},
-    {PairedNode::Action::LocalToRemote, "===>"},
-    {PairedNode::Action::RemoteToLocal, "<==="},
+    {PairedNode::Action::None, ""},
+    {PairedNode::Action::DoNothing, ""},
+    {PairedNode::Action::LocalToRemote, ">>>>"},
+    {PairedNode::Action::RemoteToLocal, "<<<<"},
     {PairedNode::Action::Ignore, "Ignore"},
     {PairedNode::Action::Conflict, "Conflict"},
     {PairedNode::Action::FastForward, "Fast Forward"},
-    {PairedNode::Action::Cancel, "Cancel"},
+};
+
+const std::map<PairedNode::Progress, std::string> PairedNode::ProgressAsString =
+{
+    {PairedNode::Progress::NoProgress, ""},
+    {PairedNode::Progress::Canceled, "Canceled"},
+    {PairedNode::Progress::Failed, "Failed"},
+    {PairedNode::Progress::Success, "Success"},
 };
 
 void PairedNode::SetDefaultAction(Action action)
@@ -34,27 +41,25 @@ void PairedNode::SetDefaultAction(Action action)
     this->defaultAction = action;
 }
 
-std::string PairedNode::GetStatusString() const
+std::pair<std::string, std::string> PairedNode::GetStatusString() const
 {
-    return FileNode::StatusAsString.at(localNode.status)
-           + " <-> "
-           + FileNode::StatusAsString.at(remoteNode.status);
+    return {FileNode::StatusAsString.at(localNode.status),
+           FileNode::StatusAsString.at(remoteNode.status)};
 }
 
 std::string PairedNode::GetActionString() const
 {
-    if (action != PairedNode::Action::None)
-        return ActionAsString.at(action);
-    else
-        return "";
+    return ActionAsString.at(action);
+}
+
+std::string PairedNode::GetProgressString() const
+{
+    return ProgressAsString.at(progress);
 }
 
 std::string PairedNode::GetDefaultActionString() const
 {
-    if (defaultAction != PairedNode::Action::None)
-        return ActionAsString.at(defaultAction);
-    else
-        return "";
+    return ActionAsString.at(defaultAction);
 }
 
 int PairedNode::CompareNodeHashes(const FileNode& one, const FileNode& other)

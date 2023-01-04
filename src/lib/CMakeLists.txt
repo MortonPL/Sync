@@ -33,6 +33,7 @@ set(SRC_LIB_FILES
     SyncManager.cpp
     DBConnector.cpp
     SSHConnector.cpp
+    SFTPConnector.cpp
 )
 
 add_library(lib ${SRC_LIB_FILES})

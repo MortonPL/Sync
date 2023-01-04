@@ -23,7 +23,14 @@ public:
         RemoteToLocal,
         Conflict,
         FastForward,
-        Cancel,
+    };
+
+    enum Progress: char
+    {
+        NoProgress = 0,
+        Canceled,
+        Failed,
+        Success,
     };
 
     bool operator<(const PairedNode& other) const
@@ -32,17 +39,20 @@ public:
     }
 
     void SetDefaultAction(Action action);
-    std::string GetStatusString() const;
+    std::pair<std::string, std::string> GetStatusString() const;
     std::string GetActionString() const;
+    std::string GetProgressString() const;
     std::string GetDefaultActionString() const;
     static int CompareNodeHashes(const FileNode& one, const FileNode& other);
     
     static const std::map<Action, std::string> ActionAsString;
+    static const std::map<Progress, std::string> ProgressAsString;
 
     const std::string path;
     bool deleted = false;
     Action action = Action::None;
     Action defaultAction = Action::None;
+    Progress progress = Progress::NoProgress;
     FileNode localNode;
     HistoryFileNode historyNode;
     FileNode remoteNode;

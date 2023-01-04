@@ -213,10 +213,7 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
             rootPath, std::filesystem::directory_options::follow_directory_symlink
                 | std::filesystem::directory_options::skip_permission_denied))*/
         {
-            if (entry.path().filename().string() == Creeper::SyncBlockedFile)
-                return CREEP_BLOCK;
-
-            FileNode node;     
+            FileNode node;
             switch(MakeNode(entry, rootPath, pState, pBuffer, node))
             {
             case RES_CONTINUE:

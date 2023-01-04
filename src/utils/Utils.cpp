@@ -26,6 +26,11 @@ std::string Utils::GetRootPath()
     return Utils::GetHomePath() + "/.sync/";
 }
 
+std::string Utils::GetRootPath(std::string home)
+{
+    return home + "/.sync/";
+}
+
 std::string Utils::GetResourcePath()
 {
     return Utils::GetRootPath() + "res/";
@@ -39,6 +44,16 @@ std::string Utils::GetLogsPath()
 std::string Utils::GetDatabasePath()
 {
     return Utils::GetRootPath() + "db/";
+}
+
+std::string Utils::GetTempPath()
+{
+    return Utils::GetRootPath() + "tmp/";
+}
+
+std::string Utils::GetTempPath(std::string home)
+{
+    return Utils::GetRootPath(home) + "tmp/";
 }
 
 std::string Utils::CorrectDirPath(const std::string& path)

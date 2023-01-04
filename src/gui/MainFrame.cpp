@@ -43,9 +43,10 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
 wxEND_EVENT_TABLE()
 
 #define COL_NAME        0
-#define COL_STATUS      1
-#define COL_ACTION      2
-#define COL_PROGRESS    3
+#define COL_STATUS_L    1
+#define COL_STATUS_R    2
+#define COL_ACTION      3
+#define COL_PROGRESS    4
 
 #define TOOLBAR_CONFIG  0
 //      TOOLBAR_DIVIDER 1
@@ -97,18 +98,134 @@ MainFrame::MainFrame(wxWindow* pParent): ssh()
     auto toolBar = GetToolBar();
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, false)
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false)
-    CreateReportList();
+    CreateColumns();
 
     // resize for menu and status bar
     //GetSizer()->SetSizeHints(this);
 }
 
-void MainFrame::CreateReportList()
+void MainFrame::CreateColumns()
 {
-    ctrl.listMain->InsertColumn(0, "File", 0, 300);
-    ctrl.listMain->InsertColumn(1, "Status", 0, 100);
-    ctrl.listMain->InsertColumn(2, "Action", 0, 100);
-    ctrl.listMain->InsertColumn(3, "Progress", 0, 100);
+    // default width available is 600
+    ctrl.listMain->InsertColumn(COL_NAME, "File", 0, 320);
+    ctrl.listMain->InsertColumn(COL_STATUS_L, "Local", 0, 70);
+    ctrl.listMain->InsertColumn(COL_STATUS_R, "Remote", 0, 70);
+    ctrl.listMain->InsertColumn(COL_ACTION, "Action", 0, 70);
+    ctrl.listMain->InsertColumn(COL_PROGRESS, "Progress", 0, 70);
+}
+
+void MainFrame::PopulateList()
+{
+    int i = 0;
+    for (auto& pair: pairedNodes)
+    {
+        ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
+        ctrl.listMain->SetItemData(i, (long)&pair);
+        auto statuses = pair.GetStatusString();
+        ctrl.listMain->SetItem(i, COL_STATUS_L, statuses.first);
+        ctrl.listMain->SetItem(i, COL_STATUS_R, statuses.second);
+        ctrl.listMain->SetItem(i, COL_ACTION, pair.GetActionString());
+        ctrl.listMain->SetItem(i, COL_PROGRESS, pair.GetProgressString());
+        i++;
+    }
+}
+
+void MainFrame::RefreshList()
+{
+    for (int i = 0; i < ctrl.listMain->GetItemCount(); i++)
+    {
+        auto pPair = (PairedNode*)ctrl.listMain->GetItemData(i);
+        auto statuses = pPair->GetStatusString();
+        ctrl.listMain->SetItem(i, COL_STATUS_L, statuses.first);
+        ctrl.listMain->SetItem(i, COL_STATUS_R, statuses.second);
+        ctrl.listMain->SetItem(i, COL_ACTION, pPair->GetActionString());
+        ctrl.listMain->SetItem(i, COL_PROGRESS, pPair->GetProgressString());
+    }
+}
+
+#define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
+void MainFrame::ShowDetails(long itemIndex)
+{
+    auto writeNodeDetails = [this](const FileNode& pNode)
+    {
+        if (!pNode.IsEmpty())
+        {
+            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
+            *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode.mtime) << '\n';
+            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
+            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+        }
+        else
+        {
+            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\n Hash:";
+        }
+    };
+
+    auto writeHistoryNodeDetails = [this](const HistoryFileNode& pNode)
+    {
+        if (!pNode.IsEmpty())
+        {
+            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
+            *ctrl.txtDetails << "Local Mtime: " << Utils::TimestampToString(pNode.mtime) << '\n';
+            *ctrl.txtDetails << "Remote Mtime: " << Utils::TimestampToString(pNode.remoteMtime) << '\n';
+            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
+            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+        }
+        else
+        {
+            *ctrl.txtDetails << "Status: Absent\nLocal Mtime:\nRemote Mtime:\nSize:\nHash:";
+        }
+    };
+
+    auto pPair = (PairedNode*)ctrl.listMain->GetItemData(itemIndex);
+    ctrl.txtDetails->Clear();
+    //general
+    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
+    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
+    *ctrl.txtDetails << "Pair Action: " << pPair->GetActionString() << '\n';
+    *ctrl.txtDetails << "Pair Default Action: " << pPair->GetDefaultActionString() << '\n';
+    //local
+    *ctrl.txtDetails << "== LOCAL ==\n";
+    writeNodeDetails(pPair->localNode);
+    //remote
+    *ctrl.txtDetails << "== REMOTE ==\n";
+    writeNodeDetails(pPair->remoteNode);
+    //history
+    *ctrl.txtDetails << "== HISTORY ==\n";
+    writeHistoryNodeDetails(pPair->historyNode);
+}
+#undef LTOA
+
+void MainFrame::OnAction(PairedNode::Action action)
+{
+    if (action == PairedNode::Action::None)
+    {
+        for (auto index: selectedItems)
+        {
+            PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            pPair->action = pPair->defaultAction;
+            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+        }
+    }
+    else if (action == PairedNode::Action::Conflict)
+    {
+        if (selectedItems.size() > 0)
+        {
+            // launch only for the first file?
+            //selectedItems.begin()
+        }
+    }
+    else
+    {
+        for (auto index: selectedItems)
+        {
+            PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            if (action != PairedNode::Action::Ignore && (pPair->action == PairedNode::Action::DoNothing || pPair->action == PairedNode::Action::FastForward))
+                continue;
+            pPair->action = action;
+            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+        }
+    }
 }
 
 /******************************* EVENT HANDLERS ******************************/
@@ -217,15 +334,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
     
     //display at the end
     pairedNodes.sort();
-    int i = 0;
-    for (auto& pair: pairedNodes)
-    {
-        ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
-        ctrl.listMain->SetItemData(i, (long)&pair);
-        ctrl.listMain->SetItem(i, COL_STATUS, pair.GetStatusString());
-        ctrl.listMain->SetItem(i, COL_ACTION, pair.GetActionString());
-        i++;
-    }
+    PopulateList();
 
     auto toolBar = GetToolBar();
     ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SYNC);
@@ -237,35 +346,65 @@ void MainFrame::OnSync(wxCommandEvent& event)
     try
     {
         auto cfg = Global::GetCurrentConfig();
-        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
-        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser) || !ssh.StartSFTPSession())
+        std::filesystem::current_path(cfg.pathA);
+        auto creeper = Creeper();
+        if (creeper.SearchForBlock(cfg.pathA))
         {
-            LOG(ERROR) << "Failed to connect to the remote.";
+            GUIAnnouncer::LogPopup(
+                "Failed to scan for files, because an entry in " + Creeper::SyncBlockedFile + " was found.\nThis can happen if a "
+                "directory is already being synchronized by another instance, or if the last "
+                "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
+                "nothing is being synchronized, find and delete " + Creeper::SyncBlockedFile + " manually.", SEV_ERROR);
             return;
         }
+
+        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
+        auto sftp = SFTPConnector(&ssh);
+        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser) || !sftp.Connect())
+        {
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            return;
+        }
+
+        std::string remoteHome;
+        switch (ssh.CallCLIHomeAndBlock(cfg.pathB, &remoteHome))
+        {
+        case CALLCLI_BLOCKED:
+            GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", SEV_ERROR);
+            return;
+        default:
+            GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
+            return;
+        case CALLCLI_OK:
+            break;
+        }
+
+        if (cfg.pathB[0] != '/')
+        {
+            cfg.pathB = remoteHome + '/' + cfg.pathB;
+        }
+        std::string tempPath = Utils::GetTempPath(remoteHome);
 
         if (hasSelectedEverything || selectedItems.size() == 0)
         {
             for (auto& pair: pairedNodes)
             {
-                SyncManager::Sync(&pair, ssh, db);
+                SyncManager::Sync(&pair, cfg.pathB, remoteHome, ssh, sftp, db);
             }
         }
         else
         {
             for (auto index: selectedItems)
             {
-                SyncManager::Sync((PairedNode*)(ctrl.listMain->GetItemData(index)), ssh, db);
+                SyncManager::Sync((PairedNode*)(ctrl.listMain->GetItemData(index)), cfg.pathB, tempPath, ssh, sftp, db);
             }
         }
     }
     catch(const std::exception& e)
     {
         GUIAnnouncer::LogPopup("Failed to sync.", SEV_ERROR);
-        ssh.EndSFTPSession();
         return;
     }
-    ssh.EndSFTPSession();
 
     int index = 0;
     for (auto it = pairedNodes.begin(); it != pairedNodes.end();)
@@ -279,8 +418,11 @@ void MainFrame::OnSync(wxCommandEvent& event)
         }
         else
         {
-            ctrl.listMain->SetItem(index, COL_STATUS, it->GetStatusString());
+            auto statuses = it->GetStatusString();
+            ctrl.listMain->SetItem(index, COL_STATUS_L, statuses.first);
+            ctrl.listMain->SetItem(index, COL_STATUS_R, statuses.second);
             ctrl.listMain->SetItem(index, COL_ACTION, it->GetActionString());
+            ctrl.listMain->SetItem(index, COL_PROGRESS, it->GetProgressString());
             it++;
             index++;
         }
@@ -290,89 +432,6 @@ void MainFrame::OnSync(wxCommandEvent& event)
     if (viewedItemIndex != -1)
         ShowDetails(viewedItemIndex);
 }
-
-void MainFrame::OnAction(PairedNode::Action action)
-{
-    if (action == PairedNode::Action::None)
-    {
-        for (auto index: selectedItems)
-        {
-            PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-            pPair->action = pPair->defaultAction;
-            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
-        }
-    }
-    else if (action == PairedNode::Action::Conflict)
-    {
-        if (selectedItems.size() > 0)
-        {
-            // launch only for the first file?
-            //selectedItems.begin()
-        }
-    }
-    else
-    {
-        for (auto index: selectedItems)
-        {
-            PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-            pPair->action = action;
-            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
-        }
-    }
-}
-
-#define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
-void MainFrame::ShowDetails(long itemIndex)
-{
-    auto writeNodeDetails = [this](const FileNode& pNode)
-    {
-        if (!pNode.IsEmpty())
-        {
-            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
-            *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode.mtime) << '\n';
-            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
-            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
-        }
-        else
-        {
-            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\n Hash:";
-        }
-    };
-
-    auto writeHistoryNodeDetails = [this](const HistoryFileNode& pNode)
-    {
-        if (!pNode.IsEmpty())
-        {
-            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
-            *ctrl.txtDetails << "Local Mtime: " << Utils::TimestampToString(pNode.mtime) << '\n';
-            *ctrl.txtDetails << "Remote Mtime: " << Utils::TimestampToString(pNode.remoteMtime) << '\n';
-            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
-            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
-        }
-        else
-        {
-            *ctrl.txtDetails << "Status: Absent\nLocal Mtime:\nRemote Mtime:\nSize:\nHash:";
-        }
-    };
-
-    auto pPair = (PairedNode*)ctrl.listMain->GetItemData(itemIndex);
-    ctrl.txtDetails->Clear();
-    //general
-    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
-    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
-    *ctrl.txtDetails << "Pair Action: " << pPair->GetActionString() << '\n';
-    *ctrl.txtDetails << "Pair Default Action: " << pPair->GetDefaultActionString() << '\n';
-    //local
-    *ctrl.txtDetails << "== LOCAL ==\n";
-    writeNodeDetails(pPair->localNode);
-    //remote
-    *ctrl.txtDetails << "== REMOTE ==\n";
-    writeNodeDetails(pPair->remoteNode);
-    //history
-    *ctrl.txtDetails << "== HISTORY ==\n";
-    writeHistoryNodeDetails(pPair->historyNode);
-}
-#undef LTOA
 
 void MainFrame::OnActionDefault(wxCommandEvent& event)
 {
@@ -479,7 +538,8 @@ void MainFrame::CharHook(wxKeyEvent& event)
 }
 
 #undef COL_NAME
-#undef COL_STATUS
+#undef COL_STATUS_L
+#undef COL_STATUS_R
 #undef COL_ACTION
 #undef COL_PROGRESS
 
