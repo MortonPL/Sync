@@ -42,6 +42,7 @@ public:
 
     int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
     int CallCLIHomeAndBlock(std::string pathToCheck, std::string* result);
+    int CallCLIUnblock(std::string path);
     int CallCLIServe();
     int EndCLIServe();
     int StatRemote(std::string pathToStat, struct stat* pBuf);

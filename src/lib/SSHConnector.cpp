@@ -185,10 +185,26 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* resu
     ssh_channel_read(channel, buf, len, 0);
     *result = std::string(buf, len);
 
-    char blocked;
+    bool blocked;
     ssh_channel_read(channel, &blocked, sizeof(blocked), 0);
 
-    return blocked == 0? CALLCLI_OK: CALLCLI_BLOCKED;
+    return blocked? CALLCLI_OK: CALLCLI_BLOCKED;
+}
+
+int SSHConnector::CallCLIUnblock(std::string path)
+{
+    if ((channel = CallCLI("u", path)) == nullptr)
+    {
+        return CALLCLI_NOANSWER;
+    }
+    bool unblocked;
+    if (ssh_channel_read(channel, &unblocked, sizeof(unblocked), 0) != sizeof(unblocked))
+    {
+        FreeChannel(channel);
+        return CALLCLI_404;
+    }
+
+    return unblocked? CALLCLI_OK: CALLCLI_ERROR;
 }
 
 int SSHConnector::CallCLIServe()
@@ -271,12 +287,7 @@ int SSHConnector::ReplaceFile(std::string pathFrom, std::string pathTo)
     }
     if (ssh_get_error_code(session) != SSH_NO_ERROR)
         return CALLCLI_ERROR;
-    
-    char buf[100];
-    ssh_channel_read(pChannel, buf, 100, 0);
-    LOG(INFO) << buf;
-    ssh_channel_read(pChannel, buf, 100, 1);
-    LOG(INFO) << buf;
+
     FreeChannel(pChannel);
 
     return CALLCLI_OK;

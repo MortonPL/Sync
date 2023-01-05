@@ -3,6 +3,7 @@
 
 #include "Lib/General.h"
 #include "Lib/Creeper.h"
+#include "Lib/Blocker.h"
 #include "Lib/SSHConnector.h"
 #include "Lib/SocketListener.h"
 #include "Lib/Announcer.h"
@@ -29,19 +30,20 @@ void ParseArgs(int argc, char* argv[])
         case 'd':
             GlobalCLI::mode |= GlobalCLI::CLIMode::DaemonServant;
             break;
+        case 'h':
+            GlobalCLI::mode |= GlobalCLI::CLIMode::HomePath;
+            if (i + 1 < argc)
+                GlobalCLI::dirToBlock = Utils::CorrectDirPath(argv[i+1]);
+            break;
         case 'p':
             if (i + 1 >= argc)
                 break;
             GlobalCLI::rootDir = Utils::CorrectDirPath(argv[i+1]);
             break;
-        case 'r':
-            if (i + 2 >= argc)
+        case 'u':
+            if (i + 1 >= argc)
                 break;
-            GlobalCLI::remoteAddress = argv[i+1];
-            GlobalCLI::remotePort = atoi(argv[i+2]);
-            break;
-        case 'h':
-            GlobalCLI::mode |= GlobalCLI::CLIMode::HomePath;
+            GlobalCLI::dirToUnblock = Utils::CorrectDirPath(argv[i+1]);
             break;
         default:
             break;
@@ -105,6 +107,24 @@ int GetHomePath()
     return 0;
 }
 
+int BlockDir(std::string path)
+{
+    LOG(INFO) << "Blocking directory " << path;
+    auto blocker = Blocker();
+    bool blocked = blocker.Block(path);
+    SocketListener::writeall(1, (char*)&blocked, sizeof(blocked));
+    return 0;
+}
+
+int UnblockDir(std::string path)
+{
+    LOG(INFO) << "Unblocking directory " << path;
+    auto blocker = Blocker();
+    bool unblocked = blocker.Unblock(path);
+    SocketListener::writeall(1, (char*)&unblocked, sizeof(unblocked));
+    return 0;
+}
+
 int Serve()
 {
     char buff[32];
@@ -155,14 +175,16 @@ int main(int argc, char* argv[])
         std::filesystem::current_path(GlobalCLI::rootDir);
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::HomePath)
-    {
         GetHomePath();
-    }
+
+    if (GlobalCLI::dirToBlock != "")
+        BlockDir(GlobalCLI::dirToBlock);
+
+    if (GlobalCLI::dirToUnblock != "")
+        UnblockDir(GlobalCLI::dirToUnblock);
 
     if (GlobalCLI::dirToCreep != "")
-    {
         CreepDir(GlobalCLI::dirToCreep);
-    }
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::DaemonServant)
     {

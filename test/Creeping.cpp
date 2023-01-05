@@ -185,21 +185,6 @@ TEST_F(CreepingTest, HardLinks)
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
 
-TEST_F(CreepingTest, SyncBlockedPresent)
-{
-    const std::filesystem::path sandbox{"sandbox"};
-    std::filesystem::create_directory(sandbox);
-    std::ofstream{sandbox/Creeper::SyncBlockedFile};
-    std::ofstream{sandbox/"a"};
-    std::ofstream{sandbox/"b"};
-
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
-
-    EXPECT_EQ(rc, CREEP_BLOCK);
-    EXPECT_EQ(scanNodes.begin(), scanNodes.end());
-    EXPECT_EQ(creeper.GetResultsCount(), 0);
-}
-
 TEST_F(CreepingTest, SyncBlackListPresent)
 {
     const std::filesystem::path sandbox{"sandbox"};

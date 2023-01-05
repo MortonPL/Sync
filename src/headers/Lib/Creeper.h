@@ -15,7 +15,7 @@
 #define CREEP_NOTDIR 4
 #define CREEP_BLOCK 5
 /*Recursively creeps through a directory and gathers FileNodes. Also provides an option to
-check a path against blacklist/whitelist rules, or search for/create BLOCK files.*/
+check a path against blacklist/whitelist rules.*/
 class Creeper
 {
 public:
@@ -29,7 +29,6 @@ public:
 
     static std::string SyncBlackListFile;
     static std::string SyncWhiteListFile;
-    static std::string SyncBlockedFile;
 
 private:
     void SearchForLists(std::string& path);

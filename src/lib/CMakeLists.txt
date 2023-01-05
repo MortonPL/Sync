@@ -27,6 +27,7 @@ set(SRC_LIB_FILES
     Global.cpp
     General.cpp
     SocketListener.cpp
+    Blocker.cpp
     Mapper.cpp
     Creeper.cpp
     PairingManager.cpp

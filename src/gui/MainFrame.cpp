@@ -11,6 +11,7 @@
 #include "Lib/Announcer.h"
 #include "Lib/DBConnector.h"
 #include "Lib/Global.h"
+#include "Lib/Blocker.h"
 #include "Lib/Creeper.h"
 #include "Lib/PairingManager.h"
 #include "Lib/SyncManager.h"
@@ -28,6 +29,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_action_rtol"), MainFrame::OnActionRtoL)
     EVT_MENU(XRCID("menu_action_ignore"), MainFrame::OnActionIgnore)
     EVT_MENU(XRCID("menu_action_tool"), MainFrame::OnActionResolve)
+    EVT_MENU(XRCID("menu_view_cleanon"), MainFrame::OnToggleShowClean)
     EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
     EVT_TOOL(XRCID("tlb_scan"), MainFrame::OnScan)
     EVT_TOOL(XRCID("tlb_sync"), MainFrame::OnSync)
@@ -61,7 +63,8 @@ wxEND_EVENT_TABLE()
 #define MENU_FILE           0
 #define MENU_EDIT           1
 #define MENU_ACTIONS        2
-#define MENU_HELP           3
+#define MENU_VIEW           3
+#define MENU_HELP           4
 
 #define MENU_FILE_NEW       0
 #define MENU_FILE_CHANGE    1
@@ -73,6 +76,7 @@ wxEND_EVENT_TABLE()
 #define MENU_ACTION_RTOL    2
 #define MENU_ACTION_IGNORE  3
 #define MENU_ACTION_RESOLVE 4
+#define MENU_VIEW_CLEANON   0
 #define MENU_HELP_ABOUT     0
 
 #define ENABLE_MENU_ITEM(menu, item)\
@@ -117,8 +121,12 @@ void MainFrame::CreateColumns()
 void MainFrame::PopulateList()
 {
     int i = 0;
+    ctrl.listMain->DeleteAllItems();
     for (auto& pair: pairedNodes)
     {
+        if (pair.action == PairedNode::Action::DoNothing && !shouldShowClean)
+            continue;
+
         ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
         ctrl.listMain->SetItemData(i, (long)&pair);
         auto statuses = pair.GetStatusString();
@@ -317,8 +325,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
     int rc;
     if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
     {
-        LOG(ERROR) << "Failed to receive file info from the remote host. Error code: " << rc;
-        GenericPopup("Failed to receive file info from the remote host. Error code: " + rc).ShowModal();
+        GUIAnnouncer::LogPopup("Failed to receive file info from the remote host. Error code: " + rc, SEV_ERROR);
         return;
     }
     LOG(INFO) << "Received remote file nodes.";
@@ -343,18 +350,19 @@ void MainFrame::OnScan(wxCommandEvent& event)
 
 void MainFrame::OnSync(wxCommandEvent& event)
 {
+    auto blocker = Blocker();
+    auto cfg = Global::GetCurrentConfig();
     try
     {
-        auto cfg = Global::GetCurrentConfig();
-        std::filesystem::current_path(cfg.pathA);
-        auto creeper = Creeper();
-        if (creeper.SearchForBlock(cfg.pathA))
+        std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
+        LOG(INFO) << "Blocking directory " << cfg.pathA;
+        if (!blocker.Block(cfg.pathA))
         {
             GUIAnnouncer::LogPopup(
-                "Failed to scan for files, because an entry in " + Creeper::SyncBlockedFile + " was found.\nThis can happen if a "
-                "directory is already being synchronized by another instance, or if the last "
+                "Failed to scan for files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
+                "directory is already being synchronized by another instance, or if the last \n"
                 "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
-                "nothing is being synchronized, find and delete " + Creeper::SyncBlockedFile + " manually.", SEV_ERROR);
+                "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", SEV_ERROR);
             return;
         }
 
@@ -362,6 +370,7 @@ void MainFrame::OnSync(wxCommandEvent& event)
         auto sftp = SFTPConnector(&ssh);
         if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser) || !sftp.Connect())
         {
+            blocker.Unblock(cfg.pathA);
             GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
             return;
         }
@@ -371,9 +380,11 @@ void MainFrame::OnSync(wxCommandEvent& event)
         {
         case CALLCLI_BLOCKED:
             GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", SEV_ERROR);
+            blocker.Unblock(cfg.pathA);
             return;
         default:
             GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
+            blocker.Unblock(cfg.pathA);
             return;
         case CALLCLI_OK:
             break;
@@ -389,7 +400,7 @@ void MainFrame::OnSync(wxCommandEvent& event)
         {
             for (auto& pair: pairedNodes)
             {
-                SyncManager::Sync(&pair, cfg.pathB, remoteHome, ssh, sftp, db);
+                SyncManager::Sync(&pair, cfg.pathB, tempPath, ssh, sftp, db);
             }
         }
         else
@@ -402,9 +413,15 @@ void MainFrame::OnSync(wxCommandEvent& event)
     }
     catch(const std::exception& e)
     {
-        GUIAnnouncer::LogPopup("Failed to sync.", SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), SEV_ERROR);
+        ssh.CallCLIUnblock(cfg.pathB);
+        blocker.Unblock(cfg.pathA);
         return;
     }
+
+    LOG(INFO) << "Unblock myself and remote...";
+    ssh.CallCLIUnblock(cfg.pathB);
+    blocker.Unblock(cfg.pathA);
 
     int index = 0;
     for (auto it = pairedNodes.begin(); it != pairedNodes.end();)
@@ -497,6 +514,12 @@ void MainFrame::OnActionDeselectAll(wxCommandEvent& event)
     hasSelectedEverything = false;
 }
 
+void MainFrame::OnToggleShowClean(wxCommandEvent& event)
+{
+    shouldShowClean = event.IsChecked();
+    PopulateList();
+}
+
 void MainFrame::OnAbout(wxCommandEvent& event)
 {
     wxMessageBox("This is a message box.", "About...",
@@ -554,7 +577,9 @@ void MainFrame::CharHook(wxKeyEvent& event)
 #undef MENU_FILE
 #undef MENU_EDIT
 #undef MENU_ACTION
+#undef MENU_VIEW
 #undef MENU_HELP
+
 #undef MENU_FILE_NEW
 #undef MENU_FILE_CHANGE
 #undef MENU_FILE_EXIT
@@ -565,6 +590,7 @@ void MainFrame::CharHook(wxKeyEvent& event)
 #undef MENU_ACTION_RTOL
 #undef MENU_ACTION_IGNORE
 #undef MENU_ACTION_RESOLVE
+#undef MENU_VIEW_CLEANON
 #undef MENU_HELP_ABOUT
 
 #undef ENABLE_MENU_ITEM

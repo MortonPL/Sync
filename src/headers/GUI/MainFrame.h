@@ -25,6 +25,7 @@ private:
     long viewedItemIndex;
     std::set<long> selectedItems;
     bool hasSelectedEverything = false;
+    bool shouldShowClean = false;
 
     //temp
     std::list<PairedNode> pairedNodes;
@@ -53,6 +54,7 @@ private:
     void OnActionResolve(wxCommandEvent& event);
     void OnSelectNode(wxListEvent& event);
     void OnDeselectNode(wxListEvent& event);
+    void OnToggleShowClean(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void CharHook(wxKeyEvent& event);

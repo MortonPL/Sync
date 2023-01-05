@@ -51,7 +51,7 @@ bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::str
     // open both
     if ((pFile = sftp_open(sftp, fullTempPath.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
     {
-        LOG(ERROR) << "Failed to open remote file " << fullTempPath << " with error " << ssh->GetError();
+        LOG(ERROR) << "Failed to open remote file " << fullTempPath << " with error: " << ssh->GetError();
         return false;
     }
     if ((localFd = open(localPath.c_str(), O_RDONLY)) == -1)
@@ -114,7 +114,7 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {
-        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error " << ssh->GetError();
+        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << ssh->GetError();
         return false;
     }
     if ((localFd = open(fullTempPath.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)

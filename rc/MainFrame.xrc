@@ -70,6 +70,15 @@
 					<help>Launch a third party tool to resolve conflicting changes.</help>
 				</object>
 			</object>
+			<object class="wxMenu" name="menu_view">
+				<label>View</label>
+				<object class="wxMenuItem" name="menu_view_cleanon">
+					<label>Show up to date files\tCtrl+V</label>
+					<help>Should files with no changes also be listed?</help>
+					<checked>1</checked>
+					<checkable>1</checkable>
+				</object>
+			</object>
 			<object class="wxMenu" name="menu_help">
 				<label>Help</label>
 				<object class="wxMenuItem" name="wxID_ABOUT">

@@ -9,7 +9,6 @@
 
 std::string Creeper::SyncBlackListFile = ".SyncBlackList";
 std::string Creeper::SyncWhiteListFile = ".SyncWhiteList";
-std::string Creeper::SyncBlockedFile = ".SyncBLOCKED";
 
 Creeper::Creeper()
 {

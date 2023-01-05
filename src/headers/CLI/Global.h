@@ -12,9 +12,9 @@ public:
     };
 
     static int mode;
-    static std::string remoteAddress;
-    static int remotePort;
     static std::string dirToCreep;
     static std::string pathToStat;
     static std::string rootDir;
+    static std::string dirToUnblock;
+    static std::string dirToBlock;
 };

@@ -9,6 +9,24 @@ std::string QuickHash(std::string value)
     return fmt::format("{:x}", XXH64(value.c_str(), value.size(), 0));
 }
 
+int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
+{
+    if (pNode->localNode.status == FileNode::Status::Absent)
+    {
+        pNode->deleted = wasDeleted = true;
+        return 0;
+    }
+
+    pNode->localNode.status = FileNode::Status::Clean;
+    pNode->remoteNode.status = FileNode::Status::Clean;
+    pNode->historyNode = HistoryFileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
+                                         pNode->remoteNode.dev, pNode->remoteNode.inode, pNode->localNode.mtime,
+                                         pNode->remoteNode.mtime, pNode->localNode.size, pNode->localNode.hashHigh,
+                                         pNode->localNode.hashLow);
+    pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+    return 0;
+}
+
 int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
     std::string fullPath = remoteRoot + pNode->path;
@@ -144,7 +162,9 @@ int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& t
         }
         break;
     case PairedNode::Action::DoNothing:
+        return 0;
     case PairedNode::Action::FastForward:
+        UpdateHistory(pNode, wasDeleted);
     default:
         break;
     }
