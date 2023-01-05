@@ -59,6 +59,14 @@ int DBConnector::EnsureCreatedHistory(std::string path)
             "id INTEGER PRIMARY KEY)"
         );
         db.exec(
+            "CREATE TABLE IF NOT EXISTS conflict_rules ("
+            "id INTEGER PRIMARY KEY,"
+            "order_ INTEGER NOT NULL,"
+            "name TEXT NOT NULL,"
+            "rule TEXT NOT NULL,"
+            "command TEXT NOT NULL)"
+        );
+        db.exec(
             "CREATE TABLE IF NOT EXISTS nodes ("
             "path TEXT PRIMARY KEY,"
             "dev INTEGER NOT NULL,"
@@ -248,6 +256,90 @@ void DBConnector::SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes)
             *(XXH64_hash_t*)query.getColumn(8).getBlob(),   // hash_high
             *(XXH64_hash_t*)query.getColumn(9).getBlob()    // hash_low
         ));
+    }
+    return;
+}
+
+bool DBConnector::InsertConflictRule(const ConflictRule& rule)
+{
+    try
+    {
+        this->db.exec(fmt::format(
+            "INSERT INTO conflict_rules "
+            "(name, rule, command, order_) "
+            "VALUES (\"{}\", \"{}\", \"{}\","
+            "(SELECT IFNULL(MAX(order_), 0) + 1 FROM conflict_rules)"
+            ")",
+            rule.name, rule.rule, rule.command));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
+    return true;
+}
+
+bool DBConnector::UpdateConflictRule(const ConflictRule& rule)
+{
+    try
+    {
+        this->db.exec(fmt::format(
+            "UPDATE conflict_rules SET "
+            "name = \"{}\", rule = \"{}\", command = \"{}\","
+            "WHERE id = {}",
+            rule.name, rule.rule, rule.command, rule.id));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
+    return true;
+}
+
+bool DBConnector::DeleteConflictRule(int id)
+{
+    try
+    {
+        this->db.exec(fmt::format("DELETE FROM conflict_rules WHERE id = {}", id));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
+    return true;
+}
+
+bool DBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2)
+{
+    try
+    {
+        this->db.exec(fmt::format(
+            "UPDATE conflict_rules SET order_ = "
+            "CASE id WHEN {0} THEN {3} WHEN {1} THEN {2} END "
+            "WHERE id IN ({0}, {1})",
+            rule1.id, rule2.id, rule1.order, rule2.order));
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        return false;
+    }
+
+    return true;
+}
+
+void DBConnector::SelectAllConflictRules(std::vector<ConflictRule>& nodes)
+{
+    SQLite::Statement query(this->db, "SELECT * from conflict_rules ORDER BY order_");
+    while(query.executeStep())
+    {
+        nodes.push_back(query.getColumns<ConflictRule, 5>());
     }
     return;
 }

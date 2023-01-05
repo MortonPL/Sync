@@ -6,6 +6,7 @@
 
 #include "Domain/Configuration.h"
 #include "Domain/HistoryFileNode.h"
+#include "Domain/ConflictRule.h"
 
 #define NOID -1
 #define DB_FAIL 0
@@ -32,6 +33,12 @@ public:
     bool UpdateFileNode(const HistoryFileNode& file);
     bool DeleteFileNode(const std::string path);
     void SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes);
+
+    bool InsertConflictRule(const ConflictRule& rule);
+    bool UpdateConflictRule(const ConflictRule& rule);
+    bool DeleteConflictRule(int id);
+    bool SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2);
+    void SelectAllConflictRules(std::vector<ConflictRule>& nodes);
 
 private:
     SQLite::Database db;

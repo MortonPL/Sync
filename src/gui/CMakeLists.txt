@@ -12,6 +12,8 @@ set(SRC_GUI_FILES
     NewConfigurationDialog.cpp
     EditConfigurationDialog.cpp
     ChangeConfigurationDialog.cpp
+    ConflictRuleDialog.cpp
+    NewConflictRuleDialog.cpp
     # frames
     MainFrame.cpp
     # main

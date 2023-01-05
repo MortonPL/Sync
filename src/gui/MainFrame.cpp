@@ -8,6 +8,7 @@
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/ChangeConfigurationDialog.h"
 #include "GUI/GUIAnnouncer.h"
+#include "GUI/ConflictRuleDialog.h"
 #include "Lib/Announcer.h"
 #include "Lib/DBConnector.h"
 #include "Lib/Global.h"
@@ -63,22 +64,30 @@ wxEND_EVENT_TABLE()
 
 #define MENU_FILE           0
 #define MENU_EDIT           1
-#define MENU_ACTIONS        2
+#define MENU_ACTION         2
 #define MENU_VIEW           3
 #define MENU_HELP           4
 
-#define MENU_FILE_NEW       0
-#define MENU_FILE_CHANGE    1
-#define MENU_FILE_EXIT      2
-#define MENU_EDIT_SCAN      0
-#define MENU_EDIT_SYNC      1
-#define MENU_ACTION_DEFAULT 0
-#define MENU_ACTION_LTOR    1
-#define MENU_ACTION_RTOL    2
-#define MENU_ACTION_IGNORE  3
-#define MENU_ACTION_RESOLVE 4
-#define MENU_VIEW_CLEANON   0
-#define MENU_HELP_ABOUT     0
+#define MENU_FILE_NEW           0
+#define MENU_FILE_CHANGE        1
+//      MENU_DIVIDER            2
+#define MENU_FILE_EXIT          3
+#define MENU_EDIT_SCAN          0
+#define MENU_EDIT_SYNC          1
+#define MENU_ACTION_SELECT      0
+#define MENU_ACTION_DESELECT    1
+//      MENU_DIVIDER            2
+#define MENU_ACTION_DEFAULT     3
+//      MENU_DIVIDER            4
+#define MENU_ACTION_LTOR        5
+#define MENU_ACTION_RTOL        6
+//      MENU_DIVIDER            7
+#define MENU_ACTION_IGNORE      8
+//      MENU_DIVIDER            9
+#define MENU_ACTION_RESOLVE     10
+#define MENU_VIEW_CLEANON       0
+#define MENU_VIEW_FFWDON        1
+#define MENU_HELP_ABOUT         0
 
 #define ENABLE_MENU_ITEM(menu, item)\
     this->GetMenuBar()->GetMenu(menu)->FindItemByPosition(item)->Enable();
@@ -101,8 +110,9 @@ MainFrame::MainFrame(wxWindow* pParent): ssh()
     isFirstSelectedConfig = true;
 
     auto toolBar = GetToolBar();
-    ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, false)
-    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false)
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, false);
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false);
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_RESOLVE, false);
     CreateColumns();
 
     // resize for menu and status bar
@@ -230,11 +240,12 @@ void MainFrame::OnAction(PairedNode::Action action)
     }
     else if (action == PairedNode::Action::Conflict)
     {
-        if (selectedItems.size() > 0)
+        // launch only for the first file?
+        if (ConflictRuleDialog().ShowModal() != wxID_OK)
         {
-            // launch only for the first file?
-            //selectedItems.begin()
+            return;
         }
+        selectedItems.begin();
     }
     else
     {
@@ -273,7 +284,9 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     if (isFirstSelectedConfig)
     {
         ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SCAN);
+        ENABLE_MENU_ITEM(MENU_ACTION, MENU_ACTION_RESOLVE);
         ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, true);
+        ENABLE_TOOLBAR_ITEM(TOOLBAR_RESOLVE, true);
         isFirstSelectedConfig = false;
     }
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false);
@@ -402,6 +415,7 @@ void MainFrame::OnSync(wxCommandEvent& event)
         return;
     }
 
+    auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
     auto blocker = Blocker();
     auto cfg = Global::GetCurrentConfig();
     try
@@ -433,10 +447,12 @@ void MainFrame::OnSync(wxCommandEvent& event)
         case CALLCLI_BLOCKED:
             GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", SEV_ERROR);
             blocker.Unblock(cfg.pathA);
+            std::filesystem::current_path(previousCWD);
             return;
         default:
             GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
             blocker.Unblock(cfg.pathA);
+            std::filesystem::current_path(previousCWD);
             return;
         case CALLCLI_OK:
             break;
@@ -468,12 +484,14 @@ void MainFrame::OnSync(wxCommandEvent& event)
         GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), SEV_ERROR);
         ssh.CallCLIUnblock(cfg.pathB);
         blocker.Unblock(cfg.pathA);
+        std::filesystem::current_path(previousCWD);
         return;
     }
 
     LOG(INFO) << "Unblock myself and remote...";
     ssh.CallCLIUnblock(cfg.pathB);
     blocker.Unblock(cfg.pathA);
+    std::filesystem::current_path(previousCWD);
 
     int index = 0;
     //ctrl.listMain->DeleteAllItems();
@@ -666,12 +684,15 @@ void MainFrame::CharHook(wxKeyEvent& event)
 #undef MENU_FILE_EXIT
 #undef MENU_EDIT_SCAN
 #undef MENU_EDIT_SYNC
+#undef MENU_ACTION_SELECT
+#undef MENU_ACTION_DESELECT
 #undef MENU_ACTION_DEFAULT
 #undef MENU_ACTION_LTOR
 #undef MENU_ACTION_RTOL
 #undef MENU_ACTION_IGNORE
 #undef MENU_ACTION_RESOLVE
 #undef MENU_VIEW_CLEANON
+#undef MENU_VIEW_FFWDON
 #undef MENU_HELP_ABOUT
 
 #undef ENABLE_MENU_ITEM

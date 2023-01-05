@@ -68,6 +68,7 @@
 				<object class="wxMenuItem" name="menu_action_tool">
 					<label>Resolve Conflict with a tool\tShift+C</label>
 					<help>Launch a third party tool to resolve conflicting changes.</help>
+					<enabled>0</enabled>
 				</object>
 			</object>
 			<object class="wxMenu" name="menu_view">
@@ -140,7 +141,7 @@
 				<longhelp>Propagate Remote version to the Local.</longhelp>
 				<bitmap stock_id="wxART_GO_BACK" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
 			</object>
-			<object class="tool" name="mtlb_tool">
+			<object class="tool" name="tlb_tool">
 				<label>Resolve Conflict</label>
 				<tooltip>Launch a third party tool to resolve conflicting changes.</tooltip>
 				<longhelp>Launch a third party tool to resolve conflicting changes.</longhelp>
