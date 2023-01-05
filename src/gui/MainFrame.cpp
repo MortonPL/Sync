@@ -123,6 +123,7 @@ void MainFrame::PopulateList()
 {
     int i = 0;
     ctrl.listMain->DeleteAllItems();
+    selectedItems.clear();
     for (auto& pair: pairedNodes)
     {
         if (ShouldBeFiltered(pair))
@@ -154,10 +155,10 @@ void MainFrame::RefreshList()
 
 bool MainFrame::ShouldBeFiltered(PairedNode& pair)
 {
-    if (pair.action == PairedNode::Action::DoNothing && !shouldShowClean)
+    if (pair.defaultAction == PairedNode::Action::DoNothing && !shouldShowClean)
         return true;
     
-    if (pair.action == PairedNode::Action::FastForward && !shouldShowFastFwd)
+    if (pair.defaultAction == PairedNode::Action::FastForward && !shouldShowFastFwd)
         return true;
     
     return false;
@@ -278,6 +279,8 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false);
 
     ctrl.listMain->DeleteAllItems();
+    pairedNodes.clear();
+    selectedItems.clear();
 
     if (DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)) != DB_GOOD)
     {
@@ -292,6 +295,7 @@ void MainFrame::OnScan(wxCommandEvent& event)
         return;
 
     ctrl.listMain->DeleteAllItems();
+    selectedItems.clear();
     ctrl.txtDetails->Clear();
 
     //get current config
@@ -362,6 +366,42 @@ void MainFrame::OnScan(wxCommandEvent& event)
 
 void MainFrame::OnSync(wxCommandEvent& event)
 {
+    // if there's nothing to sync, don't bother
+    bool anythingToSync = false;
+    if (hasSelectedEverything || selectedItems.size() == 0)
+    {
+        for (auto& pair: pairedNodes)
+        {
+            if (pair.action != PairedNode::Action::Conflict
+                && pair.action != PairedNode::Action::DoNothing
+                && pair.action != PairedNode::Action::None
+                && pair.action != PairedNode::Action::Ignore)
+            {
+                anythingToSync = true;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (auto index: selectedItems)
+        {
+            auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            if (pPair->action != PairedNode::Action::Conflict
+                && pPair->action != PairedNode::Action::DoNothing
+                && pPair->action != PairedNode::Action::None
+                && pPair->action != PairedNode::Action::Ignore)
+            {
+                anythingToSync = true;
+                break;
+            }
+        }
+    }
+    if (!anythingToSync)
+    {
+        return;
+    }
+
     auto blocker = Blocker();
     auto cfg = Global::GetCurrentConfig();
     try
@@ -436,23 +476,33 @@ void MainFrame::OnSync(wxCommandEvent& event)
     blocker.Unblock(cfg.pathA);
 
     int index = 0;
+    //ctrl.listMain->DeleteAllItems();
     for (auto it = pairedNodes.begin(); it != pairedNodes.end();)
     {
         if (it->deleted)
         {
+            if (ctrl.listMain->GetItemCount() > index
+                && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &*it)
+                ctrl.listMain->DeleteItem(index);
+
             pairedNodes.erase(it++);
-            ctrl.listMain->DeleteItem(index);
+            if (index == viewedItemIndex)
+                viewedItemIndex = -1;
+        }
+        else if (ShouldBeFiltered(*it))
+        {
+            if (ctrl.listMain->GetItemCount() > index
+                && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &*it)
+                ctrl.listMain->DeleteItem(index);
+
+            it++;
             if (index == viewedItemIndex)
                 viewedItemIndex = -1;
         }
         else
         {
-            if (ShouldBeFiltered(*it))
-            {
-                it++;
-                continue;
-            }
-
+            //ctrl.listMain->InsertItem(index, wxString::FromUTF8(it->path));
+            //ctrl.listMain->SetItemData(index, (long)&*it);
             auto statuses = it->GetStatusString();
             ctrl.listMain->SetItem(index, COL_STATUS_L, statuses.first);
             ctrl.listMain->SetItem(index, COL_STATUS_R, statuses.second);
@@ -576,6 +626,13 @@ void MainFrame::CharHook(wxKeyEvent& event)
     case 'C':
         if (event.GetModifiers() == wxMOD_SHIFT)
             OnAction(PairedNode::Action::Conflict);
+        break;
+    case WXK_RETURN:
+        if (selectedItems.size() > 0)
+        {
+            auto dummy = wxCommandEvent();
+            OnSync(dummy);
+        }
         break;
     default:
         event.DoAllowNextEvent();
