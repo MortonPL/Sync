@@ -20,5 +20,6 @@ sudo ldconfig
 
 Budowanie projektu
 ```
-./action.sh build -c -i
+# Instrukcja użycia skryptu: ./action.sh -h
+./action.sh build -i
 ```

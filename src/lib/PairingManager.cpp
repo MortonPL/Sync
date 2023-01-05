@@ -1,5 +1,7 @@
 #include "Lib/PairingManager.h"
 
+#include "Utils.h"
+
 void PairingManager::PairAllLocal(std::forward_list<FileNode>& scanNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
 {
     for (auto& scanNode: scanNodes)
@@ -202,8 +204,9 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
 {
     for (auto& pair: pairedNodes)
     {
-        if (pair.action == PairedNode::Action::FastForward
-            || pair.action == PairedNode::Action::Conflict)
+        pair.pathHash = Utils::QuickHash(pair.path);
+
+        if (pair.action == PairedNode::Action::FastForward || pair.action == PairedNode::Action::Conflict)
             continue;
         
         if (!pair.remoteNode.IsEmpty())

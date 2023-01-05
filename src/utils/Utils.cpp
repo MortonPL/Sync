@@ -2,6 +2,7 @@
 
 #include <pwd.h>
 #include <unistd.h>
+#include "xxhash.h"
 
 std::string homePath;
 
@@ -99,4 +100,9 @@ std::string Utils::UUIDToDBPath(const uuid_t& uuid)
     char uuidbuf[37];
     uuid_unparse(uuid, uuidbuf);
     return std::string(uuidbuf) + ".db3";
+}
+
+std::string Utils::QuickHash(std::string value)
+{
+    return fmt::format("{:x}", XXH64(value.c_str(), value.size(), 0));
 }

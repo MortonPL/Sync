@@ -1,20 +1,4 @@
 # dependencies
-include(FetchContent)
-FetchContent_Declare(
-  SQLiteCpp
-  GIT_REPOSITORY https://github.com/SRombauts/SQLiteCpp.git
-  GIT_TAG 3.2.0
-)
-FetchContent_MakeAvailable(SQLiteCpp)
-FetchContent_Declare(
-  xxHash
-  GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
-  GIT_TAG v0.8.1
-  SOURCE_SUBDIR  cmake_unofficial
-)
-set(XXHASH_BUILD_XXHSUM OFF)
-set(BUILD_SHARED_LIBS OFF)
-FetchContent_MakeAvailable(xxHash)
 find_package(libssh REQUIRED)
 
 # sources
@@ -26,6 +10,7 @@ set(SRC_LIB_FILES
     domain/ConflictRule.cpp
     Announcer.cpp
     Global.cpp
+    FileSystem.cpp
     General.cpp
     SocketListener.cpp
     Blocker.cpp

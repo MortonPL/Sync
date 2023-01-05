@@ -115,9 +115,6 @@ MainFrame::MainFrame(wxWindow* pParent): ssh()
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false);
     ENABLE_TOOLBAR_ITEM(TOOLBAR_RESOLVE, false);
     CreateColumns();
-
-    // resize for menu and status bar
-    //GetSizer()->SetSizeHints(this);
 }
 
 void MainFrame::CreateColumns()
@@ -209,11 +206,15 @@ void MainFrame::ShowDetails(long itemIndex)
         }
     };
 
+    if (itemIndex < 0 || itemIndex >= ctrl.listMain->GetItemCount())
+        return;
+
     auto pPair = (PairedNode*)ctrl.listMain->GetItemData(itemIndex);
     ctrl.txtDetails->Clear();
     //general
     *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
     *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
+    *ctrl.txtDetails << "Path hash: " << pPair->pathHash << '\n';
     *ctrl.txtDetails << "Pair Action: " << pPair->GetActionString() << '\n';
     *ctrl.txtDetails << "Pair Default Action: " << pPair->GetDefaultActionString() << '\n';
     //local
@@ -239,40 +240,12 @@ void MainFrame::OnAction(PairedNode::Action action)
             ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
         }
     }
-    else if (action == PairedNode::Action::Conflict)
+    else if (action == PairedNode::Action::Conflict || action == PairedNode::Action::Resolved)
     {
-        auto cfg = Global::GetCurrentConfig();
-        int ruleId;
-        if ((ruleId = ConflictRuleDialog(conflictRules).ShowModal()) == CONFLICT_CANCEL)
-            return;
+        ResolveConflict();
 
-        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
-        {
-            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
-            return;
-        }
-        auto sftp = SFTPConnector(&ssh);
-        if (!sftp.Connect())
-        {
-            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
-            return;
-        }
-
-        if (ruleId != CONFLICT_AUTO)
-        {
-            for (auto index: selectedItems)
-            {
-                ConflictManager::Resolve((PairedNode*)(ctrl.listMain->GetItemData(index)), conflictRules[ruleId], sftp);
-            }
-        }
-        else
-        {
-            for (auto index: selectedItems)
-            {
-                auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-                ConflictManager::Resolve(pPair, ConflictRule::Match(pPair->path, conflictRules), sftp);
-            }
-        }
+        if (viewedItemIndex != -1)
+            ShowDetails(viewedItemIndex);
     }
     else
     {
@@ -285,6 +258,209 @@ void MainFrame::OnAction(PairedNode::Action action)
             ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
         }
     }
+}
+
+void MainFrame::ResolveConflict()
+{
+    auto cfg = Global::GetCurrentConfig();
+    int ruleId;
+    if ((ruleId = ConflictRuleDialog(conflictRules).ShowModal()) == CONFLICT_CANCEL)
+        return;
+
+    if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
+    {
+        GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+        return;
+    }
+    auto sftp = SFTPConnector(&ssh);
+    if (!sftp.Connect())
+    {
+        GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+        return;
+    }
+
+    auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
+    std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
+
+    if (ruleId != CONFLICT_AUTO)
+    {
+        for (auto index: selectedItems)
+        {
+            auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            if (ConflictManager::Resolve(pPair, conflictRules[ruleId],
+                                            cfg.pathB, sftp, GUIAnnouncer::LogPopup))
+            {
+                ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+            }
+            else
+            {
+                GUIAnnouncer::LogPopup("Failed to resolve conflict!", SEV_ERROR);
+            }
+        }
+    }
+    else
+    {
+        for (auto index: selectedItems)
+        {
+            auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            if (ConflictManager::Resolve(pPair, ConflictRule::Match(pPair->path, conflictRules),
+                                            cfg.pathB, sftp, GUIAnnouncer::LogPopup))
+            {
+                ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+            }
+            else
+            {
+                GUIAnnouncer::LogPopup("Failed to resolve conflict!", SEV_ERROR);
+            }
+        }
+    }
+
+    std::filesystem::current_path(previousCWD);
+}
+
+bool MainFrame::DoScan()
+{
+    std::forward_list<FileNode> scanNodes;
+    std::forward_list<HistoryFileNode> historyNodes;
+    std::forward_list<FileNode> remoteNodes;
+
+    //get current config
+    auto cfg = Global::GetCurrentConfig();
+    LOG(INFO) << "Loaded config " << cfg.name << ".";
+
+    //establish session
+    if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
+    {
+        //NOTE: SSHConnectorWrap already handles GUI popups, so we only need to log here.
+        LOG(ERROR) << "Failed to connect to the remote.";
+        return false;
+    }
+    LOG(INFO) << "Successfully connected to the remote.";
+
+    // remove all previous data
+    pairedNodes.clear();
+
+    // scan
+    LOG(INFO) << "Begin local scan...";
+    auto creeper = Creeper();
+    if (!Announcer::CreeperResult(creeper.CreepPath(cfg.pathA, scanNodes), GUIAnnouncer::LogPopup))
+        return false;
+    LOG(INFO) << "Local scan finished.";
+
+    // read history
+    try
+    {
+        auto db = DBConnector(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        db.SelectAllFileNodes(historyNodes);
+    }
+    catch(const std::exception& e)
+    {
+        GUIAnnouncer::LogPopup("Failed to read file history.", SEV_ERROR);
+        return false;
+    }
+    LOG(INFO) << "Read file history.";
+
+    // get remote nodes
+    int rc;
+    if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
+    {
+        GUIAnnouncer::LogPopup("Failed to receive file info from the remote host. Error code: " + rc, SEV_ERROR);
+        return false;
+    }
+    LOG(INFO) << "Received remote file nodes.";
+
+    // pairing
+    LOG(INFO) << "Begin pairing...";
+    Mapper mapper;
+    PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, creeper, mapper);
+    LOG(INFO) << "Pairing finished.";
+
+    return true;
+}
+
+bool MainFrame::DoSync()
+{
+    auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
+    auto blocker = Blocker();
+    auto cfg = Global::GetCurrentConfig();
+    try
+    {
+        std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
+        LOG(INFO) << "Blocking directory " << cfg.pathA;
+        if (!blocker.Block(cfg.pathA))
+        {
+            GUIAnnouncer::LogPopup(
+                "Failed to scan for files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
+                "directory is already being synchronized by another instance, or if the last \n"
+                "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
+                "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", SEV_ERROR);
+            return false;
+        }
+
+        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
+        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
+        {
+            blocker.Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            return false;
+        }
+        auto sftp = SFTPConnector(&ssh);
+        if (!sftp.Connect())
+        {
+            blocker.Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            return false;
+        }
+
+        std::string remoteHome;
+        switch (ssh.CallCLIHomeAndBlock(cfg.pathB, &remoteHome))
+        {
+        case CALLCLI_BLOCKED:
+            GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", SEV_ERROR);
+            blocker.Unblock(cfg.pathA);
+            std::filesystem::current_path(previousCWD);
+            return false;
+        default:
+            GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
+            blocker.Unblock(cfg.pathA);
+            std::filesystem::current_path(previousCWD);
+            return false;
+        case CALLCLI_OK:
+            break;
+        }
+
+        std::string tempPath = Utils::GetTempPath(remoteHome);
+
+        if (hasSelectedEverything || selectedItems.size() == 0)
+        {
+            for (auto& pair: pairedNodes)
+            {
+                SyncManager::Sync(&pair, cfg.pathB, tempPath, ssh, sftp, db);
+            }
+        }
+        else
+        {
+            for (auto index: selectedItems)
+            {
+                SyncManager::Sync((PairedNode*)(ctrl.listMain->GetItemData(index)), cfg.pathB, tempPath, ssh, sftp, db);
+            }
+        }
+    }
+    catch(const std::exception& e)
+    {
+        GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), SEV_ERROR);
+        ssh.CallCLIUnblock(cfg.pathB);
+        blocker.Unblock(cfg.pathA);
+        std::filesystem::current_path(previousCWD);
+        return false;
+    }
+
+    LOG(INFO) << "Unblock myself and remote...";
+    ssh.CallCLIUnblock(cfg.pathB);
+    blocker.Unblock(cfg.pathA);
+    std::filesystem::current_path(previousCWD);
+
+    return true;
 }
 
 /******************************* EVENT HANDLERS ******************************/
@@ -334,68 +510,16 @@ void MainFrame::OnScan(wxCommandEvent& event)
     if (!Global::IsLoadedConfig())
         return;
 
+    // clean everything left after the last scan
     ctrl.listMain->DeleteAllItems();
     selectedItems.clear();
     ctrl.txtDetails->Clear();
 
-    //get current config
-    auto cfg = Global::GetCurrentConfig();
-    LOG(INFO) << "Loaded config " << cfg.name << ".";
-
-    //establish session
-    if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
-    {
-        //NOTE: SSHConnectorWrap already handles GUI popups, so we only need to log here.
-        LOG(ERROR) << "Failed to connect to the remote.";
+    // scan proper
+    if (!DoScan())
         return;
-    }
-    LOG(INFO) << "Successfully connected to the remote.";
-
-    // remove all previous data
-    pairedNodes.clear();
-
-    //scan
-    scanNodes.clear();
-    LOG(INFO) << "Begin local scan...";
-    auto creeper = Creeper();
-    if (!Announcer::CreeperResult(creeper.CreepPath(cfg.pathA, scanNodes), GUIAnnouncer::LogPopup))
-        return;
-    LOG(INFO) << "Local scan finished.";
-
-    //read history
-    historyNodes.clear();
-    try
-    {
-        auto db = DBConnector(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        db.SelectAllFileNodes(historyNodes);
-    }
-    catch(const std::exception& e)
-    {
-        GUIAnnouncer::LogPopup("Failed to read file history.", SEV_ERROR);
-        return;
-    }
-    LOG(INFO) << "Read file history.";
-
-    // get remote nodes
-    remoteNodes.clear();
-    int rc;
-    if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
-    {
-        GUIAnnouncer::LogPopup("Failed to receive file info from the remote host. Error code: " + rc, SEV_ERROR);
-        return;
-    }
-    LOG(INFO) << "Received remote file nodes.";
-
-    //pairing
-    LOG(INFO) << "Begin pairing...";
-    Mapper mapper;
-    PairingManager::PairAll(scanNodes, historyNodes, remoteNodes, pairedNodes, creeper, mapper);
-    scanNodes.clear();
-    historyNodes.clear();
-    remoteNodes.clear();
-    LOG(INFO) << "Pairing finished.";
     
-    //display at the end
+    // display at the end
     pairedNodes.sort();
     PopulateList();
 
@@ -442,92 +566,11 @@ void MainFrame::OnSync(wxCommandEvent& event)
         return;
     }
 
-    auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
-    auto blocker = Blocker();
-    auto cfg = Global::GetCurrentConfig();
-    try
-    {
-        std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
-        LOG(INFO) << "Blocking directory " << cfg.pathA;
-        if (!blocker.Block(cfg.pathA))
-        {
-            GUIAnnouncer::LogPopup(
-                "Failed to scan for files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
-                "directory is already being synchronized by another instance, or if the last \n"
-                "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
-                "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", SEV_ERROR);
-            return;
-        }
+    // sync proper
+    DoSync();
 
-        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
-        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
-        {
-            blocker.Unblock(cfg.pathA);
-            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
-            return;
-        }
-        auto sftp = SFTPConnector(&ssh);
-        if (!sftp.Connect())
-        {
-            blocker.Unblock(cfg.pathA);
-            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
-            return;
-        }
-
-        std::string remoteHome;
-        switch (ssh.CallCLIHomeAndBlock(cfg.pathB, &remoteHome))
-        {
-        case CALLCLI_BLOCKED:
-            GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", SEV_ERROR);
-            blocker.Unblock(cfg.pathA);
-            std::filesystem::current_path(previousCWD);
-            return;
-        default:
-            GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
-            blocker.Unblock(cfg.pathA);
-            std::filesystem::current_path(previousCWD);
-            return;
-        case CALLCLI_OK:
-            break;
-        }
-
-        if (cfg.pathB[0] != '/')
-        {
-            //cfg.pathB = remoteHome + '/' + cfg.pathB;
-        }
-        std::string tempPath = Utils::GetTempPath(remoteHome);
-
-        if (hasSelectedEverything || selectedItems.size() == 0)
-        {
-            for (auto& pair: pairedNodes)
-            {
-                SyncManager::Sync(&pair, cfg.pathB, tempPath, ssh, sftp, db);
-            }
-        }
-        else
-        {
-            for (auto index: selectedItems)
-            {
-                SyncManager::Sync((PairedNode*)(ctrl.listMain->GetItemData(index)), cfg.pathB, tempPath, ssh, sftp, db);
-            }
-        }
-    }
-    catch(const std::exception& e)
-    {
-        GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), SEV_ERROR);
-        ssh.CallCLIUnblock(cfg.pathB);
-        blocker.Unblock(cfg.pathA);
-        std::filesystem::current_path(previousCWD);
-        return;
-    }
-
-    LOG(INFO) << "Unblock myself and remote...";
-    ssh.CallCLIUnblock(cfg.pathB);
-    blocker.Unblock(cfg.pathA);
-    std::filesystem::current_path(previousCWD);
-
+    // update item list
     int index = 0;
-    //ctrl.listMain->DeleteAllItems();
     for (auto it = pairedNodes.begin(); it != pairedNodes.end();)
     {
         if (it->deleted)
@@ -552,8 +595,6 @@ void MainFrame::OnSync(wxCommandEvent& event)
         }
         else
         {
-            //ctrl.listMain->InsertItem(index, wxString::FromUTF8(it->path));
-            //ctrl.listMain->SetItemData(index, (long)&*it);
             auto statuses = it->GetStatusString();
             ctrl.listMain->SetItem(index, COL_STATUS_L, statuses.first);
             ctrl.listMain->SetItem(index, COL_STATUS_R, statuses.second);

@@ -1,13 +1,7 @@
 #include "Lib/SyncManager.h"
 
-#include "xxhash.h"
 #include <sys/stat.h>
 #include "Utils.h"
-
-std::string QuickHash(std::string value)
-{
-    return fmt::format("{:x}", XXH64(value.c_str(), value.size(), 0));
-}
 
 int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
 {
@@ -30,7 +24,6 @@ int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
 int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
     std::string fullPath = remoteRoot + pNode->path;
-    std::string hashedPath = QuickHash(pNode->path);
     switch (pNode->localNode.status)
     {
     case FileNode::Status::Absent:
@@ -43,9 +36,9 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::strin
     case FileNode::Status::New:
     {
         //send
-        if (!sftp.Send(pNode->path, fullPath, tempPath, hashedPath, pNode->localNode.size))
+        if (!sftp.Send(pNode->path, fullPath, tempPath, pNode->pathHash, pNode->localNode.size))
             return -1;
-        if (ssh.ReplaceFile(hashedPath, fullPath) != CALLCLI_OK)
+        if (ssh.ReplaceFile(pNode->pathHash, fullPath) != CALLCLI_OK)
             return -1;
         //stat local for dev/inode
         auto path = pNode->path.c_str();
@@ -84,7 +77,6 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::strin
 int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remoteRoot, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
     std::string fullPath = remoteRoot + pNode->path;
-    std::string hashedPath = QuickHash(pNode->path);
     switch (pNode->remoteNode.status)
     {
     case FileNode::Status::Absent:
@@ -97,7 +89,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remoteRoot, SSHConnect
     case FileNode::Status::New:
     {
         //receive
-        if (!sftp.Receive(pNode->path, fullPath, hashedPath, pNode->remoteNode.size))
+        if (!sftp.Receive(pNode->path, fullPath, pNode->pathHash, pNode->remoteNode.size))
             return -1;
         //stat local for dev/inode, mtime
         auto path = pNode->path.c_str();

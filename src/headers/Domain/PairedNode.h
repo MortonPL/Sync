@@ -22,6 +22,7 @@ public:
         LocalToRemote,
         RemoteToLocal,
         Conflict,
+        Resolved,
         FastForward,
     };
 
@@ -49,6 +50,7 @@ public:
     static const std::map<Progress, std::string> ProgressAsString;
 
     const std::string path;
+    std::string pathHash;
     bool deleted = false;
     Action action = Action::None;
     Action defaultAction = Action::None;

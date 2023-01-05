@@ -4,7 +4,6 @@
 #include <forward_list>
 #include <filesystem>
 #include <regex>
-#include "xxhash.h"
 
 #include "Domain/FileNode.h"
 

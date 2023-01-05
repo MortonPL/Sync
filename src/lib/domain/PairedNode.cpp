@@ -20,10 +20,11 @@ const std::map<PairedNode::Action, std::string> PairedNode::ActionAsString =
 {
     {PairedNode::Action::None, ""},
     {PairedNode::Action::DoNothing, ""},
-    {PairedNode::Action::LocalToRemote, ">>>>"},
-    {PairedNode::Action::RemoteToLocal, "<<<<"},
+    {PairedNode::Action::LocalToRemote, "==>>"},
+    {PairedNode::Action::RemoteToLocal, "<<=="},
     {PairedNode::Action::Ignore, "Ignore"},
     {PairedNode::Action::Conflict, "Conflict"},
+    {PairedNode::Action::Resolved, "=><="},
     {PairedNode::Action::FastForward, "Fast Forward"},
 };
 

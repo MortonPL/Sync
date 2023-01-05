@@ -32,9 +32,6 @@ private:
 
     //temp
     std::list<PairedNode> pairedNodes;
-    std::forward_list<FileNode> scanNodes;
-    std::forward_list<HistoryFileNode> historyNodes;
-    std::forward_list<FileNode> remoteNodes;
     std::vector<ConflictRule> conflictRules;
 
     // custom methods
@@ -44,6 +41,10 @@ private:
     void OnAction(PairedNode::Action action);
     void ShowDetails(long itemIndex);
     bool ShouldBeFiltered(PairedNode& pair);
+    
+    void ResolveConflict();
+    bool DoScan();
+    bool DoSync();
 
     // event handlers
     void OnNewConfig(wxCommandEvent& event);

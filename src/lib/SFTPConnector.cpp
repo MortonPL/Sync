@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <iostream>
+#include "Lib/FileSystem.h"
 #include "Utils.h"
 
 SFTPConnector::SFTPConnector(SSHConnector* ssh)
@@ -177,63 +178,81 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
         LOG(ERROR) << "Error moving temporary file " << fullTempPath << ". Message: " << strerror(err);
         if (err == 18)
         {
-            if ((localFd = open(fullTempPath.c_str(), O_RDONLY)) == -1);
-            {
-                int err = errno;
-                LOG(ERROR) << "Failed to open temp file " << fullTempPath << " with error: " << strerror(err);
-                sftp_close(pFile);
-                return false;
-            }
-            int destFd;
-            if ((destFd = open(localPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
-            {
-                int err = errno;
-                LOG(ERROR) << "Failed to open destination file " << fullTempPath << " with error: " << strerror(err);
-                sftp_close(pFile);
-                return false;
-            }
-
-            while (size2 > 0)
-            {
-                if ((len = read(localFd, buf, sizeof(buf))) < 0)
-                {
-                    // error!
-                    int err = errno;
-                    LOG(ERROR) << "Error reading temp file " << fullTempPath << ". Message: " << strerror(err);
-                    close(destFd);
-                    close(localFd);
-                    return false;            
-                }
-                if ((len2 = write(destFd, buf, len)) < 0)
-                {
-                    // error!
-                    int err = errno;
-                    LOG(ERROR) << "Error writing local file " << localPath << ". Message: " << strerror(err);
-                    close(destFd);
-                    close(localFd);
-                    return false;
-                }
-                if (len != len2)
-                {
-                    // error!
-                    int err = errno;
-                    LOG(ERROR) << "Error moving local file " << localPath << ". Read more bytes than written!";
-                    close(destFd);
-                    close(localFd);
-                    return false;
-                }
-                size2 -= len2;
-            }
-
-            remove(fullTempPath.c_str());
-            return true;
+            return FileSystem::CopyLocalFile(fullTempPath, localPath, std::filesystem::copy_options::overwrite_existing);
         }
         return false;
     }
 
     return true;
 }
-#undef BUFFER_SIZE
+
+bool SFTPConnector::ReceiveNonAtomic(std::string localPath, std::string remotePath)
+{
+    struct stat buf2;
+    if (stat(localPath.c_str(), &buf2) == 0)
+        return true;
+
+    sftp_file pFile;
+    int localFd;
+    int len = 0;
+    int len2 = 0;
+    int initlen = 0;
+    char buf[BUFSIZ];
+    // open both
+    if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
+    {
+        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << ssh->GetError();
+        return false;
+    }
+    if ((localFd = open(localPath.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
+    {
+        int err = errno;
+        LOG(ERROR) << "Failed to open local file " << localPath << " with error: " << strerror(err);
+        sftp_close(pFile);
+        return false;
+    }
+
+    // check if we're resuming a failed operation
+    off_t size = sftp_stat(sftp, remotePath.c_str())->size;
+    if ((initlen = buf2.st_size) > 0)
+    {
+        size -= initlen;
+        sftp_seek(pFile, initlen);
+        lseek(localFd, initlen, SEEK_SET);
+    }
+
+    // write
+    while (size > 0)
+    {
+        if (len != len2)
+            sftp_seek(pFile, len2 - len);
+
+        if ((len = sftp_read(pFile, buf, sizeof(buf))) < 0)
+        {
+            // error!
+            int err = errno;
+            LOG(ERROR) << "Error reading remote file " << remotePath << ". Message: " << strerror(err);
+            sftp_close(pFile);
+            close(localFd);
+            return false;
+        }
+        if ((len2 = write(localFd, buf, len)) < 0)
+        {
+            // error!
+            int err = errno;
+            LOG(ERROR) << "Error writing local file " << localPath << ". Message: " << strerror(err);
+            sftp_close(pFile);
+            close(localFd);
+            return false;
+        }
+        size -= len2;
+    }
+
+    sftp_close(pFile);
+    close(localFd);
+
+    return true;
+}
 
 bool SFTPConnector::Delete(std::string path)
 {

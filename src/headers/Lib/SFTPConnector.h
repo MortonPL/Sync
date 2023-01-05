@@ -18,6 +18,7 @@ public:
 
     bool Send(std::string localPath, std::string remotePath, std::string tempPath, std::string hashedPath, off_t size);
     bool Receive(std::string localPath, std::string remotePath, std::string hashedPath, off_t size);
+    bool ReceiveNonAtomic(std::string localPath, std::string remotePath);
     bool Delete(std::string path);
 
 private:
