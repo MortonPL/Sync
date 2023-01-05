@@ -75,6 +75,11 @@
 				<object class="wxMenuItem" name="menu_view_cleanon">
 					<label>Show up to date files\tCtrl+V</label>
 					<help>Should files with no changes also be listed?</help>
+					<checkable>1</checkable>
+				</object>
+				<object class="wxMenuItem" name="menu_view_ffwdon">
+					<label>Show fast forwards\tCtrl+F</label>
+					<help>Should files with fast forward action (update only history) be listed?</help>
 					<checked>1</checked>
 					<checkable>1</checkable>
 				</object>

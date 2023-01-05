@@ -22,10 +22,11 @@ private:
     Controls ctrl;
     bool isFirstSelectedConfig = true;
     SSHConnector ssh;
-    long viewedItemIndex;
+    long viewedItemIndex = -1;
     std::set<long> selectedItems;
     bool hasSelectedEverything = false;
     bool shouldShowClean = false;
+    bool shouldShowFastFwd = true;
 
     //temp
     std::list<PairedNode> pairedNodes;
@@ -39,6 +40,7 @@ private:
     void RefreshList();
     void OnAction(PairedNode::Action action);
     void ShowDetails(long itemIndex);
+    bool ShouldBeFiltered(PairedNode& pair);
 
     // event handlers
     void OnNewConfig(wxCommandEvent& event);
@@ -55,6 +57,7 @@ private:
     void OnSelectNode(wxListEvent& event);
     void OnDeselectNode(wxListEvent& event);
     void OnToggleShowClean(wxCommandEvent& event);
+    void OnToggleShowFastFwd(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void CharHook(wxKeyEvent& event);

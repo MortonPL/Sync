@@ -30,6 +30,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(XRCID("menu_action_ignore"), MainFrame::OnActionIgnore)
     EVT_MENU(XRCID("menu_action_tool"), MainFrame::OnActionResolve)
     EVT_MENU(XRCID("menu_view_cleanon"), MainFrame::OnToggleShowClean)
+    EVT_MENU(XRCID("menu_view_ffwdon"), MainFrame::OnToggleShowFastFwd)
     EVT_TOOL(XRCID("tlb_changec"), MainFrame::OnChangeConfig)
     EVT_TOOL(XRCID("tlb_scan"), MainFrame::OnScan)
     EVT_TOOL(XRCID("tlb_sync"), MainFrame::OnSync)
@@ -124,7 +125,7 @@ void MainFrame::PopulateList()
     ctrl.listMain->DeleteAllItems();
     for (auto& pair: pairedNodes)
     {
-        if (pair.action == PairedNode::Action::DoNothing && !shouldShowClean)
+        if (ShouldBeFiltered(pair))
             continue;
 
         ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
@@ -149,6 +150,17 @@ void MainFrame::RefreshList()
         ctrl.listMain->SetItem(i, COL_ACTION, pPair->GetActionString());
         ctrl.listMain->SetItem(i, COL_PROGRESS, pPair->GetProgressString());
     }
+}
+
+bool MainFrame::ShouldBeFiltered(PairedNode& pair)
+{
+    if (pair.action == PairedNode::Action::DoNothing && !shouldShowClean)
+        return true;
+    
+    if (pair.action == PairedNode::Action::FastForward && !shouldShowFastFwd)
+        return true;
+    
+    return false;
 }
 
 #define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
@@ -435,6 +447,12 @@ void MainFrame::OnSync(wxCommandEvent& event)
         }
         else
         {
+            if (ShouldBeFiltered(*it))
+            {
+                it++;
+                continue;
+            }
+
             auto statuses = it->GetStatusString();
             ctrl.listMain->SetItem(index, COL_STATUS_L, statuses.first);
             ctrl.listMain->SetItem(index, COL_STATUS_R, statuses.second);
@@ -517,6 +535,12 @@ void MainFrame::OnActionDeselectAll(wxCommandEvent& event)
 void MainFrame::OnToggleShowClean(wxCommandEvent& event)
 {
     shouldShowClean = event.IsChecked();
+    PopulateList();
+}
+
+void MainFrame::OnToggleShowFastFwd(wxCommandEvent& event)
+{
+    shouldShowFastFwd = event.IsChecked();
     PopulateList();
 }
 
