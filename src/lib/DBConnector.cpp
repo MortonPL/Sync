@@ -287,7 +287,7 @@ bool DBConnector::UpdateConflictRule(const ConflictRule& rule)
     {
         this->db.exec(fmt::format(
             "UPDATE conflict_rules SET "
-            "name = \"{}\", rule = \"{}\", command = \"{}\","
+            "name = \"{}\", rule = \"{}\", command = \"{}\" "
             "WHERE id = {}",
             rule.name, rule.rule, rule.command, rule.id));
     }

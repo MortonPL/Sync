@@ -2,6 +2,8 @@
 
 #include "Utils.h"
 
+ConflictRule ConflictRule::emptyRule;
+
 ConflictRule::ConflictRule()
 {
 }
@@ -44,4 +46,18 @@ ConflictRule::ConflictRule(int id, int order, std::string name, std::string rule
     {
         this->badRule = true;
     }
+}
+
+ConflictRule& ConflictRule::Match(std::string path, std::vector<ConflictRule>& rules)
+{
+    for (auto& rule: rules)
+    {
+        if (rule.badRule)
+            continue;
+        
+        if (std::regex_search(path, rule.regex))
+            return rule;
+    }
+
+    return emptyRule;
 }

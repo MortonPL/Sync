@@ -16,6 +16,7 @@
 #include "Lib/Creeper.h"
 #include "Lib/PairingManager.h"
 #include "Lib/SyncManager.h"
+#include "Lib/ConflictManager.h"
 #include "Utils.h"
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -240,12 +241,38 @@ void MainFrame::OnAction(PairedNode::Action action)
     }
     else if (action == PairedNode::Action::Conflict)
     {
-        // launch only for the first file?
-        if (ConflictRuleDialog().ShowModal() != wxID_OK)
+        auto cfg = Global::GetCurrentConfig();
+        int ruleId;
+        if ((ruleId = ConflictRuleDialog(conflictRules).ShowModal()) == CONFLICT_CANCEL)
+            return;
+
+        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
         {
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
             return;
         }
-        selectedItems.begin();
+        auto sftp = SFTPConnector(&ssh);
+        if (!sftp.Connect())
+        {
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            return;
+        }
+
+        if (ruleId != CONFLICT_AUTO)
+        {
+            for (auto index: selectedItems)
+            {
+                ConflictManager::Resolve((PairedNode*)(ctrl.listMain->GetItemData(index)), conflictRules[ruleId], sftp);
+            }
+        }
+        else
+        {
+            for (auto index: selectedItems)
+            {
+                auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+                ConflictManager::Resolve(pPair, ConflictRule::Match(pPair->path, conflictRules), sftp);
+            }
+        }
     }
     else
     {
@@ -433,8 +460,14 @@ void MainFrame::OnSync(wxCommandEvent& event)
         }
 
         auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
+        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
+        {
+            blocker.Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            return;
+        }
         auto sftp = SFTPConnector(&ssh);
-        if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser) || !sftp.Connect())
+        if (!sftp.Connect())
         {
             blocker.Unblock(cfg.pathA);
             GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
@@ -460,7 +493,7 @@ void MainFrame::OnSync(wxCommandEvent& event)
 
         if (cfg.pathB[0] != '/')
         {
-            cfg.pathB = remoteHome + '/' + cfg.pathB;
+            //cfg.pathB = remoteHome + '/' + cfg.pathB;
         }
         std::string tempPath = Utils::GetTempPath(remoteHome);
 

@@ -4,9 +4,11 @@
 
 #include "Domain/ConflictRule.h"
 
+#define CONFLICT_CANCEL -1
+#define CONFLICT_AUTO -2
 class ConflictRuleDialog : public wxDialog {
 public:
-    ConflictRuleDialog(wxWindow* pParent=(wxWindow*)NULL);
+    ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindow* pParent=(wxWindow*)NULL);
     ~ConflictRuleDialog(){}
 
 private:
@@ -27,7 +29,7 @@ private:
 
     // properties
     Controls ctrl;
-    std::vector<ConflictRule> rules;
+    std::vector<ConflictRule>* pRules;
     int selectedRuleIdx;
 
     // custom methods

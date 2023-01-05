@@ -3,8 +3,10 @@
 
 #include <list>
 #include <set>
+#include <vector>
 #include "Lib/SSHConnector.h"
-#include "domain/PairedNode.h"
+#include "Domain/ConflictRule.h"
+#include "Domain/PairedNode.h"
 
 class MainFrame : public wxFrame {
 public:
@@ -33,6 +35,7 @@ private:
     std::forward_list<FileNode> scanNodes;
     std::forward_list<HistoryFileNode> historyNodes;
     std::forward_list<FileNode> remoteNodes;
+    std::vector<ConflictRule> conflictRules;
 
     // custom methods
     void CreateColumns();

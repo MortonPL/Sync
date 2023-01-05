@@ -11,6 +11,17 @@ public:
     ConflictRule(std::string name, std::string rule, std::string command);
     ConflictRule(int id, int order, std::string name, std::string rule, std::string command);
 
+    bool operator==(const ConflictRule& other) const
+    {
+        return this->name == other.name
+            && this->id == other.id
+            && this->order == other.order
+            && this->rule == other.rule
+            && this->command == other.command;
+    }
+
+    static ConflictRule& Match(std::string path, std::vector<ConflictRule>& rules);
+
     int id;
     int order;
     std::string name;
@@ -18,4 +29,5 @@ public:
     std::regex regex;
     std::string command;
     bool badRule = false;
+    static ConflictRule emptyRule;
 };

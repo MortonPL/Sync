@@ -2,6 +2,7 @@
 
 #include "GUI/GenericPopup.h"
 #include "GUI/NewConflictRuleDialog.h"
+#include "GUI/EditConflictRuleDialog.h"
 #include "Lib/DBConnector.h"
 #include "Lib/Global.h"
 #include "Utils.h"
@@ -20,7 +21,7 @@ wxBEGIN_EVENT_TABLE(ConflictRuleDialog, wxDialog)
 wxEND_EVENT_TABLE()
 
 // ctor
-ConflictRuleDialog::ConflictRuleDialog(wxWindow* pParent)
+ConflictRuleDialog::ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindow* pParent)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "ConflictRuleDialog");
 
@@ -39,6 +40,7 @@ ConflictRuleDialog::ConflictRuleDialog(wxWindow* pParent)
     };
 
     this->selectedRuleIdx = -1;
+    pRules = &rules;
     PopulateRuleList();
 }
 
@@ -49,10 +51,10 @@ void ConflictRuleDialog::PopulateRuleList()
     DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid));
     try
     {
-        this->rules.clear();
-        db.SelectAllConflictRules(this->rules);
+        this->pRules->clear();
+        db.SelectAllConflictRules(*this->pRules);
         auto arrs = wxArrayString();
-        for(auto rule: this->rules)
+        for(auto rule: *this->pRules)
             arrs.Add(wxString::FromUTF8(rule.name));
         ctrl.listConflictRules->Clear();
         if (!arrs.IsEmpty())
@@ -71,7 +73,7 @@ void ConflictRuleDialog::PopulateRuleDetails()
     if (this->selectedRuleIdx < 0)
         return;
 
-    auto rule = this->rules[this->selectedRuleIdx];
+    auto rule = (*this->pRules)[this->selectedRuleIdx];
     ctrl.txtDetails->Clear();
     *ctrl.txtDetails << "Name:\t\t" << wxString::FromUTF8(rule.name) << "\n";
     *ctrl.txtDetails << "Rule:\t\t" << wxString::FromUTF8(rule.rule) << "\n";
@@ -116,9 +118,7 @@ void ConflictRuleDialog::OnNewRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnEditRule(wxCommandEvent &event)
 {
-    // TODO
-    if (GenericPopup(rules[selectedRuleIdx].name).ShowModal() == wxID_OK)
-    //if (EditConflictRuleDialog(rules[selectedRuleIdx]).ShowModal() == wxID_OK)
+    if (EditConflictRuleDialog((*pRules)[selectedRuleIdx]).ShowModal() == wxID_OK)
     {
         PopulateRuleList();
         PopulateRuleDetails();
@@ -132,11 +132,11 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
         try
         {
             DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
-            if (db.SwapConflictRule(rules[selectedRuleIdx - 1], rules[selectedRuleIdx]))
+            if (db.SwapConflictRule((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]))
             {
-                ctrl.listConflictRules->SetString(selectedRuleIdx - 1, rules[selectedRuleIdx].name);
-                ctrl.listConflictRules->SetString(selectedRuleIdx, rules[selectedRuleIdx - 1].name);
-                std::swap(rules[selectedRuleIdx - 1], rules[selectedRuleIdx]);
+                ctrl.listConflictRules->SetString(selectedRuleIdx - 1, (*pRules)[selectedRuleIdx].name);
+                ctrl.listConflictRules->SetString(selectedRuleIdx, (*pRules)[selectedRuleIdx - 1].name);
+                std::swap((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]);
                 ctrl.listConflictRules->Select(selectedRuleIdx - 1);
                 selectedRuleIdx--;
             }
@@ -157,16 +157,16 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
 {
-    if (selectedRuleIdx < rules.size() - 1)
+    if (selectedRuleIdx < pRules->size() - 1)
     {
         try
         {
             DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
-            if (db.SwapConflictRule(rules[selectedRuleIdx + 1], rules[selectedRuleIdx]))
+            if (db.SwapConflictRule((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]))
             {
-                ctrl.listConflictRules->SetString(selectedRuleIdx + 1, rules[selectedRuleIdx].name);
-                ctrl.listConflictRules->SetString(selectedRuleIdx, rules[selectedRuleIdx + 1].name);
-                std::swap(rules[selectedRuleIdx + 1], rules[selectedRuleIdx]);
+                ctrl.listConflictRules->SetString(selectedRuleIdx + 1, (*pRules)[selectedRuleIdx].name);
+                ctrl.listConflictRules->SetString(selectedRuleIdx, (*pRules)[selectedRuleIdx + 1].name);
+                std::swap((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]);
                 ctrl.listConflictRules->Select(selectedRuleIdx + 1);
                 selectedRuleIdx++;
             }
@@ -190,7 +190,7 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
     try
     {
         DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.DeleteConflictRule(rules[selectedRuleIdx].id))
+        if (db.DeleteConflictRule((*pRules)[selectedRuleIdx].id))
         {
             GenericPopup("Conflict rules removed successfully.").ShowModal();
         }
@@ -213,17 +213,15 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnAuto(wxCommandEvent &event)
 {
-    //Global::SetCurrentConfig(configs[selectedConfigIdx]);
-    EndModal(wxID_OK);
+    EndModal(CONFLICT_AUTO);
 }
 
 void ConflictRuleDialog::OnOK(wxCommandEvent &event)
 {
-    //Global::SetCurrentConfig(configs[selectedConfigIdx]);
-    EndModal(wxID_OK);
+    EndModal(selectedRuleIdx);
 }
 
 void ConflictRuleDialog::OnCancel(wxCommandEvent &event)
 {
-    EndModal(wxID_CANCEL);
+    EndModal(CONFLICT_CANCEL);
 }

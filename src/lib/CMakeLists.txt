@@ -33,6 +33,7 @@ set(SRC_LIB_FILES
     Creeper.cpp
     PairingManager.cpp
     SyncManager.cpp
+    ConflictManager.cpp
     DBConnector.cpp
     SSHConnector.cpp
     SFTPConnector.cpp

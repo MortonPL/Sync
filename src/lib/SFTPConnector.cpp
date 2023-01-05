@@ -38,7 +38,6 @@ void SFTPConnector::EndSession()
     }
 }
 
-#define BUFFER_SIZE 32000
 bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::string tempPath, std::string hashedPath, off_t size)
 {
     sftp_file pFile;
@@ -46,7 +45,7 @@ bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::str
     int len = 0;
     int len2 = 0;
     int initlen = 0;
-    char buf[BUFFER_SIZE];
+    char buf[BUFSIZ];
     std::string fullTempPath = tempPath + hashedPath + ".SyncTEMP";
     // open both
     if ((pFile = sftp_open(sftp, fullTempPath.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
@@ -75,7 +74,7 @@ bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::str
     {
         if (len != len2)
             lseek(localFd, len2 - len, SEEK_CUR);
-        if ((len = read(localFd, buf, BUFFER_SIZE)) < 0)
+        if ((len = read(localFd, buf, sizeof(buf))) < 0)
         {
             // error!
             int err = errno;
@@ -109,7 +108,8 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     int len = 0;
     int len2 = 0;
     int initlen = 0;
-    char buf[BUFFER_SIZE];
+    char buf[BUFSIZ];
+    off_t size2 = size;
     std::string fullTempPath = Utils::GetTempPath() + hashedPath + ".SyncTEMP";
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
@@ -119,6 +119,8 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     }
     if ((localFd = open(fullTempPath.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
     {
+        int err = errno;
+        LOG(ERROR) << "Failed to open temp file " << fullTempPath << " with error: " << strerror(err);
         sftp_close(pFile);
         return false;
     }
@@ -139,7 +141,7 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
         if (len != len2)
             sftp_seek(pFile, len2 - len);
 
-        if ((len = sftp_read(pFile, buf, BUFFER_SIZE)) < 0)
+        if ((len = sftp_read(pFile, buf, sizeof(buf))) < 0)
         {
             // error!
             int err = errno;
@@ -167,6 +169,7 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     auto path = std::filesystem::path(localPath);
     if (path.has_parent_path())
         std::filesystem::create_directories(path.parent_path());
+    // try to move atomically, if it fails, copy the old fashioned way
     if (rename(fullTempPath.c_str(), localPath.c_str()) < 0)
     {
         // error!
@@ -174,9 +177,54 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
         LOG(ERROR) << "Error moving temporary file " << fullTempPath << ". Message: " << strerror(err);
         if (err == 18)
         {
-            std::ifstream ifs(fullTempPath, std::ios::binary);
-            std::ofstream ofs(localPath, std::ios::binary);
-            ofs << ifs.rdbuf();
+            if ((localFd = open(fullTempPath.c_str(), O_RDONLY)) == -1);
+            {
+                int err = errno;
+                LOG(ERROR) << "Failed to open temp file " << fullTempPath << " with error: " << strerror(err);
+                sftp_close(pFile);
+                return false;
+            }
+            int destFd;
+            if ((destFd = open(localPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
+            {
+                int err = errno;
+                LOG(ERROR) << "Failed to open destination file " << fullTempPath << " with error: " << strerror(err);
+                sftp_close(pFile);
+                return false;
+            }
+
+            while (size2 > 0)
+            {
+                if ((len = read(localFd, buf, sizeof(buf))) < 0)
+                {
+                    // error!
+                    int err = errno;
+                    LOG(ERROR) << "Error reading temp file " << fullTempPath << ". Message: " << strerror(err);
+                    close(destFd);
+                    close(localFd);
+                    return false;            
+                }
+                if ((len2 = write(destFd, buf, len)) < 0)
+                {
+                    // error!
+                    int err = errno;
+                    LOG(ERROR) << "Error writing local file " << localPath << ". Message: " << strerror(err);
+                    close(destFd);
+                    close(localFd);
+                    return false;
+                }
+                if (len != len2)
+                {
+                    // error!
+                    int err = errno;
+                    LOG(ERROR) << "Error moving local file " << localPath << ". Read more bytes than written!";
+                    close(destFd);
+                    close(localFd);
+                    return false;
+                }
+                size2 -= len2;
+            }
+
             remove(fullTempPath.c_str());
             return true;
         }
