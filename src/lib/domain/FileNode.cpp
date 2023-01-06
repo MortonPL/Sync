@@ -3,6 +3,8 @@
 #include "linux/limits.h"
 #include <cstring>
 
+#include "Utils.h"
+
 const unsigned short FileNode::MaxBinarySize = sizeof(unsigned short) + sizeof(unsigned short)
                                                + PATH_MAX + sizeof(FileNode::size) + sizeof(FileNode::mtime)
                                                + sizeof(FileNode::dev) + sizeof(FileNode::inode)
@@ -61,6 +63,11 @@ FileNode::devinode FileNode::GetDevInode() const
 bool FileNode::IsEqualHash(const FileNode& other) const
 {
     return hashHigh == other.hashHigh && hashLow == other.hashLow;
+}
+
+std::string FileNode::HashToString() const
+{
+    return noHash? "-" : fmt::format("{:x}{:x}", (unsigned long)hashHigh, (unsigned long)hashLow);
 }
 
 bool FileNode::IsEmpty() const

@@ -30,6 +30,8 @@ void Creeper::SearchForLists(std::string& path)
             while (in.peek() != EOF)
             {
                 getline(in, out);
+                if(*out.end() == '\r')
+                    out.pop_back();
                 Utils::Replace(out, ".", "\\.");
                 Utils::Replace(out, "*", ".*");
                 try
@@ -212,7 +214,7 @@ int Creeper::MakeSingleNodeLight(const std::string& path, FileNode& node)
     }
     if (!S_ISREG(ret.st_mode))
         return CREEP_NOTDIR;
-    if ((ret.st_mode & S_IRWXU) != S_IRWXU)
+    if ((ret.st_mode & (S_IREAD|S_IWRITE)) != (S_IREAD|S_IWRITE))
         return CREEP_PERM;
 
     // create a new file entry

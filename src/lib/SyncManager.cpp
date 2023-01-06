@@ -37,9 +37,10 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
     case FileNode::Status::New:
     {
         //send
-        if (!sftp.Send(pNode->path, remotePath, tempPath, pNode->pathHash, pNode->localNode.size))
+        std::string tempFilePath = pNode->pathHash + '-' + pNode->localNode.HashToString();
+        if (!sftp.Send(pNode->path, remotePath, tempPath, tempFilePath, pNode->localNode.size))
             return -1;
-        if (ssh.ReplaceFile(pNode->pathHash, remotePath) != CALLCLI_OK)
+        if (ssh.ReplaceFile(tempFilePath, remotePath) != CALLCLI_OK)
             return -1;
         //stat local for dev/inode
         auto path = pNode->path.c_str();
@@ -90,7 +91,8 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, SSHConnect
     case FileNode::Status::New:
     {
         //receive
-        if (!sftp.Receive(pNode->path, remotePath, pNode->pathHash, pNode->remoteNode.size))
+        std::string tempFilePath = pNode->pathHash + '-' + pNode->remoteNode.HashToString();
+        if (!sftp.Receive(pNode->path, remotePath, tempFilePath, pNode->remoteNode.size))
             return -1;
         //stat local for dev/inode, mtime
         auto path = pNode->path.c_str();
@@ -171,9 +173,10 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
 
     // then move temp/remote
     //send
-    if (!sftp.Send(tempRemote, remotePath, tempPath, pNode->pathHash, pNode->localNode.size))
+    std::string tempFilePath = pNode->pathHash + '-' + pNode->remoteNode.HashToString();
+    if (!sftp.Send(tempRemote, remotePath, tempPath, tempRemote, pNode->localNode.size))
         return -1;
-    if (ssh.ReplaceFile(pNode->pathHash, remotePath) != CALLCLI_OK)
+    if (ssh.ReplaceFile(tempRemote, remotePath) != CALLCLI_OK)
         return -1;
     remove(tempRemote.c_str());
     //stat remote for dev/inode, mtime

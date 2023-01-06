@@ -65,6 +65,7 @@ public:
 
     devinode GetDevInode() const;
     bool IsEqualHash(const FileNode& other) const;
+    std::string HashToString() const;
     bool IsEmpty() const;
 
     unsigned short Serialize(unsigned char* buf) const;

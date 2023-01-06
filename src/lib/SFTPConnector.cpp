@@ -39,7 +39,7 @@ void SFTPConnector::EndSession()
     }
 }
 
-bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::string tempPath, std::string hashedPath, off_t size)
+bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::string tempPath, std::string tempFileName, off_t size)
 {
     sftp_file pFile;
     int localFd;
@@ -47,7 +47,7 @@ bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::str
     int len2 = 0;
     int initlen = 0;
     char buf[BUFSIZ];
-    std::string fullTempPath = tempPath + hashedPath + ".SyncTEMP";
+    std::string fullTempPath = tempPath + tempFileName;
     // open both
     if ((pFile = sftp_open(sftp, fullTempPath.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
     {
@@ -96,13 +96,17 @@ bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::str
         size -= len2;
     }
 
-    sftp_close(pFile);
+    if (sftp_close(pFile) == SSH_ERROR)
+    {
+        LOG(ERROR) << "Failed to close remote file because: " << ssh->GetError();
+        return false;
+    }
     close(localFd);
 
     return true;
 }
 
-bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::string hashedPath, off_t size)
+bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::string tempFileName, off_t size)
 {
     sftp_file pFile;
     int localFd;
@@ -111,7 +115,7 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     int initlen = 0;
     char buf[BUFSIZ];
     off_t size2 = size;
-    std::string fullTempPath = Utils::GetTempPath() + hashedPath + ".SyncTEMP";
+    std::string fullTempPath = Utils::GetTempPath() + tempFileName;
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {

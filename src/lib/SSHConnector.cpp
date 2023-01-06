@@ -266,27 +266,36 @@ int SSHConnector::ReplaceFile(std::string pathFrom, std::string pathTo)
 {
     auto pChannel = GetChannel();
     auto path = std::filesystem::path(pathTo).parent_path().string();
+    char buf;
     Utils::Replace(path, "\'", "\'\\\'\'");
 
-    if (ssh_channel_request_exec(pChannel, ("mkdir -p \'" + path + '\'').c_str()) != SSH_OK)
+    if (ssh_channel_request_exec(pChannel, ("mkdir -p \'" + path + "\'; echo 0;").c_str()) != SSH_OK)
     {
         LOG(ERROR) << ssh_get_error(session);
         FreeChannel(pChannel);
         return CALLCLI_NOANSWER;
     }
-    if (ssh_get_error_code(session) != SSH_NO_ERROR)
+    if ((ssh_channel_read(pChannel, &buf, sizeof(buf), 0) != sizeof(buf)) || buf != '0')
+    {
+        LOG(ERROR) << ssh_get_error(session);
+        FreeChannel(pChannel);
         return CALLCLI_ERROR;
+    }
     FreeChannel(pChannel);
 
     pChannel = GetChannel();
-    if (ssh_channel_request_exec(pChannel, ("mv .sync/tmp/" + pathFrom + ".SyncTEMP \'" + pathTo + '\'').c_str()) != SSH_OK)
+    if (ssh_channel_request_exec(pChannel, ("mv .sync/tmp/" + pathFrom + " \'" + pathTo + "\'; echo 0;").c_str()) != SSH_OK)
     {
         LOG(ERROR) << ssh_get_error(session);
         FreeChannel(pChannel);
         return CALLCLI_NOANSWER;
     }
-    if (ssh_get_error_code(session) != SSH_NO_ERROR)
+    if ((ssh_channel_read(pChannel, &buf, sizeof(buf), 0) != sizeof(buf)) || buf != '0')
+    {
+        LOG(ERROR) << ssh_get_error(session);
+        FreeChannel(pChannel);
         return CALLCLI_ERROR;
+    }
 
     FreeChannel(pChannel);
 

@@ -182,14 +182,11 @@ void MainFrame::ShowDetails(long itemIndex)
             *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
             *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode.mtime) << '\n';
             *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
-            if (pNode.noHash)
-                *ctrl.txtDetails << "Hash: ???????\n";
-            else
-                *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+            *ctrl.txtDetails << "Hash: " << pNode.HashToString() << '\n';
         }
         else
         {
-            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\n Hash:";
+            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\n Hash:\n";
         }
     };
 
@@ -201,11 +198,11 @@ void MainFrame::ShowDetails(long itemIndex)
             *ctrl.txtDetails << "Local Mtime: " << Utils::TimestampToString(pNode.mtime) << '\n';
             *ctrl.txtDetails << "Remote Mtime: " << Utils::TimestampToString(pNode.remoteMtime) << '\n';
             *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
-            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+            *ctrl.txtDetails << "Hash: " << pNode.HashToString() << '\n';
         }
         else
         {
-            *ctrl.txtDetails << "Status: Absent\nLocal Mtime:\nRemote Mtime:\nSize:\nHash:";
+            *ctrl.txtDetails << "Status: Absent\nLocal Mtime:\nRemote Mtime:\nSize:\nHash:\n";
         }
     };
 
