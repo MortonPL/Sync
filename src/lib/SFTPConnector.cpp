@@ -173,7 +173,17 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     // move
     auto path = std::filesystem::path(localPath);
     if (path.has_parent_path())
-        std::filesystem::create_directories(path.parent_path());
+    {
+        try
+        {
+            std::filesystem::create_directories(path.parent_path());
+        }
+        catch(const std::exception& e)
+        {
+            LOG(ERROR) << "Failed to create directory " << path.parent_path() << " Reason: " << e.what() << '\n';
+            return false;
+        }
+    }
     // try to move atomically, if it fails, copy the old fashioned way
     if (rename(fullTempPath.c_str(), localPath.c_str()) < 0)
     {

@@ -5,6 +5,11 @@
 #include "Lib/ConflictManager.h"
 #include "Utils.h"
 
+std::string MakeTempPath(PairedNode* pNode)
+{
+    return pNode->pathHash + '-' + pNode->remoteNode.HashToString() + ".SyncTEMP";
+}
+
 int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
 {
     if (pNode->localNode.status == FileNode::Status::Absent)
@@ -37,7 +42,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
     case FileNode::Status::New:
     {
         //send
-        std::string tempFilePath = pNode->pathHash + '-' + pNode->localNode.HashToString();
+        std::string tempFilePath = MakeTempPath(pNode);
         if (!sftp.Send(pNode->path, remotePath, tempPath, tempFilePath, pNode->localNode.size))
             return -1;
         if (ssh.ReplaceFile(tempFilePath, remotePath) != CALLCLI_OK)
@@ -91,7 +96,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, SSHConnect
     case FileNode::Status::New:
     {
         //receive
-        std::string tempFilePath = pNode->pathHash + '-' + pNode->remoteNode.HashToString();
+        std::string tempFilePath = MakeTempPath(pNode);
         if (!sftp.Receive(pNode->path, remotePath, tempFilePath, pNode->remoteNode.size))
             return -1;
         //stat local for dev/inode, mtime

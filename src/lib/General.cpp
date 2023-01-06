@@ -1,19 +1,21 @@
 #include "Lib/General.h"
 
+#include <filesystem>
 #include "Lib/DBConnector.h"
 #include "Utils.h"
 
 bool ensureDirectory(std::string dir, std::string errMsg, bool isLogger=false)
 {
-    if (mkdir(dir.c_str(), S_IRWXU | S_IRWXG) == 0 || errno == EEXIST)
+    try
     {
+        std::filesystem::create_directories(dir);
         return true;
     }
-    else
+    catch(const std::exception& e)
     {
-        std::cout << errMsg << '\n';
+        std::cerr << errMsg << " Reason: " << e.what() << '\n';
         if (!isLogger)
-            LOG(ERROR) << errMsg;
+            LOG(ERROR) << errMsg << " Reason: " << e.what();
         return false;
     }
 }
