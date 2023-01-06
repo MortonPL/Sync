@@ -182,7 +182,10 @@ void MainFrame::ShowDetails(long itemIndex)
             *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
             *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode.mtime) << '\n';
             *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
-            *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
+            if (pNode.noHash)
+                *ctrl.txtDetails << "Hash: ???????\n";
+            else
+                *ctrl.txtDetails << "Hash: " << fmt::format("{:x}{:x}", (unsigned long)pNode.hashHigh, (unsigned long)pNode.hashLow) << '\n';
         }
         else
         {
@@ -240,7 +243,7 @@ void MainFrame::OnAction(PairedNode::Action action)
             ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
         }
     }
-    else if (action == PairedNode::Action::Conflict || action == PairedNode::Action::Resolved)
+    else if (action == PairedNode::Action::Conflict || action == PairedNode::Action::Resolve)
     {
         ResolveConflict();
 
@@ -288,7 +291,7 @@ void MainFrame::ResolveConflict()
         {
             auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
             if (ConflictManager::Resolve(pPair, conflictRules[ruleId],
-                                            cfg.pathB, sftp, GUIAnnouncer::LogPopup))
+                                         cfg.pathB, sftp, GUIAnnouncer::LogPopup))
             {
                 ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
             }
@@ -304,7 +307,7 @@ void MainFrame::ResolveConflict()
         {
             auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
             if (ConflictManager::Resolve(pPair, ConflictRule::Match(pPair->path, conflictRules),
-                                            cfg.pathB, sftp, GUIAnnouncer::LogPopup))
+                                         cfg.pathB, sftp, GUIAnnouncer::LogPopup))
             {
                 ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
             }
@@ -390,7 +393,7 @@ bool MainFrame::DoSync()
         if (!blocker.Block(cfg.pathA))
         {
             GUIAnnouncer::LogPopup(
-                "Failed to scan for files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
+                "Failed to sync files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
                 "directory is already being synchronized by another instance, or if the last \n"
                 "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
                 "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", SEV_ERROR);

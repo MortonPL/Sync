@@ -64,7 +64,7 @@ bool Creeper::CheckIfFileIsIgnored(std::string path)
 }
 
 #define BUFFER_SIZE 4096
-bool hashFile(XXH3_state_t* pState, void* pBuffer, std::string& path, const char* cPath, XXH128_hash_t* pOut)
+bool hashFile(XXH3_state_t* pState, void* pBuffer, const std::string& path, const char* cPath, XXH128_hash_t* pOut)
 {
     if(XXH3_128bits_reset(pState) == XXH_ERROR)
     {
@@ -157,7 +157,7 @@ int Creeper::MakeNode(const std::filesystem::__cxx11::directory_entry& entry,
     return RES_OK;
 }
 
-int Creeper::MakeNode(std::string& path, FileNode& node)
+int Creeper::MakeSingleNode(const std::string& path, FileNode& node)
 {
     auto cstr = path.c_str();
     struct stat ret;
@@ -195,6 +195,32 @@ int Creeper::MakeNode(std::string& path, FileNode& node)
     return CREEP_OK;
 }
 
+int Creeper::MakeSingleNodeLight(const std::string& path, FileNode& node)
+{
+    auto cstr = path.c_str();
+    struct stat ret;
+    int rc = stat(cstr, &ret);
+    int err = errno;
+    if (rc == -1)
+    {
+        if (err == EACCES)
+            return CREEP_PERM;
+        if (err == ENOENT || err == ENOTDIR)
+            return CREEP_EXIST;
+        LOG(ERROR) << "An error occured while checking if a path exists. Error code: " << err;
+        return CREEP_ERROR;
+    }
+    if (!S_ISREG(ret.st_mode))
+        return CREEP_NOTDIR;
+    if ((ret.st_mode & S_IRWXU) != S_IRWXU)
+        return CREEP_PERM;
+
+    // create a new file entry
+    node = FileNode(path, ret.st_dev, ret.st_ino, ret.st_mtim.tv_sec, ret.st_size, 0, 0);
+    node.noHash = true;
+    return CREEP_OK;
+}
+
 int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes)
 {
     XXH3_state_t* pState;
@@ -208,9 +234,6 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
     {
         for (auto const& entry: std::filesystem::recursive_directory_iterator(
             rootPath, std::filesystem::directory_options::skip_permission_denied))
-        /*for (auto const& entry: std::filesystem::recursive_directory_iterator(
-            rootPath, std::filesystem::directory_options::follow_directory_symlink
-                | std::filesystem::directory_options::skip_permission_denied))*/
         {
             FileNode node;
             switch(MakeNode(entry, rootPath, pState, pBuffer, node))

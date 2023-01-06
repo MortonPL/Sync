@@ -22,7 +22,8 @@ public:
     ~Creeper();
     int CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes);
     size_t GetResultsCount();
-    int MakeNode(std::string& path, FileNode& node);
+    static int MakeSingleNode(const std::string& path, FileNode& node);
+    static int MakeSingleNodeLight(const std::string& path, FileNode& node);
 
     bool CheckIfFileIsIgnored(std::string path);
 

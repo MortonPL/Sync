@@ -20,6 +20,9 @@ public:
     bool Receive(std::string localPath, std::string remotePath, std::string hashedPath, off_t size);
     bool ReceiveNonAtomic(std::string localPath, std::string remotePath);
     bool Delete(std::string path);
+    
+    sftp_attributes Stat(std::string path);
+    bool IsAbsent();
 
 private:
     sftp_session sftp = NULL;

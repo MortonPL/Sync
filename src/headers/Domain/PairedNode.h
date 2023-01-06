@@ -22,7 +22,7 @@ public:
         LocalToRemote,
         RemoteToLocal,
         Conflict,
-        Resolved,
+        Resolve,
         FastForward,
     };
 

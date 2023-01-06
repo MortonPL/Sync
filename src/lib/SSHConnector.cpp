@@ -247,7 +247,7 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    if (rc != 0)
+    if (rc != '0')
     {
         FreeChannel(pChannel);
         return CALLCLI_ERROR;

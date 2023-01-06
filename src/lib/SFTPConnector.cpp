@@ -175,12 +175,18 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     {
         // error!
         int err = errno;
-        LOG(ERROR) << "Error moving temporary file " << fullTempPath << ". Message: " << strerror(err);
-        if (err == 18)
+        LOG(WARNING) << "Error moving atomically temporary file " << fullTempPath << ". Message: " << strerror(err);
+        if (err == EXDEV)
         {
-            return FileSystem::CopyLocalFile(fullTempPath, localPath, std::filesystem::copy_options::overwrite_existing);
+            if (FileSystem::CopyLocalFile(fullTempPath, localPath, std::filesystem::copy_options::overwrite_existing))
+                remove(fullTempPath.c_str());
+            else
+                return false;
         }
-        return false;
+        else
+        {
+            return false;
+        }
     }
 
     return true;
@@ -257,4 +263,14 @@ bool SFTPConnector::ReceiveNonAtomic(std::string localPath, std::string remotePa
 bool SFTPConnector::Delete(std::string path)
 {
     return sftp_unlink(sftp, path.c_str()) == SSH_OK;
+}
+
+sftp_attributes SFTPConnector::Stat(std::string path)
+{
+    return sftp_stat(sftp, path.c_str());
+}
+
+bool SFTPConnector::IsAbsent()
+{
+    return sftp_get_error(sftp) == ENOENT;
 }

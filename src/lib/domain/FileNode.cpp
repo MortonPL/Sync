@@ -7,7 +7,7 @@ const unsigned short FileNode::MaxBinarySize = sizeof(unsigned short) + sizeof(u
                                                + PATH_MAX + sizeof(FileNode::size) + sizeof(FileNode::mtime)
                                                + sizeof(FileNode::dev) + sizeof(FileNode::inode)
                                                + sizeof(FileNode::hashHigh) + sizeof(FileNode::hashLow);
-const unsigned short FileNode::MiniStatBinarySize = sizeof(dev_t) + sizeof(ino_t) + sizeof(timespec);
+const unsigned short FileNode::MiniStatBinarySize = sizeof(dev_t) + sizeof(ino_t) + sizeof(off_t) + sizeof(timespec);
 
 const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
 {
@@ -22,6 +22,7 @@ const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
     {FileNode::Status::MovedDirty, "Dirty (Moved)"},
     {FileNode::Status::HistoryPresent, "Present"},
     {FileNode::Status::Absent, "Absent"},
+    {FileNode::Status::Changed, "Changed!"},
 };
 
 FileNode::FileNode()
@@ -45,6 +46,7 @@ FileNode::FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t
     this->hashHigh = hashHigh;
     this->hashLow = hashLow;
     this->status = FileNode::Status::New;
+    this->noHash = false;
 }
 
 FileNode::~FileNode()
@@ -130,6 +132,7 @@ void FileNode::SerializeStat(struct stat* in, unsigned char* out)
 
     SERIALIZE(out, dev_t, in->st_dev);
     SERIALIZE(out, ino_t, in->st_ino);
+    SERIALIZE(out, off_t, in->st_size);
     SERIALIZE(out, timespec, in->st_mtim);
 }
 
@@ -139,6 +142,7 @@ void FileNode::DeserializeStat(unsigned char* in, struct stat* out)
 
     DESERIALIZE(in, dev_t, out->st_dev);
     DESERIALIZE(in, ino_t, out->st_ino);
+    DESERIALIZE(in, off_t, out->st_size);
     DESERIALIZE(in, timespec, out->st_mtim);
 }
 

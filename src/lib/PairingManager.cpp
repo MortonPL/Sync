@@ -275,3 +275,22 @@ void PairingManager::PairAll(std::forward_list<FileNode>& scanNodes, std::forwar
     //final reconciliation
     PairingManager::SolveFinalAction(pairedNodes);
 }
+
+bool PairingManager::CheckChanges(FileNode& localOld, FileNode& localNew, FileNode& remoteOld, FileNode& remoteNew)
+{
+    bool isOk = true;
+
+    if (localOld.size != localNew.size || localOld.mtime != localNew.mtime)
+    {
+        localOld = localNew;
+        isOk = false;
+    }
+
+    if (remoteOld.size != remoteNew.size || remoteOld.mtime != remoteNew.mtime)
+    {
+        remoteOld = remoteNew;
+        isOk = false;
+    }
+
+    return isOk;
+}

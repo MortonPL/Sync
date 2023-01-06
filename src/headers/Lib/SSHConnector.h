@@ -54,8 +54,6 @@ private:
     ssh_channel_struct* GetChannel();
     void FreeChannel(ssh_channel_struct* pChannel);
     ssh_channel_struct* CallCLI(std::string flag, std::string cmd);
-    ssh_channel_struct* PrepareReverseTunnel();
-    bool CreateTunnels();
 
     bool BeginSession(std::string host, std::string user);
     bool AuthenticateServer(serverHashCallbackType unknownCallback,

@@ -35,10 +35,10 @@ void ParseArgs(int argc, char* argv[])
             if (i + 1 < argc)
                 GlobalCLI::dirToBlock = Utils::CorrectDirPath(argv[i+1]);
             break;
-        case 'p':
+        case 's':
             if (i + 1 >= argc)
                 break;
-            GlobalCLI::rootDir = Utils::CorrectDirPath(argv[i+1]);
+            GlobalCLI::pathToStat = argv[i+1];
             break;
         case 'u':
             if (i + 1 >= argc)
@@ -152,6 +152,14 @@ int Serve()
         else if (retval)
         {
             read(0, &mode, sizeof(mode));
+            switch (mode)
+            {
+            case 's':
+                break;
+            
+            default:
+                break;
+            }
         }
         else
         {
@@ -170,12 +178,12 @@ int main(int argc, char* argv[])
 
     if (!General::InitEverything("synccli.log"))
         return -1;
-    
-    if (GlobalCLI::rootDir != "")
-        std::filesystem::current_path(GlobalCLI::rootDir);
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::HomePath)
         GetHomePath();
+
+    if (GlobalCLI::pathToStat != "")
+        StatPath(GlobalCLI::pathToStat);
 
     if (GlobalCLI::dirToBlock != "")
         BlockDir(GlobalCLI::dirToBlock);

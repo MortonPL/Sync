@@ -25,6 +25,7 @@ public:
         Dirty,
         MovedClean,
         MovedDirty,
+        Changed,
         Absent,
         HistoryPresent,
     };
@@ -60,6 +61,7 @@ public:
     XXH64_hash_t hashHigh;
     XXH64_hash_t hashLow;
     Status status = Status::Absent;
+    bool noHash = true;
 
     devinode GetDevInode() const;
     bool IsEqualHash(const FileNode& other) const;

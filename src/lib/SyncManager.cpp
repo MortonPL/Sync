@@ -1,6 +1,8 @@
 #include "Lib/SyncManager.h"
 
-#include <sys/stat.h>
+#include "Lib/FileSystem.h"
+#include "Lib/PairingManager.h"
+#include "Lib/ConflictManager.h"
 #include "Utils.h"
 
 int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
@@ -21,13 +23,12 @@ int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
     return 0;
 }
 
-int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
+int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
-    std::string fullPath = remoteRoot + pNode->path;
     switch (pNode->localNode.status)
     {
     case FileNode::Status::Absent:
-        if (!sftp.Delete(fullPath))
+        if (!sftp.Delete(remotePath))
             return -1;
         pNode->deleted = wasDeleted = true;
         break;
@@ -36,9 +37,9 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::strin
     case FileNode::Status::New:
     {
         //send
-        if (!sftp.Send(pNode->path, fullPath, tempPath, pNode->pathHash, pNode->localNode.size))
+        if (!sftp.Send(pNode->path, remotePath, tempPath, pNode->pathHash, pNode->localNode.size))
             return -1;
-        if (ssh.ReplaceFile(pNode->pathHash, fullPath) != CALLCLI_OK)
+        if (ssh.ReplaceFile(pNode->pathHash, remotePath) != CALLCLI_OK)
             return -1;
         //stat local for dev/inode
         auto path = pNode->path.c_str();
@@ -47,9 +48,10 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::strin
         auto newLocalDev = buf.st_dev;
         auto newLocalInode = buf.st_ino;
         //stat remote for dev/inode, mtime
-        if (ssh.StatRemote(fullPath, &buf) != CALLCLI_OK)
+        if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
         {
             //uh oh
+            return -1;
         }
         auto newRemoteDev = buf.st_dev;
         auto newRemoteInode = buf.st_ino;
@@ -74,9 +76,8 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remoteRoot, std::strin
     return 0;
 }
 
-int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remoteRoot, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
+int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
-    std::string fullPath = remoteRoot + pNode->path;
     switch (pNode->remoteNode.status)
     {
     case FileNode::Status::Absent:
@@ -89,7 +90,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remoteRoot, SSHConnect
     case FileNode::Status::New:
     {
         //receive
-        if (!sftp.Receive(pNode->path, fullPath, pNode->pathHash, pNode->remoteNode.size))
+        if (!sftp.Receive(pNode->path, remotePath, pNode->pathHash, pNode->remoteNode.size))
             return -1;
         //stat local for dev/inode, mtime
         auto path = pNode->path.c_str();
@@ -97,22 +98,23 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remoteRoot, SSHConnect
         stat(path, &buf);
         auto newLocalDev = buf.st_dev;
         auto newLocalInode = buf.st_ino;
-        auto localMtime = buf.st_mtim.tv_sec;
+        auto newLocalMtime = buf.st_mtim.tv_sec;
         //stat remote for dev/inode
-        if (ssh.StatRemote(fullPath, &buf) != CALLCLI_OK)
+        if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
         {
             //uh oh
+            return -1;
         }
         auto newRemoteDev = buf.st_dev;
         auto newRemoteInode = buf.st_ino;
 
         pNode->localNode = FileNode(pNode->path, newLocalDev, newLocalInode,
-                                    localMtime, pNode->remoteNode.size, pNode->remoteNode.hashHigh,
+                                    newLocalMtime, pNode->remoteNode.size, pNode->remoteNode.hashHigh,
                                     pNode->remoteNode.hashLow);
         pNode->localNode.status = FileNode::Status::Clean;
         pNode->remoteNode.status = FileNode::Status::Clean;
         pNode->historyNode = HistoryFileNode(pNode->path, newLocalDev, newLocalInode,
-                                             newRemoteDev, newRemoteInode, localMtime, pNode->remoteNode.mtime,
+                                             newRemoteDev, newRemoteInode, newLocalMtime, pNode->remoteNode.mtime,
                                              pNode->remoteNode.size, pNode->remoteNode.hashHigh,
                                              pNode->remoteNode.hashLow);
         pNode->SetDefaultAction(PairedNode::Action::DoNothing);
@@ -125,29 +127,153 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remoteRoot, SSHConnect
     return 0;
 }
 
+int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp)
+{
+    std::string tempLocal = Utils::GetTempPath() + pNode->pathHash + ConflictManager::tempSuffixLocal;
+    std::string tempRemote = Utils::GetTempPath() + pNode->pathHash + ConflictManager::tempSuffixRemote;
+
+    FileNode local;
+    FileNode remote;
+    if (Creeper::MakeSingleNode(tempLocal, local) != CREEP_OK)
+        return -1;
+    if (Creeper::MakeSingleNode(tempRemote, remote) != CREEP_OK)
+        return -1;
+    if (!local.IsEqualHash(remote))
+        return -1;
+
+    // move temp/local first
+    // try to move atomically, if it fails, copy the old fashioned way
+    if (rename(tempLocal.c_str(), pNode->path.c_str()) < 0)
+    {
+        // error!
+        int err = errno;
+        LOG(WARNING) << "Error moving temporary file " << tempLocal << " atomically. Message: " << strerror(err);
+        if (err == EXDEV)
+        {
+            if (FileSystem::CopyLocalFile(tempLocal, pNode->path, std::filesystem::copy_options::overwrite_existing))
+                remove(tempLocal.c_str());
+            else
+                return -1;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+    //stat local for dev/inode
+    auto path = pNode->path.c_str();
+    struct stat buf;
+    stat(path, &buf);
+    auto newLocalDev = buf.st_dev;
+    auto newLocalInode = buf.st_ino;
+    auto newLocalMtime = buf.st_mtim.tv_sec;
+    auto newLocalSize = buf.st_size;
+
+    // then move temp/remote
+    //send
+    if (!sftp.Send(tempRemote, remotePath, tempPath, pNode->pathHash, pNode->localNode.size))
+        return -1;
+    if (ssh.ReplaceFile(pNode->pathHash, remotePath) != CALLCLI_OK)
+        return -1;
+    remove(tempRemote.c_str());
+    //stat remote for dev/inode, mtime
+    if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
+    {
+        //uh oh
+        return -1;
+    }
+    auto newRemoteDev = buf.st_dev;
+    auto newRemoteInode = buf.st_ino;
+    auto newRemoteMtime = buf.st_mtim.tv_sec;
+    auto newRemoteSize = buf.st_size;
+
+    // resolve history
+    pNode->localNode = FileNode(pNode->path, newLocalDev, newLocalInode,
+                                newLocalMtime, newLocalSize, local.hashHigh,
+                                local.hashLow);
+    pNode->remoteNode = FileNode(pNode->path, newRemoteDev, newRemoteInode,
+                                 newRemoteMtime, newRemoteSize, remote.hashHigh,
+                                 remote.hashLow);
+    pNode->historyNode = HistoryFileNode(pNode->path, newLocalDev, newLocalInode,
+                                         newRemoteDev, newRemoteInode, newLocalMtime,
+                                         newRemoteMtime, newLocalSize, pNode->localNode.hashHigh,
+                                         pNode->localNode.hashLow);
+    pNode->localNode.status = FileNode::Status::Clean;
+    pNode->remoteNode.status = FileNode::Status::Clean;
+    pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+
+    return 0;
+}
+
+bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& sftp)
+{
+    FileNode local;
+    FileNode remote;
+    switch(Creeper::MakeSingleNodeLight(pNode->path, local))
+    {
+    case CREEP_OK:
+        local.status = FileNode::Status::Changed;
+        break;
+    case CREEP_EXIST:
+        break;
+    default:
+        pNode->progress = PairedNode::Progress::Failed;
+        return false;
+    }
+
+    sftp_attributes info;
+    if ((info = sftp.Stat(remotePath)) == NULL)
+    {
+        if (!sftp.IsAbsent())
+        {
+            pNode->progress = PairedNode::Progress::Failed;
+            return false;
+        }
+    }
+    else
+    {
+        remote.status = FileNode::Status::Changed;
+        remote.size = info->size;
+        remote.mtime = info->mtime;
+    }
+    
+    if (!PairingManager::CheckChanges(pNode->localNode, local, pNode->remoteNode, remote))
+    {
+        pNode->progress = PairedNode::Progress::Canceled;
+        pNode->action = PairedNode::Action::Ignore;
+        sftp_attributes_free(info);
+        return false;
+    }
+    sftp_attributes_free(info);
+
+    return true;
+}
+
 int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, DBConnector& db)
 {
-    if (pNode->progress == PairedNode::Progress::Canceled)
-        return 1;
-
     if (pNode->action == PairedNode::Action::Ignore
         || pNode->action == PairedNode::Action::DoNothing
         || pNode->action == PairedNode::Action::Conflict)
         return 1;
 
-    bool wasDeleted = false;
+    std::string remotePath = remoteRoot + pNode->path;
 
+    // check for cancel here
+    if (!LastMinuteCheck(pNode, remotePath, sftp))
+        return 3;
+
+    bool wasDeleted = false;
     switch (pNode->action)
     {
     case PairedNode::Action::LocalToRemote:
-        if (SyncFileLocalToRemote(pNode, remoteRoot, tempPath, ssh, sftp, wasDeleted) != 0)
+        if (SyncFileLocalToRemote(pNode, remotePath, tempPath, ssh, sftp, wasDeleted) != 0)
         {
             pNode->progress = PairedNode::Progress::Failed;
             return 2;
         }
         break;
     case PairedNode::Action::RemoteToLocal:
-        if (SyncFileRemoteToLocal(pNode, remoteRoot, ssh, sftp, wasDeleted) != 0)
+        if (SyncFileRemoteToLocal(pNode, remotePath, ssh, sftp, wasDeleted) != 0)
         {
             pNode->progress = PairedNode::Progress::Failed;
             return 2;
@@ -157,6 +283,12 @@ int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& t
         return 0;
     case PairedNode::Action::FastForward:
         UpdateHistory(pNode, wasDeleted);
+    case PairedNode::Action::Resolve:
+        if (SyncResolve(pNode, remotePath, tempPath, ssh, sftp) != 0)
+        {
+            pNode->progress = PairedNode::Progress::Failed;
+            return 2;
+        }
     default:
         break;
     }
