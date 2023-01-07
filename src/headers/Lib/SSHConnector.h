@@ -46,6 +46,7 @@ public:
     int CallCLIServe();
     int EndCLIServe();
     int StatRemote(std::string pathToStat, struct stat* pBuf);
+    int ServerStatRemote(std::string pathToStat, struct stat* pBuf);
     int ReplaceFile(std::string pathFrom, std::string pathTo);
 
     std::string GetError();

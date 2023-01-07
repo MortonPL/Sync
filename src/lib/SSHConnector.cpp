@@ -121,7 +121,7 @@ sftp_session SSHConnector::MakeSFTPSession()
 
 int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes)
 {
-    ssh_channel_struct* pChannel;
+    ssh_channel pChannel;
     if ((pChannel = CallCLI("c", dirToCreep)) == nullptr)
     {
         FreeChannel(pChannel);
@@ -166,47 +166,54 @@ int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNod
 
 int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* result)
 {
+    ssh_channel pChannel;
     char buf[PATH_MAX];
-
-    if ((channel = CallCLI("h", pathToCheck)) == nullptr)
+    if ((pChannel = CallCLI("h", pathToCheck)) == nullptr)
     {
         return CALLCLI_NOANSWER;
     }
     unsigned short len;
-    if (ssh_channel_read(channel, &len, sizeof(len), 0) != sizeof(len))
+    if (ssh_channel_read(pChannel, &len, sizeof(len), 0) != sizeof(len))
     {
-        FreeChannel(channel);
+        FreeChannel(pChannel);
         return CALLCLI_404;
     }
 
     if (len > PATH_MAX)
+    {
+        FreeChannel(pChannel);
         return CALLCLI_ERROR;
+    }
 
-    ssh_channel_read(channel, buf, len, 0);
+    ssh_channel_read(pChannel, buf, len, 0);
     *result = std::string(buf, len);
 
     bool blocked;
-    ssh_channel_read(channel, &blocked, sizeof(blocked), 0);
+    ssh_channel_read(pChannel, &blocked, sizeof(blocked), 0);
 
+    FreeChannel(pChannel);
     return blocked? CALLCLI_OK: CALLCLI_BLOCKED;
 }
 
 int SSHConnector::CallCLIUnblock(std::string path)
 {
-    if ((channel = CallCLI("u", path)) == nullptr)
+    ssh_channel pChannel;
+    if ((pChannel = CallCLI("u", path)) == nullptr)
     {
         return CALLCLI_NOANSWER;
     }
     bool unblocked;
-    if (ssh_channel_read(channel, &unblocked, sizeof(unblocked), 0) != sizeof(unblocked))
+    if (ssh_channel_read(pChannel, &unblocked, sizeof(unblocked), 0) != sizeof(unblocked))
     {
-        FreeChannel(channel);
+        FreeChannel(pChannel);
         return CALLCLI_404;
     }
 
+    FreeChannel(pChannel);
     return unblocked? CALLCLI_OK: CALLCLI_ERROR;
 }
 
+// NOTE - unused and unfinished
 int SSHConnector::CallCLIServe()
 {
     FreeChannel(channel);
@@ -215,7 +222,7 @@ int SSHConnector::CallCLIServe()
         return CALLCLI_NOANSWER;
     }
     char rc;
-    if (ssh_channel_read(channel, &rc, sizeof(rc), 0) != sizeof(rc) || rc != 0)
+    if (ssh_channel_read(channel, &rc, sizeof(rc), 0) != sizeof(rc) || rc != 'd')
     {
         FreeChannel(channel);
         return CALLCLI_404;
@@ -223,12 +230,50 @@ int SSHConnector::CallCLIServe()
     return CALLCLI_OK;
 }
 
+// NOTE - unused and unfinished
 int SSHConnector::EndCLIServe()
 {
     char buf = 0;
     ssh_channel_write(channel, &buf, sizeof(buf));
     FreeChannel(channel);
 
+    return CALLCLI_OK;
+}
+
+// NOTE - unused and unfinished
+int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
+{
+    if (!ssh_channel_is_open(channel))
+    {
+        if (CallCLIServe() != CALLCLI_OK)
+            return CALLCLI_ERROR;
+    }
+
+    char rc = 's';
+    if (ssh_channel_write(channel, &rc, sizeof(rc)) != sizeof(rc))
+    {
+        EndCLIServe();
+        return CALLCLI_ERROR;
+    }
+
+    unsigned char buf[FileNode::MiniStatBinarySize];
+    
+    if (ssh_channel_read(channel, &rc, sizeof(rc), 0) != sizeof(rc))
+    {
+        EndCLIServe();
+        return CALLCLI_404;
+    }
+    if (rc != '0')
+    {
+        EndCLIServe();
+        return CALLCLI_ERROR;
+    }
+    if (ssh_channel_read(channel, buf, sizeof(buf), 0) != sizeof(buf))
+    {
+        EndCLIServe();
+        return CALLCLI_404;
+    }
+    FileNode::DeserializeStat(buf, pBuf);
     return CALLCLI_OK;
 }
 
@@ -247,7 +292,7 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    if (rc != '0')
+    if (rc != 's')
     {
         FreeChannel(pChannel);
         return CALLCLI_ERROR;

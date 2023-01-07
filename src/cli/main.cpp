@@ -1,5 +1,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
+#include <linux/limits.h>
 
 #include "Lib/General.h"
 #include "Lib/Creeper.h"
@@ -60,7 +61,7 @@ void StatPath(std::string path)
         std::cout.flush();
         return;
     }
-    std::cout << 0;
+    std::cout << 's';
     std::cout.flush();
     unsigned char buf2[FileNode::MiniStatBinarySize];
     FileNode::SerializeStat(&buf, buf2);
@@ -125,6 +126,30 @@ int UnblockDir(std::string path)
     return 0;
 }
 
+int ServeOnce(char mode)
+{
+    char buf[PATH_MAX];
+    unsigned short pathSize;
+
+    switch (mode)
+    {
+    case 's':
+    {
+        if (read(0, &pathSize, sizeof(pathSize)) != sizeof(pathSize))
+            return 1;
+        int len = pathSize > PATH_MAX? PATH_MAX: pathSize;
+        if (read(0, buf, len) != len)
+            return 1;
+        StatPath(std::string(buf));
+        break;
+    }
+    default:
+        break;
+    }
+
+    return 0;
+}
+
 int Serve()
 {
     char buff[32];
@@ -137,7 +162,7 @@ int Serve()
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
 
-    std::cout << 0;
+    std::cout << 'd';
     std::cout.flush();
 
     while (!isDone)
@@ -152,14 +177,9 @@ int Serve()
         else if (retval)
         {
             read(0, &mode, sizeof(mode));
-            switch (mode)
-            {
-            case 's':
-                break;
-            
-            default:
-                break;
-            }
+            if (mode != 0)
+                if (ServeOnce(mode) != 0)
+                    break;
         }
         else
         {
@@ -169,6 +189,10 @@ int Serve()
         if (mode == 0)
             isDone = true;
     }
+
+    std::cout << 0;
+    std::cout.flush();
+
     return 0;
 }
 
@@ -176,14 +200,17 @@ int main(int argc, char* argv[])
 {
     ParseArgs(argc, argv);
 
+    if (GlobalCLI::pathToStat != "")
+    {
+        StatPath(GlobalCLI::pathToStat);
+        return 0;
+    }
+
     if (!General::InitEverything("synccli.log"))
         return -1;
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::HomePath)
         GetHomePath();
-
-    if (GlobalCLI::pathToStat != "")
-        StatPath(GlobalCLI::pathToStat);
 
     if (GlobalCLI::dirToBlock != "")
         BlockDir(GlobalCLI::dirToBlock);
