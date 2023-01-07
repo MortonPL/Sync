@@ -248,7 +248,9 @@ void MainFrame::OnAction(PairedNode::Action action)
         for (auto index: selectedItems)
         {
             PairedNode* pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-            if (action != PairedNode::Action::Ignore && (pPair->action == PairedNode::Action::DoNothing || pPair->action == PairedNode::Action::FastForward))
+            if (pPair->progress == PairedNode::Progress::Canceled
+                || (action != PairedNode::Action::Ignore
+                    && (pPair->action == PairedNode::Action::DoNothing || pPair->action == PairedNode::Action::FastForward)))
                 continue;
             pPair->action = action;
             ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
@@ -538,7 +540,8 @@ void MainFrame::OnSync(wxCommandEvent& event)
             if (pair.action != PairedNode::Action::Conflict
                 && pair.action != PairedNode::Action::DoNothing
                 && pair.action != PairedNode::Action::None
-                && pair.action != PairedNode::Action::Ignore)
+                && pair.action != PairedNode::Action::Ignore
+                && pair.progress != PairedNode::Progress::Canceled)
             {
                 anythingToSync = true;
                 break;
@@ -553,7 +556,8 @@ void MainFrame::OnSync(wxCommandEvent& event)
             if (pPair->action != PairedNode::Action::Conflict
                 && pPair->action != PairedNode::Action::DoNothing
                 && pPair->action != PairedNode::Action::None
-                && pPair->action != PairedNode::Action::Ignore)
+                && pPair->action != PairedNode::Action::Ignore
+                && pPair->progress != PairedNode::Progress::Canceled)
             {
                 anythingToSync = true;
                 break;

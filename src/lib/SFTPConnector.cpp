@@ -39,7 +39,7 @@ void SFTPConnector::EndSession()
     }
 }
 
-bool SFTPConnector::Send(std::string localPath, std::string tempPath, std::string tempFileName, off_t size)
+bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t size)
 {
     sftp_file pFile;
     int localFd;
@@ -47,11 +47,10 @@ bool SFTPConnector::Send(std::string localPath, std::string tempPath, std::strin
     int len2 = 0;
     int initlen = 0;
     char buf[BUFSIZ];
-    std::string fullTempPath = tempPath + tempFileName;
     // open both
-    if ((pFile = sftp_open(sftp, fullTempPath.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
+    if ((pFile = sftp_open(sftp, tempFileName.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
     {
-        LOG(ERROR) << "Failed to open remote file " << fullTempPath << " with error: " << ssh->GetError();
+        LOG(ERROR) << "Failed to open remote file " << tempFileName << " with error: " << ssh->GetError();
         return false;
     }
     if ((localFd = open(localPath.c_str(), O_RDONLY)) == -1)
@@ -63,7 +62,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempPath, std::strin
     }
 
     // check if we're resuming a failed operation
-    if ((initlen = sftp_stat(sftp, fullTempPath.c_str())->size) > 0)
+    if ((initlen = sftp_stat(sftp, tempFileName.c_str())->size) > 0)
     {
         size -= initlen;
         lseek(localFd, initlen, SEEK_SET);
@@ -88,7 +87,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempPath, std::strin
         {
             // error!
             int err = errno;
-            LOG(ERROR) << "Error writing remote file " << fullTempPath << ". Message: " << strerror(err);
+            LOG(ERROR) << "Error writing remote file " << tempFileName << ". Message: " << strerror(err);
             sftp_close(pFile);
             close(localFd);
             return false;
@@ -106,7 +105,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempPath, std::strin
     return true;
 }
 
-bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::string tempFileName, off_t size)
+bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, off_t size)
 {
     sftp_file pFile;
     int localFd;
@@ -115,17 +114,16 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
     int initlen = 0;
     char buf[BUFSIZ];
     off_t size2 = size;
-    std::string fullTempPath = Utils::GetTempPath() + tempFileName;
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {
         LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << ssh->GetError();
         return false;
     }
-    if ((localFd = open(fullTempPath.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
+    if ((localFd = open(tempFileName.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
     {
         int err = errno;
-        LOG(ERROR) << "Failed to open temp file " << fullTempPath << " with error: " << strerror(err);
+        LOG(ERROR) << "Failed to open temp file " << tempFileName << " with error: " << strerror(err);
         sftp_close(pFile);
         return false;
     }
@@ -159,7 +157,7 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
         {
             // error!
             int err = errno;
-            LOG(ERROR) << "Error writing local file " << localPath << ". Message: " << strerror(err);
+            LOG(ERROR) << "Error writing temp file " << tempFileName << ". Message: " << strerror(err);
             sftp_close(pFile);
             close(localFd);
             return false;
@@ -169,40 +167,6 @@ bool SFTPConnector::Receive(std::string localPath, std::string remotePath, std::
 
     sftp_close(pFile);
     close(localFd);
-
-    // move
-    auto path = std::filesystem::path(localPath);
-    if (path.has_parent_path())
-    {
-        try
-        {
-            std::filesystem::create_directories(path.parent_path());
-        }
-        catch(const std::exception& e)
-        {
-            LOG(ERROR) << "Failed to create directory " << path.parent_path() << " Reason: " << e.what() << '\n';
-            return false;
-        }
-    }
-    // try to move atomically, if it fails, copy the old fashioned way
-    if (rename(fullTempPath.c_str(), localPath.c_str()) < 0)
-    {
-        // error!
-        int err = errno;
-        LOG(WARNING) << "Error moving atomically temporary file " << fullTempPath << ". Message: " << strerror(err);
-        if (err == EXDEV)
-        {
-            if (FileSystem::CopyLocalFile(fullTempPath, localPath, std::filesystem::copy_options::overwrite_existing))
-                remove(fullTempPath.c_str());
-            else
-                return false;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
     return true;
 }
 

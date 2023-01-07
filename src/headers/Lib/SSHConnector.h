@@ -43,7 +43,7 @@ public:
     int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
     int CallCLIHomeAndBlock(std::string pathToCheck, std::string* result);
     int CallCLIUnblock(std::string path);
-    int CallCLICompress(std::string pathFrom, std::string pathTo);
+    int CallCLICompress(std::string pathFrom, std::string pathTo, off_t* compressedSize);
     int CallCLIDecompress(std::string pathFrom, std::string pathTo);
     int CallCLIServe();
     int EndCLIServe();

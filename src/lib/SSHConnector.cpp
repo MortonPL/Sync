@@ -213,7 +213,7 @@ int SSHConnector::CallCLIUnblock(std::string path)
     return unblocked? CALLCLI_OK: CALLCLI_ERROR;
 }
 
-int SSHConnector::CallCLICompress(std::string pathFrom, std::string pathTo)
+int SSHConnector::CallCLICompress(std::string pathFrom, std::string pathTo, off_t* compressedSize)
 {
     ssh_channel pChannel;
     if ((pChannel = CallCLI("z", pathFrom, pathTo)) == nullptr)
@@ -226,9 +226,20 @@ int SSHConnector::CallCLICompress(std::string pathFrom, std::string pathTo)
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
+    if (unblocked != '0')
+    {
+        FreeChannel(pChannel);
+        CALLCLI_ERROR;
+    }
+
+    if (ssh_channel_read(pChannel, &compressedSize, sizeof(compressedSize), 0) != sizeof(compressedSize))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_ERROR;
+    }
 
     FreeChannel(pChannel);
-    return (unblocked == '0'? CALLCLI_OK: CALLCLI_ERROR);
+    return CALLCLI_OK;
 }
 
 int SSHConnector::CallCLIDecompress(std::string pathFrom, std::string pathTo)
@@ -365,7 +376,7 @@ int SSHConnector::ReplaceFile(std::string pathFrom, std::string pathTo)
     FreeChannel(pChannel);
 
     pChannel = GetChannel();
-    if (ssh_channel_request_exec(pChannel, ("mv .sync/tmp/" + pathFrom + " \'" + pathTo + "\'; echo 0;").c_str()) != SSH_OK)
+    if (ssh_channel_request_exec(pChannel, ("mv " + pathFrom + " \'" + pathTo + "\'; echo 0;").c_str()) != SSH_OK)
     {
         LOG(ERROR) << ssh_get_error(session);
         FreeChannel(pChannel);
