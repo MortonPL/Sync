@@ -30,7 +30,7 @@ private:
     // properties
     Controls ctrl;
     std::vector<ConflictRule>* pRules;
-    int selectedRuleIdx;
+    long selectedRuleIdx;
 
     // custom methods
     void PopulateRuleList();

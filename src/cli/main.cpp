@@ -80,9 +80,10 @@ void StatPath(std::string path)
     }
     std::cout << 's';
     std::cout.flush();
-    unsigned char buf2[FileNode::MiniStatBinarySize];
+    unsigned char* buf2 = new unsigned char[FileNode::MiniStatBinarySize];
     FileNode::SerializeStat(&buf, buf2);
     SocketListener::writeall(1, (char*)&buf2, sizeof(buf2));
+    delete[] buf2;
 }
 
 void CreepDir(std::string path)
@@ -100,7 +101,7 @@ void CreepDir(std::string path)
     std::cout.flush();
 
     //start sending node data
-    unsigned char buf[FileNode::MaxBinarySize];
+    unsigned char* buf = new unsigned char[FileNode::MaxBinarySize];
     std::size_t nnodes = creeper.GetResultsCount();
     LOG(INFO) << "Writing " << nnodes << " nodes.";
     SocketListener::writeall(1, (char*)&nnodes, sizeof(nnodes));
@@ -110,6 +111,7 @@ void CreepDir(std::string path)
         SocketListener::writeall(1, (char*)buf, size);
     }
     LOG(INFO) << "Done.";
+    delete[] buf;
 }
 
 int GetHomePath()
@@ -145,13 +147,13 @@ int UnblockDir(std::string path)
 
 int ServeOnce(char mode)
 {
-    char buf[PATH_MAX];
     unsigned short pathSize;
 
     switch (mode)
     {
     case 's':
     {
+        char buf[PATH_MAX];
         if (read(0, &pathSize, sizeof(pathSize)) != sizeof(pathSize))
             return 1;
         int len = pathSize > PATH_MAX? PATH_MAX: pathSize;
@@ -169,13 +171,11 @@ int ServeOnce(char mode)
 
 int Serve()
 {
-    char buff[32];
     bool isDone = false;
     char mode = 0;
 
     fd_set rfds;
     struct timeval tv;
-    int retval;
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
 
@@ -185,7 +185,7 @@ int Serve()
     while (!isDone)
     {
         tv = {60, 0};
-        retval = select(1, &rfds, NULL, NULL, &tv);
+        int retval = select(1, &rfds, NULL, NULL, &tv);
 
         if (retval == -1)
         {
@@ -193,7 +193,8 @@ int Serve()
         }
         else if (retval)
         {
-            read(0, &mode, sizeof(mode));
+            if (read(0, &mode, sizeof(mode)) != sizeof(mode))
+                break;
             if (mode != 0)
                 if (ServeOnce(mode) != 0)
                     break;

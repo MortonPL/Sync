@@ -57,7 +57,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
         {
             // if we already have the uncompressed file transfered, don't bother, just move
             sftp_attributes info;
-            if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || info->size != pNode->localNode.size)
+            if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
             {
                 off_t compressedSize = 0;
                 if (!Compression::Compress(pNode->path, tempFilePathLocal+".zst", &compressedSize))
@@ -136,7 +136,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
         {
             // if we already have the uncompressed file transfered, don't bother, just move
             struct stat buf;
-            if (stat(tempFilePathLocal.c_str(), &buf) != 0 || buf.st_size != pNode->remoteNode.size)
+            if (stat(tempFilePathLocal.c_str(), &buf) != 0 || (off_t)buf.st_size != pNode->remoteNode.size)
             {
                 off_t compressedSize = 0;
                 if (ssh.CallCLICompress(remotePath, tempFilePathRemote+".zst", &compressedSize) != CALLCLI_OK)
@@ -229,7 +229,7 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     {
         // if we already have the uncompressed file transfered, don't bother, just move
         sftp_attributes info;
-        if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || info->size != pNode->localNode.size)
+        if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
         {
             off_t compressedSize = 0;
             if (!Compression::Compress(tempRemote, tempRemote+".zst", &compressedSize))

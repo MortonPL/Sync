@@ -128,7 +128,7 @@ int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNod
         return CALLCLI_NOANSWER;
     }
 
-    unsigned char buf2[FileNode::MaxBinarySize];
+    unsigned char* buf2 = new unsigned char[FileNode::MaxBinarySize];
     unsigned short len = 0;
     char rc;
     std::size_t nnodes = 0;
@@ -160,6 +160,7 @@ int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNod
         nnodes--;
     }
 
+    delete[] buf2;
     FreeChannel(pChannel);
     return CALLCLI_OK;
 }
@@ -257,7 +258,7 @@ int SSHConnector::CallCLICompress(std::string pathFrom, std::string pathTo, off_
     if (unblocked != '0')
     {
         FreeChannel(pChannel);
-        CALLCLI_ERROR;
+        return CALLCLI_ERROR;
     }
 
     if (ssh_channel_read(pChannel, &compressedSize, sizeof(compressedSize), 0) != sizeof(compressedSize))
@@ -318,6 +319,8 @@ int SSHConnector::EndCLIServe()
 // NOTE - unused and unfinished
 int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
 {
+    pathToStat.size();
+
     if (!ssh_channel_is_open(channel))
     {
         if (CallCLIServe() != CALLCLI_OK)
@@ -331,7 +334,7 @@ int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
         return CALLCLI_ERROR;
     }
 
-    unsigned char buf[FileNode::MiniStatBinarySize];
+    unsigned char* buf = new unsigned char[FileNode::MiniStatBinarySize];
     
     if (ssh_channel_read(channel, &rc, sizeof(rc), 0) != sizeof(rc))
     {
@@ -343,12 +346,13 @@ int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
         EndCLIServe();
         return CALLCLI_ERROR;
     }
-    if (ssh_channel_read(channel, buf, sizeof(buf), 0) != sizeof(buf))
+    if (ssh_channel_read(channel, buf, FileNode::MiniStatBinarySize, 0) != FileNode::MiniStatBinarySize)
     {
         EndCLIServe();
         return CALLCLI_404;
     }
     FileNode::DeserializeStat(buf, pBuf);
+    delete[] buf;
     return CALLCLI_OK;
 }
 
@@ -360,7 +364,7 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
         FreeChannel(pChannel);
         return CALLCLI_NOANSWER;
     }
-    unsigned char buf[FileNode::MiniStatBinarySize];
+    unsigned char* buf = new unsigned char[FileNode::MiniStatBinarySize];
     char rc;
     if (ssh_channel_read(pChannel, &rc, sizeof(rc), 0) != sizeof(rc))
     {
@@ -372,12 +376,13 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
         FreeChannel(pChannel);
         return CALLCLI_ERROR;
     }
-    if (ssh_channel_read(pChannel, buf, sizeof(buf), 0) != sizeof(buf))
+    if (ssh_channel_read(pChannel, buf, FileNode::MiniStatBinarySize, 0) != FileNode::MiniStatBinarySize)
     {
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
     FileNode::DeserializeStat(buf, pBuf);
+    delete[] buf;
     FreeChannel(pChannel);
     return CALLCLI_OK;
 }
@@ -493,7 +498,6 @@ bool SSHConnector::AuthenticateUser(passProviderType passProvider,
         return false;
     }
 
-    bool isCanceled = false;
     switch(authStatus)
     {
     case AUTH_STATUS_NONE:
@@ -519,6 +523,7 @@ bool SSHConnector::AuthenticateUser(passProviderType passProvider,
         }
         if (authMethods & SSH_AUTH_METHOD_PASSWORD)
         {
+            bool isCanceled = false;
             std::string password = passProvider(isCanceled, passPrompt);
             if (isCanceled)
             {
@@ -749,12 +754,11 @@ bool SSHConnector::AuthenticateUserInteractiveFetch(std::string& name, std::stri
 bool SSHConnector::AuthenticateUserInteractive(interactiveProviderType provider, std::string& name, std::string& instruction, int nprompts)
 {
     bool isCanceled;
-    const char* prompt;
     char shouldNotBeHidden;
     std::string format = name.size() && instruction.size()? "{}\n{}\n{}": (name.size() || instruction.size()? "{}{}\n{}" : "{}{}{}");
     for (int i = 0; i < nprompts; i++)
     {
-        prompt = ssh_userauth_kbdint_getprompt(session, i, &shouldNotBeHidden);
+        const char* prompt = ssh_userauth_kbdint_getprompt(session, i, &shouldNotBeHidden);
         std::string challenge = fmt::format(format, name, instruction, prompt);
         std::string res = provider(isCanceled, challenge, !(bool)shouldNotBeHidden);
         if (isCanceled || ssh_userauth_kbdint_setanswer(session, i, res.c_str()) < 0)

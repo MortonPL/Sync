@@ -20,7 +20,7 @@ Creeper::~Creeper()
 
 void Creeper::SearchForLists(std::string& path)
 {
-    auto readList = [](std::string& path, std::string filename, std::list<std::regex>& rules)
+    auto readList = [](const std::string& path, const std::string& filename, std::list<std::regex>& rules)
     {
         std::ifstream in(path + filename, std::ios_base::in);
         if (in.is_open())

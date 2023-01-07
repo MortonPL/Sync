@@ -25,6 +25,8 @@ set(SRC_LIB_FILES
     SFTPConnector.cpp
 )
 
+add_compile_options(-Wall -Wextra -pedantic -Werror)
+
 add_library(lib ${SRC_LIB_FILES})
 target_include_directories(lib PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
 target_link_libraries(lib ssh SQLiteCpp zstd xxHash::xxhash uuid utils)

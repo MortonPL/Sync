@@ -25,4 +25,4 @@ namespace Utils
     std::string TimestampToString(const time_t& timestamp);
     std::string UUIDToDBPath(const uuid_t& uuid);
     std::string QuickHash(std::string value);
-};
+}

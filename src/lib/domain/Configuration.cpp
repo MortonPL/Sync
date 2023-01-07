@@ -34,6 +34,7 @@ Configuration::Configuration(int id, std::string name, std::string uuid, std::st
 Configuration::Configuration(int id, std::string name, uuid_t uuid, time_t timestamp, std::string pathA,
                              std::string pathB, std::string pathBaddress, std::string pathBuser, int __unused)
 {
+    this->id = __unused;
     this->id = id;
     this->name = name;
     uuid_copy(this->uuid, uuid);

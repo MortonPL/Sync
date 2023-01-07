@@ -113,7 +113,6 @@ bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, of
     int len2 = 0;
     int initlen = 0;
     char buf[BUFSIZ];
-    off_t size2 = size;
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {

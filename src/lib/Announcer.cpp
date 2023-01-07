@@ -3,7 +3,11 @@
 #include "Lib/Creeper.h"
 #include "Utils.h"
 
-void Announcer::NoAnnouncer(std::string prompt, int severity){};
+void Announcer::NoAnnouncer(std::string prompt, int severity)
+{
+    prompt.clear(); // unused
+    severity++; // unused
+}
 
 bool Announcer::CreeperResult(int returnCode, announcerType announcer)
 {

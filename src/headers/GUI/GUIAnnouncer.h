@@ -8,6 +8,7 @@ namespace GUIAnnouncer
 {
     void Popup(std::string prompt, int severity=SEV_INFO)
     {
+        severity++; // unused
         GenericPopup(prompt).ShowModal();
     }
 

@@ -84,7 +84,7 @@ void PairRemoteCompare(FileNode& remoteNode, PairedNode* pPair)
     default:
         break;
     }
-};
+}
 
 void PairingManager::PairAllRemote(std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {

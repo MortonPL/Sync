@@ -12,17 +12,17 @@ std::string passwordProvider(bool& isCanceled, std::string& prompt)
     std::string password;
     isCanceled = GenericPopup(prompt, NULL, &password, nullptr, GenericPopup::Flags::PasswordCancel).ShowModal() != wxID_OK;
     return password;
-};
+}
 
 std::string interactiveProvider(bool& isCanceled, std::string& challenge, bool shouldBeHidden)
 {
     std::string password;
     GenericPopup::Flags flags = GenericPopup::Flags::Cancel;
     if (shouldBeHidden)
-        flags | GenericPopup::Flags::Password;
+        flags = GenericPopup::Flags::PasswordCancel;
     isCanceled = GenericPopup(challenge, NULL, &password, nullptr, flags).ShowModal() != wxID_OK;
     return password;
-};
+}
 
 bool unknownCallback(std::string& pubkeyHash)
 {
@@ -44,6 +44,7 @@ bool changedCallback(std::string& pubkeyHash)
 
 bool errorCallback(std::string& pubkeyHash)
 {
+    pubkeyHash.size(); // unused
     return GenericPopup("An error has occured while attempting to authenticate the server.").ShowModal() == wxID_OK;
 }
 

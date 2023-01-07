@@ -21,6 +21,8 @@ set(SRC_GUI_FILES
     main.cpp
 )
 
+add_compile_options(-Wall -Wextra -pedantic -Werror)
+
 add_library(gui ${SRC_GUI_FILES})
 target_include_directories(gui PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
 target_link_libraries(gui ${wxWidgets_LIBRARIES} lib utils)

@@ -5,4 +5,4 @@
 namespace General
 {
     bool InitEverything(std::string logName);
-};
+}

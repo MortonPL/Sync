@@ -55,8 +55,8 @@ bool Compression::Compress(std::string pathIn, std::string pathOut, off_t* compr
     // read from fin to buffer, compress it, write to fout
     for(bool isLastChunk = false; !isLastChunk;)
     {
-        size_t read;
-        if ((read = fread(buffIn, 1, inSize, fin)) < 0)
+        size_t read = fread(buffIn, 1, inSize, fin);
+        if (ferror(fin))
         {
             LOG(ERROR) << "Failed to read during compression of file " << pathIn;
             ZSTD_freeCCtx(context);
@@ -74,7 +74,8 @@ bool Compression::Compress(std::string pathIn, std::string pathOut, off_t* compr
         {
             ZSTD_outBuffer output = {buffOut, outSize, 0};
             size_t remaining = ZSTD_compressStream2(context, &output, &input, mode);
-            if ((fwrite(buffOut, 1, output.pos, fout)) < 0)
+            fwrite(buffOut, 1, output.pos, fout);
+            if (ferror(fout))
             {
                 LOG(ERROR) << "Failed to write during compression of file " << pathIn;
                 ZSTD_freeCCtx(context);
@@ -149,6 +150,17 @@ bool Compression::Decompress(std::string pathIn, std::string pathOut)
     bool empty = true;
     while ((read = fread(buffIn, 1, inSize, fin)))
     {
+        if (ferror(fin))
+        {
+            LOG(ERROR) << "Failed to read file " << pathIn;
+            ZSTD_freeDCtx(context);
+            fclose(fout);
+            fclose(fin);
+            free(buffIn);
+            free(buffOut);
+            return false;
+        }
+
         empty = false;
         ZSTD_inBuffer input = {buffIn, read, 0};
         while (input.pos < input.size) {
@@ -164,7 +176,8 @@ bool Compression::Decompress(std::string pathIn, std::string pathOut)
                 free(buffOut);
                 return false;
             }
-            if ((fwrite(buffOut, 1, output.pos, fout)) < 0)
+            fwrite(buffOut, 1, output.pos, fout);
+            if (ferror(fout))
             {
                 LOG(ERROR) << "Failed to write during decompression of file " << pathIn;
                 ZSTD_freeDCtx(context);

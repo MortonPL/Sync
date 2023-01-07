@@ -40,6 +40,7 @@ void NewConflictRuleDialog::CheckIfOK()
 
 void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
 {
+    event.GetId(); //unused
     auto rule = ConflictRule(
         ctrl.txtName->GetValue().utf8_string(),
         ctrl.txtRule->GetValue().utf8_string(),
@@ -75,5 +76,6 @@ void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
 
 void NewConflictRuleDialog::OnAnyChange(wxCommandEvent &event)
 {
+    event.GetId(); //unused
     this->CheckIfOK();
 }

@@ -24,7 +24,7 @@ bool Blocker::Block(std::string pathToBlock)
     
     char* line = NULL;
     size_t len = 0;
-    bool matches = true;
+    bool matches;
 
     fseek(fd, 0, SEEK_SET);
     while (getline(&line, &len, fd) != -1)
@@ -32,7 +32,7 @@ bool Blocker::Block(std::string pathToBlock)
         if (len >= canonicalPath.size())
         {
             matches = true;
-            for (int i = 0; i < canonicalPath.size(); i++)
+            for (size_t i = 0; i < canonicalPath.size(); i++)
             {
                 if (line[i] != canonicalPath[i])
                 {
@@ -49,7 +49,7 @@ bool Blocker::Block(std::string pathToBlock)
         else
         {
             matches = true;
-            for (int i = 0; i < len; i++)
+            for (size_t i = 0; i < len; i++)
             {
                 if (line[i] != canonicalPath[i])
                 {
@@ -78,11 +78,13 @@ bool Blocker::Unblock(std::string pathToUnblock)
     if ((fd = fopen((Utils::GetRootPath() + Blocker::SyncBlockedFile).c_str(), "r+")) == NULL)
         return false;
     if ((fd2 = fopen((Utils::GetRootPath() + "temp").c_str(), "w+")) == NULL)
+    {
+        fclose(fd);
         return false;
+    }
     
     char* line = NULL;
     size_t len = 0;
-    bool matches = true;
 
     while (getline(&line, &len, fd) != -1)
     {

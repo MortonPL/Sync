@@ -57,14 +57,13 @@ bool ConflictManager::Fetch(PairedNode* pNode, ConflictRule& rule, std::string& 
     return true;
 }
 
-bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, std::string& tempPath, Announcer::announcerType announcer)
+bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, Announcer::announcerType announcer)
 {
     std::string hashedPath = Utils::GetTempPath() + pNode->pathHash;
     std::string tempPathLocal = hashedPath + tempSuffixLocal;
     std::string tempPathRemote = hashedPath + tempSuffixRemote;
 
     // substitute command
-    std::size_t pos;
     std::string result = rule.command;
     Utils::Replace(result, "$LOCAL", tempPathLocal);
     Utils::Replace(result, "$REMOTE", tempPathRemote);

@@ -50,6 +50,8 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
 
 void GenericPopup::OnOK(wxCommandEvent &event)
 {
+    event.GetId(); // unused
+
     if (this->output)
     {
         if (this->isPassword)

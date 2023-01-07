@@ -46,6 +46,7 @@ void NewConfigurationDialog::CheckIfOK()
 
 void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 {
+    event.GetId(); //unused
     std::string pathA = ctrl.dirRootA->GetPath().utf8_string();
     std::string pathB = ctrl.txtRootB->GetValue().utf8_string();
     if (pathA.empty() || pathB.empty())
@@ -85,10 +86,12 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 
 void NewConfigurationDialog::OnAnyChange(wxCommandEvent &event)
 {
+    event.GetId(); //unused
     this->CheckIfOK();
 }
 
 void NewConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
 {
+    event.GetId(); //unused
     this->CheckIfOK();
 }
