@@ -170,7 +170,7 @@ bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, of
     return true;
 }
 
-bool SFTPConnector::ReceiveNonAtomic(std::string localPath, std::string remotePath)
+bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPath)
 {
     struct stat buf2;
     if (stat(localPath.c_str(), &buf2) == 0)

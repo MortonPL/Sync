@@ -204,28 +204,13 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
         return -1;
     if (Creeper::MakeSingleNode(tempRemote, remote) != CREEP_OK)
         return -1;
+    // if the "resolved" files are different, cancel
     if (!local.IsEqualHash(remote))
         return -1;
 
     // move temp/local first
-    // try to move atomically, if it fails, copy the old fashioned way
-    if (rename(tempLocal.c_str(), pNode->path.c_str()) < 0)
-    {
-        // error!
-        int err = errno;
-        LOG(WARNING) << "Error moving temporary file " << tempLocal << " atomically. Message: " << strerror(err);
-        if (err == EXDEV)
-        {
-            if (FileSystem::CopyLocalFile(tempLocal, pNode->path, std::filesystem::copy_options::overwrite_existing))
-                remove(tempLocal.c_str());
-            else
-                return -1;
-        }
-        else
-        {
-            return -1;
-        }
-    }
+    if (!FileSystem::MoveLocalFile(tempLocal, pNode->path))
+        return -1;
     //stat local for dev/inode
     auto path = pNode->path.c_str();
     struct stat buf;
@@ -235,14 +220,40 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     auto newLocalMtime = buf.st_mtim.tv_sec;
     auto newLocalSize = buf.st_size;
 
-    // then move temp/remote
+    // move temp/remote second
     //send
-    std::string tempFilePath = MakeTempPathForLocal(pNode);
-    if (!sftp.Send(tempRemote, tempPath+tempRemote, pNode->localNode.size))
-        return -1;
-    if (ssh.ReplaceFile(tempRemote, remotePath) != CALLCLI_OK)
-        return -1;
-    remove(tempRemote.c_str());
+    std::string tempFilePathRemote = tempPath + pNode->pathHash + ConflictManager::tempSuffixRemote;
+
+    //compress if > 50MB
+    if (pNode->localNode.size > 50000000)
+    {
+        // if we already have the uncompressed file transfered, don't bother, just move
+        sftp_attributes info;
+        if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || info->size != pNode->localNode.size)
+        {
+            off_t compressedSize = 0;
+            if (!Compression::Compress(tempRemote, tempRemote+".zst", &compressedSize))
+                return -1;
+            if (!sftp.Send(tempRemote+".zst", tempFilePathRemote+".zst", compressedSize))
+                return -1;
+            if (ssh.CallCLIDecompress(tempFilePathRemote+".zst", tempFilePathRemote) != CALLCLI_OK)
+                return -1;
+        }
+        if (ssh.ReplaceFile(tempFilePathRemote, remotePath) != CALLCLI_OK)
+            return -1;
+        sftp.Delete(tempFilePathRemote+".zst");
+        remove((tempRemote+".zst").c_str());
+        remove(tempRemote.c_str());
+    }
+    else
+    {
+        if (!sftp.Send(tempRemote, tempFilePathRemote, pNode->localNode.size))
+            return -1;
+        if (ssh.ReplaceFile(tempFilePathRemote, remotePath) != CALLCLI_OK)
+            return -1;
+        remove(tempRemote.c_str());
+    }
+
     //stat remote for dev/inode, mtime
     if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
     {

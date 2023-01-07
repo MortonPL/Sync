@@ -195,6 +195,34 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* resu
     return blocked? CALLCLI_OK: CALLCLI_BLOCKED;
 }
 
+int SSHConnector::CallCLIHome(std::string* result)
+{
+    ssh_channel pChannel;
+    char buf[PATH_MAX];
+    if ((pChannel = CallCLI("h")) == nullptr)
+    {
+        return CALLCLI_NOANSWER;
+    }
+    unsigned short len;
+    if (ssh_channel_read(pChannel, &len, sizeof(len), 0) != sizeof(len))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_404;
+    }
+
+    if (len > PATH_MAX)
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_ERROR;
+    }
+
+    ssh_channel_read(pChannel, buf, len, 0);
+    *result = std::string(buf, len);
+
+    FreeChannel(pChannel);
+    return CALLCLI_OK;
+}
+
 int SSHConnector::CallCLIUnblock(std::string path)
 {
     ssh_channel pChannel;
@@ -759,6 +787,17 @@ void SSHConnector::FreeChannel(ssh_channel pChannel)
     ssh_channel_send_eof(pChannel);
     ssh_channel_close(pChannel);
     ssh_channel_free(pChannel);
+}
+
+ssh_channel SSHConnector::CallCLI(std::string flag)
+{
+    auto pChannel = GetChannel();
+    if (ssh_channel_request_exec(pChannel, ("synccli -" + flag).c_str()) != SSH_OK)
+    {
+        FreeChannel(pChannel);
+        return nullptr;
+    }
+    return pChannel;
 }
 
 ssh_channel SSHConnector::CallCLI(std::string flag, std::string cmd)

@@ -176,7 +176,7 @@ int Creeper::MakeSingleNode(const std::string& path, FileNode& node)
     }
     if (!S_ISREG(ret.st_mode))
         return CREEP_NOTDIR;
-    if ((ret.st_mode & S_IRWXU) != S_IRWXU)
+    if ((ret.st_mode & (S_IREAD|S_IWRITE)) != (S_IREAD|S_IWRITE))
         return CREEP_PERM;
 
     // calculate hash

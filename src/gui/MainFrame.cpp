@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <uuid/uuid.h>
+#include <wx/busyinfo.h>
 
 #include "GUI/SSHConnectorWrap.h"
 #include "GUI/GenericPopup.h"
@@ -228,6 +229,17 @@ void MainFrame::ShowDetails(long itemIndex)
 }
 #undef LTOA
 
+void MainFrame::UpdateItem(PairedNode* pNode, long itemIndex)
+{
+    auto statuses = pNode->GetStatusString();
+    ctrl.listMain->SetItem(itemIndex, COL_STATUS_L, statuses.first);
+    ctrl.listMain->SetItem(itemIndex, COL_STATUS_R, statuses.second);
+    ctrl.listMain->SetItem(itemIndex, COL_ACTION, pNode->GetActionString());
+    ctrl.listMain->SetItem(itemIndex, COL_PROGRESS, pNode->GetProgressString());
+    ctrl.listMain->Refresh();
+    ctrl.listMain->Update();
+}
+
 void MainFrame::OnAction(PairedNode::Action action)
 {
     if (action == PairedNode::Action::None)
@@ -283,20 +295,40 @@ void MainFrame::ResolveConflict()
     auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
     std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
 
+    std::string remoteHome;
+    switch (ssh.CallCLIHome(&remoteHome))
+    {
+    default:
+        GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
+        std::filesystem::current_path(previousCWD);
+        return;
+    case CALLCLI_OK:
+        break;
+    }
+    std::string tempPath = Utils::GetTempPath(remoteHome);
+
     if (ruleId != CONFLICT_AUTO)
     {
         for (auto index: selectedItems)
         {
             auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-            if (ConflictManager::Resolve(pPair, conflictRules[ruleId],
-                                         cfg.pathB, sftp, GUIAnnouncer::LogPopup))
             {
-                ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+                wxBusyInfo wait("Fetching conflicting files. Please wait...");
+                wxYield();
+                if (!ConflictManager::Fetch(pPair, conflictRules[ruleId], cfg.pathB, tempPath, ssh, sftp))
+                {
+                    GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", SEV_ERROR);
+                    continue;
+                }
             }
-            else
+            wxYield();
+            if (!ConflictManager::Resolve(pPair, conflictRules[ruleId], tempPath, GUIAnnouncer::LogPopup))
             {
                 GUIAnnouncer::LogPopup("Failed to resolve conflict!", SEV_ERROR);
+                continue;
             }
+
+            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
         }
     }
     else
@@ -304,15 +336,24 @@ void MainFrame::ResolveConflict()
         for (auto index: selectedItems)
         {
             auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-            if (ConflictManager::Resolve(pPair, ConflictRule::Match(pPair->path, conflictRules),
-                                         cfg.pathB, sftp, GUIAnnouncer::LogPopup))
+            auto rule = ConflictRule::Match(pPair->path, conflictRules);
             {
-                ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+                wxBusyInfo wait("Fetching conflicting files. Please wait...");
+                wxYield();
+                if (!ConflictManager::Fetch(pPair, rule, cfg.pathB, tempPath, ssh, sftp))
+                {
+                    GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", SEV_ERROR);
+                    continue;
+                }
             }
-            else
+            wxYield();
+            if (!ConflictManager::Resolve(pPair, rule, tempPath, GUIAnnouncer::LogPopup))
             {
                 GUIAnnouncer::LogPopup("Failed to resolve conflict!", SEV_ERROR);
+                continue;
             }
+
+            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
         }
     }
 
@@ -340,6 +381,9 @@ bool MainFrame::DoScan()
 
     // remove all previous data
     pairedNodes.clear();
+
+    wxBusyInfo wait("Looking for changes. Please wait...");
+    wxYield();
 
     // scan
     LOG(INFO) << "Begin local scan...";
@@ -432,18 +476,34 @@ bool MainFrame::DoSync()
 
         std::string tempPath = Utils::GetTempPath(remoteHome);
 
+        wxBusyInfo wait("Propagating changes. Please wait...");
+        wxYield();
+
         if (hasSelectedEverything || selectedItems.size() == 0)
         {
+            int index = 0;
             for (auto& pair: pairedNodes)
             {
+                bool wasVisible = !ShouldBeFiltered(pair);
                 SyncManager::Sync(&pair, cfg.pathB, tempPath, ssh, sftp, db);
+                if (wasVisible)
+                {
+                    if (ctrl.listMain->GetItemCount() > index
+                        && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &pair)
+                    {
+                        UpdateItem(&pair, index);
+                    }
+                    index++;
+                }
             }
         }
         else
         {
             for (auto index: selectedItems)
             {
-                SyncManager::Sync((PairedNode*)(ctrl.listMain->GetItemData(index)), cfg.pathB, tempPath, ssh, sftp, db);
+                auto pNode = (PairedNode*)(ctrl.listMain->GetItemData(index));
+                SyncManager::Sync(pNode, cfg.pathB, tempPath, ssh, sftp, db);
+                UpdateItem(pNode, index);
             }
         }
     }
@@ -604,11 +664,7 @@ void MainFrame::OnSync(wxCommandEvent& event)
         }
         else
         {
-            auto statuses = it->GetStatusString();
-            ctrl.listMain->SetItem(index, COL_STATUS_L, statuses.first);
-            ctrl.listMain->SetItem(index, COL_STATUS_R, statuses.second);
-            ctrl.listMain->SetItem(index, COL_ACTION, it->GetActionString());
-            ctrl.listMain->SetItem(index, COL_PROGRESS, it->GetProgressString());
+            UpdateItem(&*it, index);
             it++;
             index++;
         }

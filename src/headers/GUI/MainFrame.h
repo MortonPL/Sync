@@ -41,7 +41,8 @@ private:
     void OnAction(PairedNode::Action action);
     void ShowDetails(long itemIndex);
     bool ShouldBeFiltered(PairedNode& pair);
-    
+    void UpdateItem(PairedNode* pNode, long itemIndex);
+
     void ResolveConflict();
     bool DoScan();
     bool DoSync();

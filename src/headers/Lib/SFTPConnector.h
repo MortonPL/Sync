@@ -18,7 +18,7 @@ public:
 
     bool Send(std::string localPath, std::string tempFileName, off_t size);
     bool Receive(std::string remotePath, std::string tempFileName, off_t size);
-    bool ReceiveNonAtomic(std::string localPath, std::string remotePath);
+    bool ReceiveNonAtomic(std::string remotePath, std::string localPath);
     bool Delete(std::string path);
     
     sftp_attributes Stat(std::string path);

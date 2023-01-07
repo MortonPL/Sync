@@ -10,5 +10,6 @@ namespace ConflictManager
     extern std::string tempSuffixLocal;
     extern std::string tempSuffixRemote;
 
-    bool Resolve(PairedNode* pNode, ConflictRule& rule, std::string& remoteRoot, SFTPConnector& sftp, Announcer::announcerType announcer);
+    bool Fetch(PairedNode* pNode, ConflictRule& rule, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp);
+    bool Resolve(PairedNode* pNode, ConflictRule& rule, std::string& tempPath, Announcer::announcerType announcer);
 };
