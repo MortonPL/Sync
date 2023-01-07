@@ -10,31 +10,6 @@ void PairingManager::PairAllLocal(std::forward_list<FileNode>& scanNodes, std::l
         pair.localNode = scanNode;
         pairedNodes.push_back(pair);
         mapper.EmplaceMapPath(scanNode.path, pairedNodes.back());
-        mapper.EmplaceMapLocalInode(scanNode.GetDevInode(), pairedNodes.back());
-    }
-}
-
-void PairHistoryNotMoved(HistoryFileNode& historyNode, PairedNode* pPair)
-{
-    if (historyNode.IsEqualHash((*pPair).localNode))
-    {
-        pPair->localNode.status = FileNode::Status::Clean;
-    }
-    else
-    {
-        pPair->localNode.status = FileNode::Status::Dirty;
-    }
-};
-
-void PairHistoryMoved(HistoryFileNode& historyNode, PairedNode* pPair)
-{
-    if (historyNode.IsEqualHash((*pPair).localNode))
-    {
-        pPair->localNode.status = FileNode::Status::MovedClean;
-    }
-    else
-    {
-        pPair->localNode.status = FileNode::Status::MovedDirty;
     }
 }
 
@@ -42,39 +17,29 @@ void PairingManager::PairAllHistory(std::forward_list<HistoryFileNode>& historyN
 {
     for (auto& historyNode: historyNodes)
     {
-        auto pPair = mapper.FindMapLocalInode(historyNode.GetDevInode());
+        auto pPair = mapper.FindMapPath(historyNode.path);
         if (pPair)
         {
-            if (historyNode.path == pPair->localNode.path)
+            if (historyNode.IsEqualHash((*pPair).localNode))
             {
-                PairHistoryNotMoved(historyNode, pPair);
+                pPair->localNode.status = FileNode::Status::Clean;
             }
             else
             {
-                PairHistoryMoved(historyNode, pPair);
+                pPair->localNode.status = FileNode::Status::Dirty;
             }
         }
         else
         {
-            pPair = mapper.FindMapPath(historyNode.path);
-            if (pPair)
-            {
-                PairHistoryNotMoved(historyNode, pPair);
-            }
-            else
-            {
-                historyNode.status = FileNode::Status::DeletedLocal;
-                pairedNodes.push_back(PairedNode(historyNode.path));
-                pPair = &pairedNodes.back();
-            }
+            pairedNodes.push_back(PairedNode(historyNode.path));
+            pPair = &pairedNodes.back();
         }
         pPair->historyNode = historyNode;
         mapper.EmplaceMapPath(historyNode.path, *pPair);
-        mapper.EmplaceMapRemoteInode(historyNode.GetRemoteDevInode(), *pPair);
     }
 }
 
-void PairRemoteNotMoved(FileNode& remoteNode, PairedNode* pPair)
+void PairRemoteCompare(FileNode& remoteNode, PairedNode* pPair)
 {
     switch (pPair->CompareNodeHashes(remoteNode, pPair->historyNode))
     {
@@ -93,7 +58,6 @@ void PairRemoteNotMoved(FileNode& remoteNode, PairedNode* pPair)
         }
         break;
     case HASHCMP_NE:
-    default:
         remoteNode.status = FileNode::Status::Dirty;
         if (pPair->CompareNodeHashes(remoteNode, pPair->localNode) == HASHCMP_EQ)
         {
@@ -117,52 +81,10 @@ void PairRemoteNotMoved(FileNode& remoteNode, PairedNode* pPair)
             }
         }
         break;
+    default:
+        break;
     }
 };
-
-void PairRemoteMovedSub(FileNode& remoteNode, PairedNode* pPair, FileNode::Status status)
-{
-    remoteNode.status = status;
-    if (pPair->CompareNodeHashes(remoteNode, pPair->localNode) == HASHCMP_EQ)
-    {
-        if (remoteNode.path == pPair->localNode.path)
-        {
-            pPair->SetDefaultAction(PairedNode::Action::FastForward);
-        }
-        else
-        {
-            if (pPair->localNode.status == FileNode::Status::Clean)
-            {
-            }
-            else
-            {
-                pPair->SetDefaultAction(PairedNode::Action::Conflict);
-            }
-        }
-    }
-    else
-    {
-        if (pPair->localNode.status == FileNode::Status::Clean)
-        {
-        }
-        else
-        {
-            pPair->SetDefaultAction(PairedNode::Action::Conflict);
-        }
-    }
-}
-
-void PairRemoteMoved(FileNode& remoteNode, PairedNode* pPair)
-{
-    if (pPair->CompareNodeHashes(remoteNode, pPair->historyNode) == HASHCMP_EQ)
-    {
-        PairRemoteMovedSub(remoteNode, pPair, FileNode::Status::MovedClean);
-    }
-    else
-    {
-        PairRemoteMovedSub(remoteNode, pPair, FileNode::Status::MovedDirty);
-    }
-}
 
 void PairingManager::PairAllRemote(std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {
@@ -170,31 +92,16 @@ void PairingManager::PairAllRemote(std::forward_list<FileNode>& remoteNodes, std
     {
         if (creeper.CheckIfFileIsIgnored(remoteNode.path))
             continue;
-        //auto pPair = mapper.FindMapPath(remoteNode.path);
-        auto pPair = mapper.FindMapRemoteInode(remoteNode.GetDevInode());
+
+        auto pPair = mapper.FindMapPath(remoteNode.path);
         if (pPair)
         {
-            if (remoteNode.path == pPair->historyNode.path)
-            {
-                PairRemoteNotMoved(remoteNode, pPair);
-            }
-            else
-            {
-                PairRemoteMoved(remoteNode, pPair);
-            }
+            PairRemoteCompare(remoteNode, pPair);
         }
         else
         {
-            pPair = mapper.FindMapPath(remoteNode.path);
-            if (pPair)
-            {
-                PairRemoteNotMoved(remoteNode, pPair);
-            }
-            else
-            {
-                pairedNodes.push_back(PairedNode(remoteNode.path));
-                pPair = &pairedNodes.back();
-            }
+            pairedNodes.push_back(PairedNode(remoteNode.path));
+            pPair = &pairedNodes.back();
         }
         pPair->remoteNode = remoteNode;
     }
@@ -242,7 +149,6 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
 
         if (pair.localNode.IsEmpty())
         {
-            pair.historyNode.status = FileNode::Status::DeletedBoth;
             pair.SetDefaultAction(PairedNode::Action::FastForward);
         }
         else if (pair.localNode.status == FileNode::Status::New)
@@ -251,7 +157,6 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
         }
         else
         {
-            pair.historyNode.status = FileNode::Status::DeletedRemote;
             pair.SetDefaultAction(
                 pair.localNode.status == FileNode::Status::Clean?
                 PairedNode::Action::RemoteToLocal:

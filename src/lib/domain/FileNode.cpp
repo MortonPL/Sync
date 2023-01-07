@@ -15,13 +15,8 @@ const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
 {
     {FileNode::Status::None, "None"},
     {FileNode::Status::New, "New"},
-    {FileNode::Status::DeletedLocal, "Deleted (L)"},
-    {FileNode::Status::DeletedRemote, "Deleted (R)"},
-    {FileNode::Status::DeletedBoth, "Deleted (LR)"},
     {FileNode::Status::Clean, "Clean"},
     {FileNode::Status::Dirty, "Dirty"},
-    {FileNode::Status::MovedClean, "Clean (Moved)"},
-    {FileNode::Status::MovedDirty, "Dirty (Moved)"},
     {FileNode::Status::HistoryPresent, "Present"},
     {FileNode::Status::Absent, "Absent"},
     {FileNode::Status::Changed, "Changed!"},

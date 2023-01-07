@@ -18,13 +18,8 @@ public:
     {
         None = 0,
         New,
-        DeletedLocal,
-        DeletedRemote,
-        DeletedBoth,
         Clean,
         Dirty,
-        MovedClean,
-        MovedDirty,
         Changed,
         Absent,
         HistoryPresent,

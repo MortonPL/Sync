@@ -76,7 +76,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
         break;
     }
     default:
-        break;
+        return -1;
     }
 
     return 0;
@@ -128,7 +128,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, SSHConnect
         break;
     }
     default:
-        break;
+        return -1;
     }
 
     return 0;
@@ -291,12 +291,14 @@ int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& t
         return 0;
     case PairedNode::Action::FastForward:
         UpdateHistory(pNode, wasDeleted);
+        break;
     case PairedNode::Action::Resolve:
         if (SyncResolve(pNode, remotePath, tempPath, ssh, sftp) != 0)
         {
             pNode->progress = PairedNode::Progress::Failed;
             return 2;
         }
+        break;
     default:
         break;
     }

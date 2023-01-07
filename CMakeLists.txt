@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(SET CMP0048 NEW)
 
 # set the project name
-project(sync VERSION 0.1.0)
+project(sync VERSION 1.0.0)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # set the standards/options

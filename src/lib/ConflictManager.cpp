@@ -15,7 +15,7 @@ bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, std::string
     if (pNode->defaultAction != PairedNode::Action::Conflict)
         return false;
     
-    if (pNode->historyNode.status == FileNode::Status::DeletedLocal || pNode->historyNode.status == FileNode::Status::DeletedRemote)
+    if (pNode->localNode.IsEmpty() || pNode->remoteNode.IsEmpty())
         return false;
     
     // get both files to tmp/

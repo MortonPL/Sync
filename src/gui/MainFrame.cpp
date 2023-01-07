@@ -186,7 +186,7 @@ void MainFrame::ShowDetails(long itemIndex)
         }
         else
         {
-            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\n Hash:\n";
+            *ctrl.txtDetails << "Status: Absent\nModification time:\nSize:\nHash:\n";
         }
     };
 
@@ -194,7 +194,6 @@ void MainFrame::ShowDetails(long itemIndex)
     {
         if (!pNode.IsEmpty())
         {
-            *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
             *ctrl.txtDetails << "Local Mtime: " << Utils::TimestampToString(pNode.mtime) << '\n';
             *ctrl.txtDetails << "Remote Mtime: " << Utils::TimestampToString(pNode.remoteMtime) << '\n';
             *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
@@ -202,7 +201,7 @@ void MainFrame::ShowDetails(long itemIndex)
         }
         else
         {
-            *ctrl.txtDetails << "Status: Absent\nLocal Mtime:\nRemote Mtime:\nSize:\nHash:\n";
+            *ctrl.txtDetails << "Local Mtime:\nRemote Mtime:\nSize:\nHash:\n";
         }
     };
 
@@ -243,9 +242,6 @@ void MainFrame::OnAction(PairedNode::Action action)
     else if (action == PairedNode::Action::Conflict || action == PairedNode::Action::Resolve)
     {
         ResolveConflict();
-
-        if (viewedItemIndex != -1)
-            ShowDetails(viewedItemIndex);
     }
     else
     {
@@ -258,6 +254,9 @@ void MainFrame::OnAction(PairedNode::Action action)
             ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
         }
     }
+
+    if (viewedItemIndex != -1)
+        ShowDetails(viewedItemIndex);
 }
 
 void MainFrame::ResolveConflict()
@@ -577,7 +576,10 @@ void MainFrame::OnSync(wxCommandEvent& event)
         {
             if (ctrl.listMain->GetItemCount() > index
                 && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &*it)
+            {
                 ctrl.listMain->DeleteItem(index);
+                selectedItems.erase(index);
+            }
 
             pairedNodes.erase(it++);
             if (index == viewedItemIndex)
@@ -587,7 +589,10 @@ void MainFrame::OnSync(wxCommandEvent& event)
         {
             if (ctrl.listMain->GetItemCount() > index
                 && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &*it)
+            {
                 ctrl.listMain->DeleteItem(index);
+                selectedItems.erase(index);
+            }
 
             it++;
             if (index == viewedItemIndex)
@@ -688,8 +693,14 @@ void MainFrame::OnToggleShowFastFwd(wxCommandEvent& event)
 
 void MainFrame::OnAbout(wxCommandEvent& event)
 {
-    wxMessageBox("This is a message box.", "About...",
-                wxOK | wxICON_INFORMATION);
+    std::string msg =
+        "Sync File Synchronizer, version 1.0.0\n"
+        "Author: Bartłomiej Moroz\n"
+        "For more information see the README.md file distributed with the source code."
+    ;
+
+    wxMessageBox(wxString::FromUTF8(msg), "About...",
+                 wxOK | wxICON_INFORMATION);
 }
 
 void MainFrame::OnExit(wxCommandEvent& event)
