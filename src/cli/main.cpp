@@ -23,28 +23,45 @@ void ParseArgs(int argc, char* argv[])
 
         switch (argv[i][1])
         {
-        case 'c':
+        case 'c':   // _c_reep
             if (i + 1 >= argc)
                 break;
-            GlobalCLI::dirToCreep = Utils::CorrectDirPath(argv[i+1]);
+            GlobalCLI::mode |= GlobalCLI::CLIMode::Creep;
+            GlobalCLI::pathCreep = Utils::CorrectDirPath(argv[i+1]);
             break;
-        case 'd':
+        case 'd':   // _d_aemon
             GlobalCLI::mode |= GlobalCLI::CLIMode::DaemonServant;
             break;
-        case 'h':
+        case 'h':   // _h_ome & block
             GlobalCLI::mode |= GlobalCLI::CLIMode::HomePath;
             if (i + 1 < argc)
-                GlobalCLI::dirToBlock = Utils::CorrectDirPath(argv[i+1]);
+                GlobalCLI::pathBlock = Utils::CorrectDirPath(argv[i+1]);
             break;
-        case 's':
+        case 's':   // _s_tat
             if (i + 1 >= argc)
                 break;
-            GlobalCLI::pathToStat = argv[i+1];
+            GlobalCLI::mode |= GlobalCLI::CLIMode::Stat;
+            GlobalCLI::pathStat = argv[i+1];
             break;
-        case 'u':
+        case 'u':   // _u__nblock
             if (i + 1 >= argc)
                 break;
-            GlobalCLI::dirToUnblock = Utils::CorrectDirPath(argv[i+1]);
+            GlobalCLI::mode |= GlobalCLI::CLIMode::Unblock;
+            GlobalCLI::pathUnblock = Utils::CorrectDirPath(argv[i+1]);
+            break;
+        case 'z':   // compress _z_std
+            if (i + 2 >= argc)
+                break;
+            GlobalCLI::mode |= GlobalCLI::CLIMode::Compress;
+            GlobalCLI::pathCompressIn = argv[i+1];
+            GlobalCLI::pathCompressOut = argv[i+2];
+            break;
+        case 'Z':   // decompress _z_std
+            if (i + 2 >= argc)
+                break;
+            GlobalCLI::mode |= GlobalCLI::CLIMode::Decompress;
+            GlobalCLI::pathDecompressIn = argv[i+1];
+            GlobalCLI::pathDecompressOut = argv[i+2];
             break;
         default:
             break;
@@ -196,30 +213,48 @@ int Serve()
     return 0;
 }
 
+#include "Lib/Compression.h"
 int main(int argc, char* argv[])
 {
     ParseArgs(argc, argv);
 
-    if (GlobalCLI::pathToStat != "")
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::Stat)
     {
-        StatPath(GlobalCLI::pathToStat);
+        StatPath(GlobalCLI::pathStat);
         return 0;
     }
 
     if (!General::InitEverything("synccli.log"))
         return -1;
 
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::Compress)
+    {
+        off_t compressedSize = 0;
+        std::cout << (Compression::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, &compressedSize)? 0: 1);
+        std::cout.flush();
+        SocketListener::writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+        return 0;
+    }
+
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::Decompress)
+    {
+        std::cout << (Compression::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
+        std::cout.flush();
+        return 0;
+    }
+
     if (GlobalCLI::mode & GlobalCLI::CLIMode::HomePath)
+    {
         GetHomePath();
+        if (GlobalCLI::pathBlock != "")
+            BlockDir(GlobalCLI::pathBlock);
+    }
 
-    if (GlobalCLI::dirToBlock != "")
-        BlockDir(GlobalCLI::dirToBlock);
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::Unblock)
+        UnblockDir(GlobalCLI::pathUnblock);
 
-    if (GlobalCLI::dirToUnblock != "")
-        UnblockDir(GlobalCLI::dirToUnblock);
-
-    if (GlobalCLI::dirToCreep != "")
-        CreepDir(GlobalCLI::dirToCreep);
+    if (GlobalCLI::mode & GlobalCLI::CLIMode::Creep)
+        CreepDir(GlobalCLI::pathCreep);
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::DaemonServant)
     {

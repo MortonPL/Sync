@@ -16,7 +16,7 @@ public:
     bool Connect();
     void EndSession();
 
-    bool Send(std::string localPath, std::string remotePath, std::string tempPath, std::string tempFileName, off_t size);
+    bool Send(std::string localPath, std::string tempPath, std::string tempFileName, off_t size);
     bool Receive(std::string localPath, std::string remotePath, std::string tempFileName, off_t size);
     bool ReceiveNonAtomic(std::string localPath, std::string remotePath);
     bool Delete(std::string path);

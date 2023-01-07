@@ -213,6 +213,42 @@ int SSHConnector::CallCLIUnblock(std::string path)
     return unblocked? CALLCLI_OK: CALLCLI_ERROR;
 }
 
+int SSHConnector::CallCLICompress(std::string pathFrom, std::string pathTo)
+{
+    ssh_channel pChannel;
+    if ((pChannel = CallCLI("z", pathFrom, pathTo)) == nullptr)
+    {
+        return CALLCLI_NOANSWER;
+    }
+    char unblocked;
+    if (ssh_channel_read(pChannel, &unblocked, sizeof(unblocked), 0) != sizeof(unblocked))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_404;
+    }
+
+    FreeChannel(pChannel);
+    return (unblocked == '0'? CALLCLI_OK: CALLCLI_ERROR);
+}
+
+int SSHConnector::CallCLIDecompress(std::string pathFrom, std::string pathTo)
+{
+    ssh_channel pChannel;
+    if ((pChannel = CallCLI("Z", pathFrom, pathTo)) == nullptr)
+    {
+        return CALLCLI_NOANSWER;
+    }
+    char unblocked;
+    if (ssh_channel_read(pChannel, &unblocked, sizeof(unblocked), 0) != sizeof(unblocked))
+    {
+        FreeChannel(pChannel);
+        return CALLCLI_404;
+    }
+
+    FreeChannel(pChannel);
+    return (unblocked == '0'? CALLCLI_OK: CALLCLI_ERROR);
+}
+
 // NOTE - unused and unfinished
 int SSHConnector::CallCLIServe()
 {
@@ -697,7 +733,7 @@ bool SSHConnector::AuthenticateGSSAPI()
     return AuthenticateResult(ssh_userauth_gssapi(session));
 }
 
-ssh_channel_struct* SSHConnector::GetChannel()
+ssh_channel SSHConnector::GetChannel()
 {
     auto pChannel = ssh_channel_new(session);
     if (pChannel == NULL)
@@ -707,18 +743,31 @@ ssh_channel_struct* SSHConnector::GetChannel()
     return pChannel;
 }
 
-void SSHConnector::FreeChannel(ssh_channel_struct* pChannel)
+void SSHConnector::FreeChannel(ssh_channel pChannel)
 {
     ssh_channel_send_eof(pChannel);
     ssh_channel_close(pChannel);
     ssh_channel_free(pChannel);
 }
 
-ssh_channel_struct* SSHConnector::CallCLI(std::string flag, std::string cmd)
+ssh_channel SSHConnector::CallCLI(std::string flag, std::string cmd)
 {
     auto pChannel = GetChannel();
     Utils::Replace(cmd, "\'", "\'\\\'\'");
     if (ssh_channel_request_exec(pChannel, ("synccli -" + flag + " \'" + cmd + '\'').c_str()) != SSH_OK)
+    {
+        FreeChannel(pChannel);
+        return nullptr;
+    }
+    return pChannel;
+}
+
+ssh_channel SSHConnector::CallCLI(std::string flag, std::string cmd, std::string cmd2)
+{
+    auto pChannel = GetChannel();
+    Utils::Replace(cmd, "\'", "\'\\\'\'");
+    Utils::Replace(cmd2, "\'", "\'\\\'\'");
+    if (ssh_channel_request_exec(pChannel, ("synccli -" + flag + " \'" + cmd + "\' \'" + cmd2 + "\'").c_str()) != SSH_OK)
     {
         FreeChannel(pChannel);
         return nullptr;

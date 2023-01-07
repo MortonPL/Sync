@@ -3,9 +3,15 @@
 #include "Lib/FileSystem.h"
 #include "Lib/PairingManager.h"
 #include "Lib/ConflictManager.h"
+#include "Lib/Compression.h"
 #include "Utils.h"
 
-std::string MakeTempPath(PairedNode* pNode)
+std::string MakeTempPathForLocal(PairedNode* pNode)
+{
+    return pNode->pathHash + '-' + pNode->localNode.HashToString() + ".SyncTEMP";
+}
+
+std::string MakeTempPathForRemote(PairedNode* pNode)
 {
     return pNode->pathHash + '-' + pNode->remoteNode.HashToString() + ".SyncTEMP";
 }
@@ -42,11 +48,32 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
     case FileNode::Status::New:
     {
         //send
-        std::string tempFilePath = MakeTempPath(pNode);
-        if (!sftp.Send(pNode->path, remotePath, tempPath, tempFilePath, pNode->localNode.size))
-            return -1;
-        if (ssh.ReplaceFile(tempFilePath, remotePath) != CALLCLI_OK)
-            return -1;
+        std::string tempFilePath = MakeTempPathForLocal(pNode);
+        std::string tempFilePathLocal = Utils::GetTempPath() + tempFilePath;
+        std::string tempFilePathRemote = tempPath + tempFilePath;
+
+        //compress if > 50MB
+        if (pNode->localNode.size > 50000000)
+        {
+            off_t compressedSize = 0;
+            if (!Compression::Compress(pNode->path, tempFilePathLocal+".zst", &compressedSize))
+                return -1;
+            if (!sftp.Send(tempFilePathLocal+".zst", tempPath, tempFilePath + ".zst", compressedSize))
+                return -1;
+            if (ssh.CallCLIDecompress(tempFilePathRemote+".zst", tempFilePathRemote) != CALLCLI_OK)
+                return -1;
+            if (ssh.ReplaceFile(tempFilePath, remotePath) != CALLCLI_OK)
+                return -1;
+            sftp.Delete(tempFilePathRemote+".zst");
+            remove((tempFilePathLocal+".zst").c_str());
+        }
+        else
+        {
+            if (!sftp.Send(pNode->path, tempPath, tempFilePath, pNode->localNode.size))
+                return -1;
+            if (ssh.ReplaceFile(tempFilePath, remotePath) != CALLCLI_OK)
+                return -1;
+        }
         //stat local for dev/inode
         auto path = pNode->path.c_str();
         struct stat buf;
@@ -56,7 +83,6 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
         //stat remote for dev/inode, mtime
         if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
         {
-            //uh oh
             return -1;
         }
         auto newRemoteDev = buf.st_dev;
@@ -96,7 +122,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, SSHConnect
     case FileNode::Status::New:
     {
         //receive
-        std::string tempFilePath = MakeTempPath(pNode);
+        std::string tempFilePath = MakeTempPathForRemote(pNode);
         if (!sftp.Receive(pNode->path, remotePath, tempFilePath, pNode->remoteNode.size))
             return -1;
         //stat local for dev/inode, mtime
@@ -109,7 +135,6 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, SSHConnect
         //stat remote for dev/inode
         if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
         {
-            //uh oh
             return -1;
         }
         auto newRemoteDev = buf.st_dev;
@@ -178,8 +203,8 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
 
     // then move temp/remote
     //send
-    std::string tempFilePath = pNode->pathHash + '-' + pNode->remoteNode.HashToString();
-    if (!sftp.Send(tempRemote, remotePath, tempPath, tempRemote, pNode->localNode.size))
+    std::string tempFilePath = MakeTempPathForLocal(pNode);
+    if (!sftp.Send(tempRemote, tempPath, tempRemote, pNode->localNode.size))
         return -1;
     if (ssh.ReplaceFile(tempRemote, remotePath) != CALLCLI_OK)
         return -1;
@@ -187,7 +212,6 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     //stat remote for dev/inode, mtime
     if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
     {
-        //uh oh
         return -1;
     }
     auto newRemoteDev = buf.st_dev;

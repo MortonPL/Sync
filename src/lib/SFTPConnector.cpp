@@ -39,7 +39,7 @@ void SFTPConnector::EndSession()
     }
 }
 
-bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::string tempPath, std::string tempFileName, off_t size)
+bool SFTPConnector::Send(std::string localPath, std::string tempPath, std::string tempFileName, off_t size)
 {
     sftp_file pFile;
     int localFd;
@@ -88,7 +88,7 @@ bool SFTPConnector::Send(std::string localPath, std::string remotePath, std::str
         {
             // error!
             int err = errno;
-            LOG(ERROR) << "Error writing remote file " << remotePath << ". Message: " << strerror(err);
+            LOG(ERROR) << "Error writing remote file " << fullTempPath << ". Message: " << strerror(err);
             sftp_close(pFile);
             close(localFd);
             return false;

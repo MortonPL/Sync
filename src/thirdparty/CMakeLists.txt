@@ -1,6 +1,6 @@
 # directories
 add_subdirectory(easyloggingpp)
-add_subdirectory(sqlite)
+add_subdirectory(zstd)
 
 # dependencies
 include(FetchContent)

@@ -8,6 +8,7 @@ set(SRC_LIB_FILES
     domain/HistoryFileNode.cpp
     domain/PairedNode.cpp
     domain/ConflictRule.cpp
+    Compression.cpp
     Announcer.cpp
     Global.cpp
     FileSystem.cpp
@@ -26,4 +27,4 @@ set(SRC_LIB_FILES
 
 add_library(lib ${SRC_LIB_FILES})
 target_include_directories(lib PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
-target_link_libraries(lib ssh SQLiteCpp xxHash::xxhash uuid utils)
+target_link_libraries(lib ssh SQLiteCpp zstd xxHash::xxhash uuid utils)
