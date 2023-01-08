@@ -9,7 +9,7 @@ UNINSTALL=0;    # Uninstall build
 BUILD_TYPE="";  # CMake build type
 DIR="";         # Build output directory
 
-# Example usage: ./action.sh debug -i -r syncguest
+# Example usage: ./action.sh debug -i
 # Show user help
 print_help() {
     echo "Usage: action.sh build|debug [OPTIONS]...";
@@ -17,10 +17,9 @@ print_help() {
     echo "Options:";
     echo "\t-c, --configure                 \t Force (re)generate CMake configuration files";
     echo "\t-h, --help                      \t Display this message";
-    echo "\t-i, --install                   \t Install program (to /usr/bin) after build";
-    echo "\t-r [USER], --remote [...]       \t Copy results to a remote location";
+    echo "\t-i, --install                   \t Install program (to ~/.sync) after build";
     echo "\t-t, --tests                     \t Build and run tests";
-    echo "\t-u, --uninstall                 \t Uninstall program (from /usr/bin)";
+    echo "\t-u, --uninstall                 \t Uninstall program (from ~/.sync)";
 }
 
 parse_args() {
@@ -181,7 +180,7 @@ printf '\a';  # Ring ring
 do_tests;
 # If success, install
 do_install;
-# Copy over to a remote location
+# Copy over to another location
 do_remote;
 cd ..;
 # Done!
