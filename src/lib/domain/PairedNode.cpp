@@ -1,4 +1,4 @@
-#include "domain/PairedNode.h"
+#include "Domain/PairedNode.h"
 
 PairedNode::PairedNode()
 {

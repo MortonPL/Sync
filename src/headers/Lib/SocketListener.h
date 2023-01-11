@@ -2,7 +2,8 @@
 #include <string>
 #include <netinet/in.h>
 
-/*A wrapper class for managing TCP communications.*/
+/*Previously a wrapper class for managing TCP communications.*/
+//TODO Properly rename
 class SocketListener
 {
 public:

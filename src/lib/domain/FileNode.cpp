@@ -1,6 +1,6 @@
 #include "Domain/FileNode.h"
 
-#include "linux/limits.h"
+#include <limits.h>
 #include <cstring>
 
 #include "Utils.h"

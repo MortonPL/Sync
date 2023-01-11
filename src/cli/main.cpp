@@ -1,6 +1,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
-#include <linux/limits.h>
+#include <limits.h>
 
 #include "Lib/General.h"
 #include "Lib/Creeper.h"

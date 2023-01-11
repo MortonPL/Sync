@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "domain/FileNode.h"
+#include "Domain/FileNode.h"
 #include "Domain/HistoryFileNode.h"
 
 #define HASHCMP_ONENULL 0
