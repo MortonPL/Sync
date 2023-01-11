@@ -1,210 +1,103 @@
 #include "Lib/Compression.h"
 
+#include <fstream>
+
 #include "Utils.h"
 #include "Zstd.h"
 
-bool Compression::Compress(std::string pathIn, std::string pathOut, off_t* compressedSize)
+struct freeContext
 {
-    FILE* fin;
-    FILE* fout;
-    void* buffIn;
-    void* buffOut;
-    if ((fin = fopen(pathIn.c_str(), "rb")) == NULL)
-    {
-        LOG(ERROR) << "Failed to open file " << pathIn << " for compression.";
-        return false;
-    }
-    if ((fout = fopen(pathOut.c_str(), "wb")) == NULL)
-    {
-        LOG(ERROR) << "Failed to create file " << pathOut << " for compression.";
-        fclose(fin);
-        return false;
-    }
-    auto inSize = ZSTD_CStreamInSize();
-    auto outSize = ZSTD_CStreamOutSize();
-    if ((buffIn = malloc(inSize)) == nullptr)
-    {
-        LOG(ERROR) << "Failed to allocate buffer during compression of file " << pathIn;
-        fclose(fin);
-        fclose(fout);
-        return false;
-    }
-    if ((buffOut = malloc(outSize)) == nullptr)
-    {
-        LOG(ERROR) << "Failed to allocate buffer during compression of file " << pathIn;
-        fclose(fin);
-        fclose(fout);
-        free(buffIn);
-        return false;
-    }
+    void operator()(ZSTD_CCtx* ptr){ZSTD_freeCCtx(ptr);}
+    void operator()(ZSTD_DCtx* ptr){ZSTD_freeDCtx(ptr);}
+};
 
-    ZSTD_CCtx* context;
-    if ((context = ZSTD_createCCtx()) == nullptr)
+bool Compression::Compress(const std::string pathIn, const std::string pathOut, off_t& compressedSize)
+{
+    try
     {
-        LOG(ERROR) << "Failed to create context during compression of file " << pathIn;
-        fclose(fin);
-        fclose(fout);
-        free(buffIn);
-        free(buffOut);
-        return false;
-    }
+        std::ifstream inputStream(pathIn, std::ios::binary);
+        std::ofstream outputStream(pathOut, std::ios::binary);
+        inputStream.exceptions(std::ifstream::failbit|std::ifstream::badbit);
+        outputStream.exceptions(std::ofstream::failbit|std::ofstream::badbit);
 
-    ZSTD_CCtx_setParameter(context, ZSTD_c_compressionLevel, ZSTD_defaultCLevel());
-    ZSTD_CCtx_setParameter(context, ZSTD_c_checksumFlag, 1);
+        const auto inSize = ZSTD_CStreamInSize();
+        const auto outSize = ZSTD_CStreamOutSize();
+        std::vector<char> buffIn(inSize, 0);
+        std::vector<char> buffOut(outSize, 0);
 
-    // read from fin to buffer, compress it, write to fout
-    for(bool isLastChunk = false; !isLastChunk;)
-    {
-        size_t read = fread(buffIn, 1, inSize, fin);
-        if (ferror(fin))
+        auto context = std::unique_ptr<ZSTD_CCtx, freeContext>(ZSTD_createCCtx(), freeContext());
+        ZSTD_CCtx_setParameter(context.get(), ZSTD_c_compressionLevel, ZSTD_defaultCLevel());
+        ZSTD_CCtx_setParameter(context.get(), ZSTD_c_checksumFlag, 1);
+
+        for(bool isLastChunk = false; !isLastChunk;)
         {
-            LOG(ERROR) << "Failed to read during compression of file " << pathIn;
-            ZSTD_freeCCtx(context);
-            fclose(fin);
-            fclose(fout);
-            free(buffIn);
-            free(buffOut);
-            return false; 
-        }
-        isLastChunk = read < inSize;
-        ZSTD_EndDirective mode = isLastChunk? ZSTD_e_end : ZSTD_e_continue;
-        ZSTD_inBuffer input = {buffIn, read, 0};
-        bool finished = false;
-        do
-        {
-            ZSTD_outBuffer output = {buffOut, outSize, 0};
-            size_t remaining = ZSTD_compressStream2(context, &output, &input, mode);
-            fwrite(buffOut, 1, output.pos, fout);
-            if (ferror(fout))
+            inputStream.read(buffIn.data(), inSize);
+            auto read = inputStream? inSize: inputStream.gcount();
+            isLastChunk = read < inSize;
+            ZSTD_EndDirective mode = isLastChunk? ZSTD_e_end : ZSTD_e_continue;
+            ZSTD_inBuffer input = {buffIn.data(), read, 0};
+            bool finished = false;
+            do
             {
-                LOG(ERROR) << "Failed to write during compression of file " << pathIn;
-                ZSTD_freeCCtx(context);
-                fclose(fout);
-                fclose(fin);
-                free(buffIn);
-                free(buffOut);
-                return false;
-            }
-            finished = isLastChunk? (remaining == 0) : (input.pos == input.size);
-            *compressedSize += output.pos;
-        } while (!finished);
+                ZSTD_outBuffer output = {buffOut.data(), outSize, 0};
+                size_t result = ZSTD_compressStream2(context.get(), &output, &input, mode);
+                if (ZSTD_isError(result))
+                    throw std::runtime_error("Compression error.");
+                outputStream.write(buffOut.data(), output.pos);
+                finished = isLastChunk? (result == 0) : (input.pos == input.size);
+                compressedSize += output.pos;
+            } while (!finished);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to compress file " << pathIn << ". Reason: " << e.what();
+        return false;
     }
 
-    ZSTD_freeCCtx(context);
-    fclose(fin);
-    fclose(fout);
-    free(buffIn);
-    free(buffOut);
     return true;
 }
 
-bool Compression::Decompress(std::string pathIn, std::string pathOut)
+bool Compression::Decompress(const std::string pathIn, const std::string pathOut)
 {
-    FILE* fin;
-    FILE* fout;
-    void* buffIn;
-    void* buffOut;
-    if ((fin = fopen(pathIn.c_str(), "rb")) == NULL)
-    {
-        LOG(ERROR) << "Failed to open file " << pathIn << " for decompression.";
-        return false;
-    }
-    if ((fout = fopen(pathOut.c_str(), "wb")) == NULL)
-    {
-        LOG(ERROR) << "Failed to create file " << pathOut << " for decompression.";
-        fclose(fin);
-        return false;
-    }
-    auto inSize = ZSTD_DStreamInSize();
-    auto outSize = ZSTD_DStreamOutSize();
-    if ((buffIn = malloc(inSize)) == nullptr)
-    {
-        LOG(ERROR) << "Failed to allocate buffer during decompression of file " << pathIn;
-        fclose(fin);
-        fclose(fout);
-        return false;
-    }
-    if ((buffOut = malloc(outSize)) == nullptr)
-    {
-        LOG(ERROR) << "Failed to allocate buffer during decompression of file " << pathIn;
-        fclose(fin);
-        fclose(fout);
-        free(buffIn);
-        return false;
-    }
-
-    ZSTD_DCtx* context;
-    if ((context = ZSTD_createDCtx()) == nullptr)
-    {
-        LOG(ERROR) << "Failed to create context during decompression of file " << pathIn;
-        fclose(fin);
-        fclose(fout);
-        free(buffIn);
-        free(buffOut);
-        return false;
-    }
-
-    // read from fin to buffer, decompress it, write to fout
-    size_t read;
-    size_t ret = 0;
     bool empty = true;
-    while ((read = fread(buffIn, 1, inSize, fin)))
-    {
-        if (ferror(fin))
-        {
-            LOG(ERROR) << "Failed to read file " << pathIn;
-            ZSTD_freeDCtx(context);
-            fclose(fout);
-            fclose(fin);
-            free(buffIn);
-            free(buffOut);
-            return false;
-        }
 
-        empty = false;
-        ZSTD_inBuffer input = {buffIn, read, 0};
-        while (input.pos < input.size) {
-            ZSTD_outBuffer output = { buffOut, outSize, 0 };
-            ret = ZSTD_decompressStream(context, &output , &input);
-            if (ZSTD_isError(ret))
+    try
+    {
+        std::ifstream inputStream(pathIn, std::ios::binary);
+        std::ofstream outputStream(pathOut, std::ios::binary);
+        inputStream.exceptions(std::ifstream::failbit|std::ifstream::badbit);
+        outputStream.exceptions(std::ofstream::failbit|std::ofstream::badbit);
+
+        const auto inSize = ZSTD_DStreamInSize();
+        const auto outSize = ZSTD_DStreamOutSize();
+        std::vector<char> buffIn(inSize, 0);
+        std::vector<char> buffOut(outSize, 0);
+
+        auto context = std::unique_ptr<ZSTD_DCtx, freeContext>(ZSTD_createDCtx(), freeContext());
+
+        size_t read;
+        inputStream.read(buffIn.data(), inSize);
+        while ((read = inputStream? inSize: inputStream.gcount()) > 0)
+        {
+            empty = false;
+            ZSTD_inBuffer input = {buffIn.data(), read, 0};
+            while (input.pos < input.size)
             {
-                LOG(ERROR) << "Failed to decompress file " << pathIn;
-                ZSTD_freeDCtx(context);
-                fclose(fout);
-                fclose(fin);
-                free(buffIn);
-                free(buffOut);
-                return false;
+                ZSTD_outBuffer output = {buffOut.data(), outSize, 0 };
+                size_t result = ZSTD_decompressStream(context.get(), &output , &input);
+                if (ZSTD_isError(result))
+                    throw std::runtime_error("Compression error.");
+                outputStream.write(buffOut.data(), output.pos);
             }
-            fwrite(buffOut, 1, output.pos, fout);
-            if (ferror(fout))
-            {
-                LOG(ERROR) << "Failed to write during decompression of file " << pathIn;
-                ZSTD_freeDCtx(context);
-                fclose(fout);
-                fclose(fin);
-                free(buffIn);
-                free(buffOut);
-                return false;
-            }
+            inputStream.read(buffIn.data(), inSize);
         }
     }
-
-    if (ret != 0)
+    catch(const std::exception& e)
     {
-        LOG(ERROR) << "Unexpected EOF during decompression of file " << pathIn;
-        ZSTD_freeDCtx(context);
-        fclose(fout);
-        fclose(fin);
-        free(buffIn);
-        free(buffOut);
+        LOG(ERROR) << "Failed to decompress file " << pathIn << ". Reason: " << e.what();
         return false;
     }
 
-    ZSTD_freeDCtx(context);
-    fclose(fin);
-    fclose(fout);
-    free(buffIn);
-    free(buffOut);
     return !empty;
 }

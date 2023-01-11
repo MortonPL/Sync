@@ -3,6 +3,6 @@
 
 namespace Compression
 {
-    bool Compress(std::string pathIn, std::string pathOut, off_t* compressedSize);
-    bool Decompress(std::string pathIn, std::string pathOut);
+    bool Compress(const std::string pathIn, const std::string pathOut, off_t& compressedSize);
+    bool Decompress(const std::string pathIn, const std::string pathOut);
 }

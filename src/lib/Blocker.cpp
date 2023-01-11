@@ -2,8 +2,6 @@
 
 #include <fstream>
 #include <filesystem>
-#include <fcntl.h>
-#include <stdio.h>
 #include "Utils.h"
 
 std::string Blocker::SyncBlockedFile = ".SyncBLOCKED";
@@ -31,7 +29,6 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
     {
         std::string line;
         blockFileIStream >> line;
-
         if (line.size() == 0)
             continue;
 
@@ -44,7 +41,7 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
     if (matched)
         return false;
     
-    std::ofstream blockFileOStream(pathToFile, std::ios_base::openmode::_S_app);
+    std::ofstream blockFileOStream(pathToFile, std::ios::app);
     blockFileOStream << canonicalPath << std::endl;
 
     return true;
@@ -67,9 +64,9 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
         return false;
     }
 
-    std::string tempFileName = pathToFile + ".tmp";
+    const std::string tempFileName = pathToFile + ".tmp";
     std::ifstream blockFileIStream(pathToFile);
-    std::ofstream blockFileOStream(tempFileName, std::ios_base::openmode::_S_app);
+    std::ofstream blockFileOStream(tempFileName, std::ios::app);
     bool matched = false;
     
     if (blockFileIStream.peek() == std::ifstream::traits_type::eof())
@@ -79,7 +76,6 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
     {
         std::string line;
         blockFileIStream >> line;
-
         if (line.size() == 0)
             continue;
 

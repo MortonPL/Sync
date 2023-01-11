@@ -60,7 +60,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
             if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
             {
                 off_t compressedSize = 0;
-                if (!Compression::Compress(pNode->path, tempFilePathLocal+".zst", &compressedSize))
+                if (!Compression::Compress(pNode->path, tempFilePathLocal+".zst", compressedSize))
                     return -1;
                 if (!sftp.Send(tempFilePathLocal+".zst", tempFilePathRemote+".zst", compressedSize))
                     return -1;
@@ -232,7 +232,7 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
         if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
         {
             off_t compressedSize = 0;
-            if (!Compression::Compress(tempRemote, tempRemote+".zst", &compressedSize))
+            if (!Compression::Compress(tempRemote, tempRemote+".zst", compressedSize))
                 return -1;
             if (!sftp.Send(tempRemote+".zst", tempFilePathRemote+".zst", compressedSize))
                 return -1;

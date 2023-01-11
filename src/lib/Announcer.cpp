@@ -1,7 +1,6 @@
 #include "Lib/Announcer.h"
 
 #include "Lib/Creeper.h"
-#include "Utils.h"
 
 void Announcer::NoAnnouncer(const std::string, Severity)
 {

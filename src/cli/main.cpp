@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Compress)
     {
         off_t compressedSize = 0;
-        std::cout << (Compression::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, &compressedSize)? 0: 1);
+        std::cout << (Compression::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize)? 0: 1);
         std::cout.flush();
         SocketListener::writeall(1, (char*)&compressedSize, sizeof(compressedSize));
         return 0;
