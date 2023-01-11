@@ -4,7 +4,7 @@
 #include <filesystem>
 #include "Utils.h"
 
-std::string Blocker::SyncBlockedFile = ".SyncBLOCKED";
+const std::string Blocker::SyncBlockedFile = ".SyncBLOCKED";
 
 bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFile)
 {
@@ -22,13 +22,13 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
     bool matched = false;
     bool empty = false;
     
-    if (blockFileIStream.peek() == std::ifstream::traits_type::eof())
+    if (blockFileIStream.peek() == blockFileIStream.eof())
         empty = true;
 
     while (!empty && !matched && !blockFileIStream.eof())
     {
         std::string line;
-        blockFileIStream >> line;
+        getline(blockFileIStream, line);
         if (line.size() == 0)
             continue;
 
@@ -69,13 +69,13 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
     std::ofstream blockFileOStream(tempFileName, std::ios::app);
     bool matched = false;
     
-    if (blockFileIStream.peek() == std::ifstream::traits_type::eof())
+    if (blockFileIStream.peek() == blockFileOStream.eof())
         return true;
 
     while (!matched && !blockFileIStream.eof())
     {
         std::string line;
-        blockFileIStream >> line;
+        getline(blockFileIStream, line);
         if (line.size() == 0)
             continue;
 

@@ -311,49 +311,51 @@ void MainFrame::ResolveConflict()
     {
         for (auto index: selectedItems)
         {
-            auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
+            auto node = *(PairedNode*)(ctrl.listMain->GetItemData(index));
             {
                 wxBusyInfo wait("Fetching conflicting files. Please wait...");
                 wxYield();
-                if (!ConflictManager::Fetch(pPair, conflictRules[ruleId], cfg.pathB, tempPath, ssh, sftp))
+                if (!ConflictManager::Fetch(node, conflictRules[ruleId], cfg.pathB, tempPath, ssh, sftp))
                 {
                     GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", Announcer::Severity::Error);
                     continue;
                 }
             }
             wxYield();
-            if (!ConflictManager::Resolve(pPair, conflictRules[ruleId], GUIAnnouncer::LogPopup))
+            if (!ConflictManager::Resolve(node, conflictRules[ruleId], GUIAnnouncer::LogPopup))
             {
                 GUIAnnouncer::LogPopup("Failed to resolve conflict!", Announcer::Severity::Error);
                 continue;
             }
 
-            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+            node.SetDefaultAction(PairedNode::Action::Resolve);
+            ctrl.listMain->SetItem(index, COL_ACTION, node.GetActionString());
         }
     }
     else
     {
         for (auto index: selectedItems)
         {
-            auto pPair = (PairedNode*)(ctrl.listMain->GetItemData(index));
-            auto rule = ConflictRule::Match(pPair->path, conflictRules);
+            auto node = *(PairedNode*)(ctrl.listMain->GetItemData(index));
+            auto rule = ConflictRule::Match(node.path, conflictRules);
             {
                 wxBusyInfo wait("Fetching conflicting files. Please wait...");
                 wxYield();
-                if (!ConflictManager::Fetch(pPair, rule, cfg.pathB, tempPath, ssh, sftp))
+                if (!ConflictManager::Fetch(node, rule, cfg.pathB, tempPath, ssh, sftp))
                 {
                     GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", Announcer::Severity::Error);
                     continue;
                 }
             }
             wxYield();
-            if (!ConflictManager::Resolve(pPair, rule, GUIAnnouncer::LogPopup))
+            if (!ConflictManager::Resolve(node, rule, GUIAnnouncer::LogPopup))
             {
                 GUIAnnouncer::LogPopup("Failed to resolve conflict!", Announcer::Severity::Error);
                 continue;
             }
 
-            ctrl.listMain->SetItem(index, COL_ACTION, pPair->GetActionString());
+            node.SetDefaultAction(PairedNode::Action::Resolve);
+            ctrl.listMain->SetItem(index, COL_ACTION, node.GetActionString());
         }
     }
 

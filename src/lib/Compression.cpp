@@ -5,6 +5,8 @@
 #include "Utils.h"
 #include "Zstd.h"
 
+const off_t Compression::minimumCompressibleSize = 50000000;
+
 struct freeContext
 {
     void operator()(ZSTD_CCtx* ptr){ZSTD_freeCCtx(ptr);}

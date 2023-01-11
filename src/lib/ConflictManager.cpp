@@ -8,65 +8,67 @@
 std::string ConflictManager::tempSuffixLocal = ".SyncLOCAL";
 std::string ConflictManager::tempSuffixRemote = ".SyncREMOTE";
 
-bool ConflictManager::Fetch(PairedNode* pNode, ConflictRule& rule, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp)
+bool ConflictManager::Fetch(const PairedNode& node, const ConflictRule& rule, const std::string& remoteRoot, const std::string& tempPath, const SSHConnector& ssh, const SFTPConnector& sftp)
 {
+    const std::string compressedExtension = ".zst";
+
     if (rule.command == "")
         return false;
     
-    if (pNode->defaultAction != PairedNode::Action::Conflict)
+    if (node.defaultAction != PairedNode::Action::Conflict)
         return false;
     
-    if (pNode->localNode.IsEmpty() || pNode->remoteNode.IsEmpty())
+    if (node.localNode.IsEmpty() || node.remoteNode.IsEmpty())
         return false;
     
     // get both files to tmp/
-    std::string hashedPath = Utils::GetTempPath() + pNode->pathHash;
-    std::string tempPathLocal = hashedPath + tempSuffixLocal;
-    std::string tempPathRemote = hashedPath + tempSuffixRemote;
-    std::string remoteTempPath = tempPath + pNode->pathHash;
+    const std::string hashedPath = Utils::GetTempPath() + node.pathHash;
+    const std::string tempFileLocal = hashedPath + tempSuffixLocal;
+    const std::string tempFileRemote = hashedPath + tempSuffixRemote;
+    const std::string remoteTempPath = tempPath + node.pathHash;
 
-    if (!FileSystem::CopyLocalFile(pNode->path, tempPathLocal, std::filesystem::copy_options::skip_existing))
+    if (!FileSystem::CopyLocalFile(node.path, tempFileLocal, std::filesystem::copy_options::skip_existing))
         return false;
     
     // receive the remote file
     // compress if > 50MB
-    if (pNode->remoteNode.size > 50000000)
+    if (node.remoteNode.size >= Compression::minimumCompressibleSize)
     {
-        // if we already have the uncompressed file transfered, don't bother, just move
+        // only transfer if we don't have the matching uncompressed file
         struct stat buf;
-        if (stat(hashedPath.c_str(), &buf) != 0 || buf.st_size != pNode->remoteNode.size)
+        if (stat(hashedPath.c_str(), &buf) != 0 || buf.st_size != node.remoteNode.size)
         {
             off_t compressedSize = 0;
-            if (ssh.CallCLICompress(remoteRoot + pNode->path, remoteTempPath+".zst", &compressedSize) != CALLCLI_OK)
+            if (ssh.CallCLICompress(remoteRoot + node.path, remoteTempPath + compressedExtension, &compressedSize) != CALLCLI_OK)
                 return false;
-            if (!sftp.ReceiveNonAtomic(remoteTempPath+".zst", hashedPath+".zst"))
+            if (!sftp.ReceiveNonAtomic(remoteTempPath + compressedExtension, hashedPath + compressedExtension))
                 return false;
-            if (!Compression::Decompress(hashedPath+".zst", hashedPath))
+            if (!Compression::Decompress(hashedPath + compressedExtension, hashedPath))
                 return false;
         }
-        if (!FileSystem::MoveLocalFile(hashedPath, tempPathRemote))
+        if (!FileSystem::MoveLocalFile(hashedPath, tempFileRemote))
             return false;
-        sftp.Delete(remoteTempPath+".zst");
-        remove((hashedPath+".zst").c_str());
+        sftp.Delete(remoteTempPath + compressedExtension);
+        std::filesystem::remove(hashedPath + compressedExtension);
     }
     else
     {
-        if (!sftp.ReceiveNonAtomic(remoteRoot + pNode->path, tempPathRemote))
+        if (!sftp.ReceiveNonAtomic(remoteRoot + node.path, tempFileRemote))
             return false;
     }
     return true;
 }
 
-bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, Announcer::announcerType announcer)
+bool ConflictManager::Resolve(const PairedNode& node, const ConflictRule& rule, Announcer::announcerType announcer)
 {
-    std::string hashedPath = Utils::GetTempPath() + pNode->pathHash;
-    std::string tempPathLocal = hashedPath + tempSuffixLocal;
-    std::string tempPathRemote = hashedPath + tempSuffixRemote;
+    const std::string hashedPath = Utils::GetTempPath() + node.pathHash;
+    const std::string tempFileLocal = hashedPath + tempSuffixLocal;
+    const std::string tempFileRemote = hashedPath + tempSuffixRemote;
 
     // substitute command
     std::string result = rule.command;
-    Utils::Replace(result, "$LOCAL", tempPathLocal);
-    Utils::Replace(result, "$REMOTE", tempPathRemote);
+    Utils::Replace(result, "$LOCAL", tempFileLocal);
+    Utils::Replace(result, "$REMOTE", tempFileRemote);
 
     // launch it
     if (system(result.c_str()) != 0)
@@ -76,30 +78,29 @@ bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, Announcer::
     }
 
     // check results
-    if (!std::filesystem::exists(tempPathLocal) || !std::filesystem::is_regular_file(tempPathLocal))
+    auto resultCheck = [announcer](const std::string& path)
     {
-        announcer("The command was executed, but the expected temporary file:\n" + tempPathLocal + "\ndoesn't exist!" , Announcer::Severity::Error);
+        if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
+        {
+            announcer("The command was executed, but the expected temporary file:\n" + path + "\ndoesn't exist!" , Announcer::Severity::Error);
+            return false;
+        }
+        return true;
+    };
+    if (!resultCheck(tempFileLocal))
         return false;
-    }
-
-    if (!std::filesystem::exists(tempPathRemote) || !std::filesystem::is_regular_file(tempPathLocal))
-    {
-        announcer("The command was executed, but the expected temporary file:\n" + tempPathRemote + "\ndoesn't exist!" , Announcer::Severity::Error);
+    if (!resultCheck(tempFileRemote))
         return false;
-    }
 
     FileNode local;
     FileNode remote;
-    Creeper::MakeSingleNode(tempPathLocal, local);
-    Creeper::MakeSingleNode(tempPathRemote, remote);
+    Creeper::MakeSingleNode(tempFileLocal, local);
+    Creeper::MakeSingleNode(tempFileRemote, remote);
     if (!local.IsEqualHash(remote))
     {
-        announcer("The command was executed, but temporary files:\n" + tempPathLocal + "\nand\n" + tempPathRemote + "\nhave different content!" , Announcer::Severity::Error);
+        announcer("The command was executed, but temporary files:\n" + tempFileLocal + "\nand\n" + tempFileRemote + "\nhave different content!" , Announcer::Severity::Error);
         return false;
     }
-
-    // apply changes back
-    pNode->SetDefaultAction(PairedNode::Action::Resolve);
 
     return true;
 }

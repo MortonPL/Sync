@@ -10,7 +10,7 @@ namespace Blocker
     bool Unblock(const std::string& pathToUnblock);
     bool Unblock(const std::string& pathToUnblock, const std::string& pathToFile);
 
-    extern std::string SyncBlockedFile;
+    extern const std::string SyncBlockedFile;
 }
 
 #endif

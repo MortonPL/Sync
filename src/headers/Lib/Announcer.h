@@ -5,7 +5,7 @@
 
 namespace Announcer
 {
-    enum Severity: char
+    enum class Severity: char
     {
         Info = 0,
         Warn,

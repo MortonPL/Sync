@@ -10,6 +10,16 @@
 std::string Creeper::SyncBlackListFile = ".SyncBlackList";
 std::string Creeper::SyncWhiteListFile = ".SyncWhiteList";
 
+Creeper::HasherState::HasherState()
+{
+    pState = std::unique_ptr<XXH3_state_t, hasherFree>(XXH3_createState(), hasherFree());
+    buffer = std::vector<char>(bufferSize, 0);
+}
+
+Creeper::HasherState::~HasherState()
+{
+}
+
 Creeper::Creeper()
 {
 }
@@ -18,7 +28,7 @@ Creeper::~Creeper()
 {
 }
 
-void Creeper::SearchForLists(std::string& path)
+void Creeper::SearchForLists(const std::string& path)
 {
     auto readList = [](const std::string& path, const std::string& filename, std::list<std::regex>& rules)
     {
@@ -27,7 +37,7 @@ void Creeper::SearchForLists(std::string& path)
         {
             rules.clear();
             std::string out;
-            while (in.peek() != EOF)
+            while (in.peek() != in.eof())
             {
                 getline(in, out);
                 if(*out.end() == '\r')
@@ -52,7 +62,7 @@ void Creeper::SearchForLists(std::string& path)
     readList(path, Creeper::SyncBlackListFile, blacklist);
 }
 
-bool Creeper::CheckIfFileIsIgnored(std::string path)
+bool Creeper::CheckIfFileIsIgnored(const std::string& path) const
 {
     for (auto const& regex: whitelist)
         if (std::regex_search(path, regex))
@@ -65,172 +75,130 @@ bool Creeper::CheckIfFileIsIgnored(std::string path)
     return false;
 }
 
-#define BUFFER_SIZE 4096
-bool hashFile(XXH3_state_t* pState, void* pBuffer, const std::string& path, const char* cPath, XXH128_hash_t* pOut)
+XXH128_hash_t Creeper::HashFile(HasherState& state, const std::string& path)
 {
-    if(XXH3_128bits_reset(pState) == XXH_ERROR)
+    if(XXH3_128bits_reset(state.pState.get()) == XXH_ERROR)
+        throw std::runtime_error("Failed to reset hashing machine while processing file " + path);
+
+    XXH128_hash_t result;
+    try
     {
-        LOG(ERROR) << "Failed to reset hashing machine while processing file '" << path << "'.";
-        return false;
-    }
-    ssize_t size = 0;
-    int fd = -1;
-    if ((fd = open(cPath, O_RDONLY)) == -1)
-    {
-        LOG(ERROR) << "Failed to open file '" << path << "'. Error code: " << errno << ".";
-        return false;
-    }
-    while((size = read(fd, pBuffer, BUFFER_SIZE)) > 0)
-    {
-        if(XXH3_128bits_update(pState, pBuffer, size) == XXH_ERROR)
+        std::ifstream inputStream(path, std::ios::binary);
+        inputStream.read(state.buffer.data(), state.bufferSize);
+        auto len = inputStream? state.bufferSize: inputStream.gcount();
+        while(len > 0)
         {
-            LOG(ERROR) << "Failed to hash file '" << path << "'.";
-            close(fd);
-            return false;
+            if(XXH3_128bits_update(state.pState.get(), state.buffer.data(), len) == XXH_ERROR)
+                throw std::runtime_error("Unspecified hasher failure.");
+            inputStream.read(state.buffer.data(), state.bufferSize);
+            len = inputStream? state.bufferSize: inputStream.gcount();
         }
+        result = XXH3_128bits_digest(state.pState.get());
     }
-    auto e = errno;
-    close(fd);
-    if (size == -1)
+    catch(const std::exception& e)
     {
-        LOG(ERROR) << "Failed to read file '" << path << "'. ERRNO: " << e << ".";
-        return false;
+        throw std::runtime_error("Failed to hash file " + path + " Reason: " + e.what());
     }
-    *pOut = XXH3_128bits_digest(pState);
-    return true;
+
+    return result;
 }
 
-int Creeper::CheckIfDirExists(std::string& path)
+Creeper::Result Creeper::CheckIfPathExists(const std::string& path, struct stat& buf, const bool isDir)
 {
-    struct stat ret;
-    int rc = stat(path.c_str(), &ret);
+    int rc = stat(path.c_str(), &buf);
     int err = errno;
     if (rc == -1)
     {
         if (err == EACCES)
-            return CREEP_PERM;
+            return Result::Permissions;
         if (err == ENOENT || err == ENOTDIR)
-            return CREEP_EXIST;
-        LOG(ERROR) << "An error occured while checking if a directory exists. Error code: " << err;
-        return CREEP_ERROR;
+            return Result::NotExists;
+        LOG(ERROR) << "An error occured while checking if a path exists. Error code: " << err;
+        return Result::Error;
     }
-    if (!S_ISDIR(ret.st_mode))
-        return CREEP_NOTDIR;
-    if ((ret.st_mode & S_IRWXU) != S_IRWXU)
-        return CREEP_PERM;
+    if (isDir)
+    {
+        if (!S_ISDIR(buf.st_mode))
+            return Result::NotADir;
+        if ((buf.st_mode & S_IRWXU) != S_IRWXU)
+            return Result::Permissions;
+    }
+    else
+    {
+        if (!S_ISREG(buf.st_mode))
+            return Result::NotADir;
+        if ((buf.st_mode & (S_IREAD|S_IWRITE)) != (S_IREAD|S_IWRITE))
+            return Result::Permissions;
+    }
     
-    return CREEP_OK;
+    return Result::Ok;
 }
 
-void Creeper::PreCreepCleanup(std::string& rootPath, XXH3_state_t*& pState, void*& pBuffer)
-{
-    SearchForLists(rootPath);
-    pBuffer = malloc(BUFFER_SIZE);
-    pState = XXH3_createState();
-}
-
-#define RES_ERROR -1
-#define RES_CONTINUE 0
-#define RES_OK 2
-int Creeper::MakeNode(const std::filesystem::__cxx11::directory_entry& entry,
-                      std::string& rootPath, XXH3_state_t* pState, void* pBuffer, FileNode& node)
+bool Creeper::MakeNode(const std::filesystem::directory_entry& entry,
+                       const std::string& rootPath, HasherState& state, FileNode& node) const
 {
     if (!entry.is_regular_file())
-        return RES_CONTINUE;
+        return false;
 
     std::string path = entry.path().string();
     std::string filePath = path.substr(rootPath.length());
 
     if (CheckIfFileIsIgnored(filePath))
-        return RES_CONTINUE;
+        return false;
 
-    //stat the file
     struct stat buf;
-    auto cstr = path.c_str();
-    stat(cstr, &buf);
+    stat(path.c_str(), &buf);
 
-    // calculate hash
-    XXH128_hash_t hash;
-    if (!hashFile(pState, pBuffer, path, cstr, &hash))
-        return RES_ERROR;
+    XXH128_hash_t hash = HashFile(state, path);
 
-    // create a new file entry
     node = FileNode(filePath, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size, hash.high64, hash.low64);
-    return RES_OK;
+    return true;
 }
 
-int Creeper::MakeSingleNode(const std::string& path, FileNode& node)
+Creeper::Result Creeper::MakeSingleNode(const std::string& path, FileNode& node)
 {
-    auto cstr = path.c_str();
-    struct stat ret;
-    int rc = stat(cstr, &ret);
-    int err = errno;
-    if (rc == -1)
-    {
-        if (err == EACCES)
-            return CREEP_PERM;
-        if (err == ENOENT || err == ENOTDIR)
-            return CREEP_EXIST;
-        LOG(ERROR) << "An error occured while checking if a path exists. Error code: " << err;
-        return CREEP_ERROR;
-    }
-    if (!S_ISREG(ret.st_mode))
-        return CREEP_NOTDIR;
-    if ((ret.st_mode & (S_IREAD|S_IWRITE)) != (S_IREAD|S_IWRITE))
-        return CREEP_PERM;
+    Result result;
+    struct stat buf;
+    if ((result = CheckIfPathExists(path, buf, false)) != Result::Ok)
+        return result;
 
-    // calculate hash
-    auto pBuffer = malloc(BUFFER_SIZE);
-    auto pState = XXH3_createState();
+    HasherState state;
     XXH128_hash_t hash;
-    if (!hashFile(pState, pBuffer, path, cstr, &hash))
+    try
     {
-        free(pBuffer);
-        XXH3_freeState(pState);
-        return CREEP_ERROR;
+        hash = HashFile(state, path);
     }
-    free(pBuffer);
-    XXH3_freeState(pState);
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to hash file " + path + " Reason: " + e.what();
+        return Result::Error;
+    }
 
-    // create a new file entry
-    node = FileNode(path, ret.st_dev, ret.st_ino, ret.st_mtim.tv_sec, ret.st_size, hash.high64, hash.low64);
-    return CREEP_OK;
+    node = FileNode(path, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size, hash.high64, hash.low64);
+    return Result::Ok;
 }
 
-int Creeper::MakeSingleNodeLight(const std::string& path, FileNode& node)
+Creeper::Result Creeper::MakeSingleNodeLight(const std::string& path, FileNode& node)
 {
-    auto cstr = path.c_str();
-    struct stat ret;
-    int rc = stat(cstr, &ret);
-    int err = errno;
-    if (rc == -1)
-    {
-        if (err == EACCES)
-            return CREEP_PERM;
-        if (err == ENOENT || err == ENOTDIR)
-            return CREEP_EXIST;
-        LOG(ERROR) << "An error occured while checking if a path exists. Error code: " << err;
-        return CREEP_ERROR;
-    }
-    if (!S_ISREG(ret.st_mode))
-        return CREEP_NOTDIR;
-    if ((ret.st_mode & (S_IREAD|S_IWRITE)) != (S_IREAD|S_IWRITE))
-        return CREEP_PERM;
+    Result result;
+    struct stat buf;
+    if ((result = CheckIfPathExists(path, buf, false)) != Result::Ok)
+        return result;
 
-    // create a new file entry
-    node = FileNode(path, ret.st_dev, ret.st_ino, ret.st_mtim.tv_sec, ret.st_size, 0, 0);
+    node = FileNode(path, buf.st_dev, buf.st_ino, buf.st_mtim.tv_sec, buf.st_size, 0, 0);
     node.noHash = true;
-    return CREEP_OK;
+    return Result::Ok;
 }
 
-int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes)
+Creeper::Result Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes)
 {
-    XXH3_state_t* pState;
-    void* pBuffer;
-    int err;
-    if ((err = CheckIfDirExists(rootPath)) != CREEP_OK)
-        return err;
-    PreCreepCleanup(rootPath, pState, pBuffer);
+    Result result;
+    struct stat buf;
+    if ((result = CheckIfPathExists(rootPath, buf, true)) != Result::Ok)
+        return result;
+
+    SearchForLists(rootPath);
+    HasherState state;
 
     try
     {
@@ -238,18 +206,8 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
             rootPath, std::filesystem::directory_options::skip_permission_denied))
         {
             FileNode node;
-            switch(MakeNode(entry, rootPath, pState, pBuffer, node))
-            {
-            case RES_CONTINUE:
+            if (!MakeNode(entry, rootPath, state, node))
                 continue;
-            default:
-            case RES_ERROR:
-                free(pBuffer);
-                XXH3_freeState(pState);
-                return CREEP_ERROR;
-            case RES_OK:
-                break;
-            }
 
             fileNodes.push_front(node);
             fileNodesCount++;
@@ -257,22 +215,14 @@ int Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNo
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
-        XXH3_freeState(pState);
-        free(pBuffer);
-        return CREEP_ERROR;
+        LOG(ERROR) << "An error has occured while scanning for changes: " << e.what();
+        return Result::Error;
     }
-    XXH3_freeState(pState);
-    free(pBuffer);
 
-    return CREEP_OK;
+    return Result::Ok;
 }
-#undef BUFFER_SIZE
-#undef RES_ERROR
-#undef RES_CONTINUE
-#undef RES_OK
 
-size_t Creeper::GetResultsCount()
+size_t Creeper::GetResultsCount() const
 {
     return fileNodesCount;
 }

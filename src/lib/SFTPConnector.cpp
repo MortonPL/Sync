@@ -39,7 +39,7 @@ void SFTPConnector::EndSession()
     }
 }
 
-bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t size)
+bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t size) const
 {
     sftp_file pFile;
     int localFd;
@@ -105,7 +105,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t 
     return true;
 }
 
-bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, off_t size)
+bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, off_t size) const
 {
     sftp_file pFile;
     int localFd;
@@ -169,7 +169,7 @@ bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, of
     return true;
 }
 
-bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPath)
+bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPath) const
 {
     struct stat buf2;
     if (stat(localPath.c_str(), &buf2) == 0)
@@ -237,17 +237,17 @@ bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPa
     return true;
 }
 
-bool SFTPConnector::Delete(std::string path)
+bool SFTPConnector::Delete(std::string path) const
 {
     return sftp_unlink(sftp, path.c_str()) == SSH_OK;
 }
 
-sftp_attributes SFTPConnector::Stat(std::string path)
+sftp_attributes SFTPConnector::Stat(std::string path) const
 {
     return sftp_stat(sftp, path.c_str());
 }
 
-bool SFTPConnector::IsAbsent()
+bool SFTPConnector::IsAbsent() const
 {
     return sftp_get_error(sftp) == ENOENT;
 }

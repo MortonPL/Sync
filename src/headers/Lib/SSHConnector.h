@@ -44,7 +44,7 @@ public:
     int CallCLIHomeAndBlock(std::string pathToCheck, std::string* result);
     int CallCLIHome(std::string* result);
     int CallCLIUnblock(std::string path);
-    int CallCLICompress(std::string pathFrom, std::string pathTo, off_t* compressedSize);
+    int CallCLICompress(std::string pathFrom, std::string pathTo, off_t* compressedSize) const;
     int CallCLIDecompress(std::string pathFrom, std::string pathTo);
     int CallCLIServe();
     int EndCLIServe();
@@ -55,11 +55,11 @@ public:
     std::string GetError();
 
 private:
-    ssh_channel GetChannel();
-    void FreeChannel(ssh_channel pChannel);
+    ssh_channel GetChannel() const;
+    void FreeChannel(ssh_channel pChannel) const;
     ssh_channel CallCLI(std::string flag);
     ssh_channel CallCLI(std::string flag, std::string cmd);
-    ssh_channel CallCLI(std::string flag, std::string cmd, std::string cmd2);
+    ssh_channel CallCLI(std::string flag, std::string cmd, std::string cmd2) const;
 
     bool BeginSession(std::string host, std::string user);
     bool AuthenticateServer(serverHashCallbackType unknownCallback,
