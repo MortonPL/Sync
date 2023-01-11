@@ -1,15 +1,22 @@
-#pragma once
+#ifndef LIB_ANNOUNCER_H
+#define LIB_ANNOUNCER_H
 
 #include <string>
 
-#define SEV_INFO 0
-#define SEV_WARN 1
-#define SEV_ERROR 2
 namespace Announcer
 {
-    typedef void (*announcerType)(std::string prompt, int severity);
+    enum Severity: char
+    {
+        Info = 0,
+        Warn,
+        Error,
+    };
 
-    void NoAnnouncer(std::string prompt, int severity);
+    typedef void (*announcerType)(std::string prompt, Severity severity);
 
-    bool CreeperResult(int returnCode, announcerType announcer);
+    void NoAnnouncer(const std::string prompt, Severity severity);
+
+    bool CreeperResult(const int returnCode, announcerType announcer);
 }
+
+#endif

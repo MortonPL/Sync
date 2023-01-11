@@ -130,8 +130,7 @@ int GetHomePath()
 int BlockDir(std::string path)
 {
     LOG(INFO) << "Blocking directory " << path;
-    auto blocker = Blocker();
-    bool blocked = blocker.Block(path);
+    bool blocked = Blocker::Block(path);
     SocketListener::writeall(1, (char*)&blocked, sizeof(blocked));
     return 0;
 }
@@ -139,8 +138,7 @@ int BlockDir(std::string path)
 int UnblockDir(std::string path)
 {
     LOG(INFO) << "Unblocking directory " << path;
-    auto blocker = Blocker();
-    bool unblocked = blocker.Unblock(path);
+    bool unblocked = Blocker::Unblock(path);
     SocketListener::writeall(1, (char*)&unblocked, sizeof(unblocked));
     return 0;
 }

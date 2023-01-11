@@ -1,15 +1,16 @@
-#pragma once
+#ifndef LIB_BLOCKER_H
+#define LIB_BLOCKER_H
 
 #include <filesystem>
 
-class Blocker
+namespace Blocker
 {
-public:
-    Blocker();
-    ~Blocker();
+    bool Block(const std::string& pathToBlock);
+    bool Block(const std::string& pathToBlock, const std::string& pathToFile);
+    bool Unblock(const std::string& pathToUnblock);
+    bool Unblock(const std::string& pathToUnblock, const std::string& pathToFile);
 
-    bool Block(std::string pathToBlock);
-    bool Unblock(std::string pathToUnblock);
+    extern std::string SyncBlockedFile;
+}
 
-    static std::string SyncBlockedFile;
-};
+#endif

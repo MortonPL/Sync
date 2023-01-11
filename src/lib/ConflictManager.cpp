@@ -71,20 +71,20 @@ bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, Announcer::
     // launch it
     if (system(result.c_str()) != 0)
     {
-        announcer("Conflict rule " + rule.name + " failed while executing the following command:\n" + result, SEV_ERROR);
+        announcer("Conflict rule " + rule.name + " failed while executing the following command:\n" + result, Announcer::Severity::Error);
         return false;
     }
 
     // check results
     if (!std::filesystem::exists(tempPathLocal) || !std::filesystem::is_regular_file(tempPathLocal))
     {
-        announcer("The command was executed, but the expected temporary file:\n" + tempPathLocal + "\ndoesn't exist!" , SEV_ERROR);
+        announcer("The command was executed, but the expected temporary file:\n" + tempPathLocal + "\ndoesn't exist!" , Announcer::Severity::Error);
         return false;
     }
 
     if (!std::filesystem::exists(tempPathRemote) || !std::filesystem::is_regular_file(tempPathLocal))
     {
-        announcer("The command was executed, but the expected temporary file:\n" + tempPathRemote + "\ndoesn't exist!" , SEV_ERROR);
+        announcer("The command was executed, but the expected temporary file:\n" + tempPathRemote + "\ndoesn't exist!" , Announcer::Severity::Error);
         return false;
     }
 
@@ -94,7 +94,7 @@ bool ConflictManager::Resolve(PairedNode* pNode, ConflictRule& rule, Announcer::
     Creeper::MakeSingleNode(tempPathRemote, remote);
     if (!local.IsEqualHash(remote))
     {
-        announcer("The command was executed, but temporary files:\n" + tempPathLocal + "\nand\n" + tempPathRemote + "\nhave different content!" , SEV_ERROR);
+        announcer("The command was executed, but temporary files:\n" + tempPathLocal + "\nand\n" + tempPathRemote + "\nhave different content!" , Announcer::Severity::Error);
         return false;
     }
 

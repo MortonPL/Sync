@@ -5,17 +5,17 @@
 
 namespace CLIAnnouncer
 {
-    void Log(std::string prompt, int severity=SEV_INFO)
+    void Log(std::string prompt, Announcer::Severity severity=Announcer::Severity::Info)
     {
         switch (severity)
         {
-        case SEV_INFO:
+        case Announcer::Severity::Info:
             LOG(INFO) << prompt;
             break;
-        case SEV_WARN:
+        case Announcer::Severity::Warn:
             LOG(WARNING) << prompt;
             break;
-        case SEV_ERROR:
+        case Announcer::Severity::Error:
             LOG(ERROR) << prompt;
             break;
         default:

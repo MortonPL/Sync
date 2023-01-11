@@ -282,13 +282,13 @@ void MainFrame::ResolveConflict()
 
     if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
     {
-        GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to connect to the remote.", Announcer::Severity::Error);
         return;
     }
     auto sftp = SFTPConnector(&ssh);
     if (!sftp.Connect())
     {
-        GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to connect to the remote.", Announcer::Severity::Error);
         return;
     }
 
@@ -299,7 +299,7 @@ void MainFrame::ResolveConflict()
     switch (ssh.CallCLIHome(&remoteHome))
     {
     default:
-        GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", Announcer::Severity::Error);
         std::filesystem::current_path(previousCWD);
         return;
     case CALLCLI_OK:
@@ -317,14 +317,14 @@ void MainFrame::ResolveConflict()
                 wxYield();
                 if (!ConflictManager::Fetch(pPair, conflictRules[ruleId], cfg.pathB, tempPath, ssh, sftp))
                 {
-                    GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", SEV_ERROR);
+                    GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", Announcer::Severity::Error);
                     continue;
                 }
             }
             wxYield();
             if (!ConflictManager::Resolve(pPair, conflictRules[ruleId], GUIAnnouncer::LogPopup))
             {
-                GUIAnnouncer::LogPopup("Failed to resolve conflict!", SEV_ERROR);
+                GUIAnnouncer::LogPopup("Failed to resolve conflict!", Announcer::Severity::Error);
                 continue;
             }
 
@@ -342,14 +342,14 @@ void MainFrame::ResolveConflict()
                 wxYield();
                 if (!ConflictManager::Fetch(pPair, rule, cfg.pathB, tempPath, ssh, sftp))
                 {
-                    GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", SEV_ERROR);
+                    GUIAnnouncer::LogPopup("Failed to fetch conflicting files!", Announcer::Severity::Error);
                     continue;
                 }
             }
             wxYield();
             if (!ConflictManager::Resolve(pPair, rule, GUIAnnouncer::LogPopup))
             {
-                GUIAnnouncer::LogPopup("Failed to resolve conflict!", SEV_ERROR);
+                GUIAnnouncer::LogPopup("Failed to resolve conflict!", Announcer::Severity::Error);
                 continue;
             }
 
@@ -400,7 +400,7 @@ bool MainFrame::DoScan()
     }
     catch(const std::exception& e)
     {
-        GUIAnnouncer::LogPopup("Failed to read file history.", SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to read file history.", Announcer::Severity::Error);
         return false;
     }
     LOG(INFO) << "Read file history.";
@@ -409,7 +409,7 @@ bool MainFrame::DoScan()
     int rc;
     if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
     {
-        GUIAnnouncer::LogPopup("Failed to receive file info from the remote host. Error code: " + rc, SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to receive file info from the remote host. Error code: " + rc, Announcer::Severity::Error);
         return false;
     }
     LOG(INFO) << "Received remote file nodes.";
@@ -426,34 +426,33 @@ bool MainFrame::DoScan()
 bool MainFrame::DoSync()
 {
     auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
-    auto blocker = Blocker();
     auto cfg = Global::GetCurrentConfig();
     try
     {
         std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
         LOG(INFO) << "Blocking directory " << cfg.pathA;
-        if (!blocker.Block(cfg.pathA))
+        if (!Blocker::Block(cfg.pathA))
         {
             GUIAnnouncer::LogPopup(
                 "Failed to sync files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
                 "directory is already being synchronized by another instance, or if the last \n"
                 "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
-                "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", SEV_ERROR);
+                "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", Announcer::Severity::Error);
             return false;
         }
 
         auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
         if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
         {
-            blocker.Unblock(cfg.pathA);
-            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            Blocker::Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", Announcer::Severity::Error);
             return false;
         }
         auto sftp = SFTPConnector(&ssh);
         if (!sftp.Connect())
         {
-            blocker.Unblock(cfg.pathA);
-            GUIAnnouncer::LogPopup("Failed to connect to the remote.", SEV_ERROR);
+            Blocker::Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Failed to connect to the remote.", Announcer::Severity::Error);
             return false;
         }
 
@@ -461,13 +460,13 @@ bool MainFrame::DoSync()
         switch (ssh.CallCLIHomeAndBlock(cfg.pathB, &remoteHome))
         {
         case CALLCLI_BLOCKED:
-            GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", SEV_ERROR);
-            blocker.Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", Announcer::Severity::Error);
+            Blocker::Unblock(cfg.pathA);
             std::filesystem::current_path(previousCWD);
             return false;
         default:
-            GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", SEV_ERROR);
-            blocker.Unblock(cfg.pathA);
+            GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", Announcer::Severity::Error);
+            Blocker::Unblock(cfg.pathA);
             std::filesystem::current_path(previousCWD);
             return false;
         case CALLCLI_OK:
@@ -509,16 +508,16 @@ bool MainFrame::DoSync()
     }
     catch(const std::exception& e)
     {
-        GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), SEV_ERROR);
+        GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), Announcer::Severity::Error);
         ssh.CallCLIUnblock(cfg.pathB);
-        blocker.Unblock(cfg.pathA);
+        Blocker::Unblock(cfg.pathA);
         std::filesystem::current_path(previousCWD);
         return false;
     }
 
     LOG(INFO) << "Unblock myself and remote...";
     ssh.CallCLIUnblock(cfg.pathB);
-    blocker.Unblock(cfg.pathA);
+    Blocker::Unblock(cfg.pathA);
     std::filesystem::current_path(previousCWD);
 
     return true;

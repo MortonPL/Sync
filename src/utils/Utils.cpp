@@ -10,7 +10,7 @@ void Utils::FindHomePath()
 {
     if (homePath.length() <= 0)
     {
-        char*  home = getenv("HOME");
+        char* home = getenv("HOME");
         if (home == NULL)
             home = getpwuid(getuid())->pw_dir;
         homePath = home;
@@ -27,7 +27,7 @@ std::string Utils::GetRootPath()
     return Utils::GetHomePath() + "/.sync/";
 }
 
-std::string Utils::GetRootPath(std::string home)
+std::string Utils::GetRootPath(const std::string& home)
 {
     return home + "/.sync/";
 }
@@ -52,7 +52,7 @@ std::string Utils::GetTempPath()
     return Utils::GetRootPath() + "tmp/";
 }
 
-std::string Utils::GetTempPath(std::string home)
+std::string Utils::GetTempPath(const std::string& home)
 {
     return Utils::GetRootPath(home) + "tmp/";
 }
@@ -62,6 +62,7 @@ std::string Utils::CorrectDirPath(const std::string& path)
     return path.back() != '/' ? path + '/' : path;
 }
 
+// TODO do seomthing about it
 // See: https://stackoverflow.com/a/29752943
 void Utils::Replace(std::string& original, const std::string& from, const std::string& to)
 {
@@ -102,7 +103,7 @@ std::string Utils::UUIDToDBPath(const uuid_t& uuid)
     return std::string(uuidbuf) + ".db3";
 }
 
-std::string Utils::QuickHash(std::string value)
+std::string Utils::QuickHash(const std::string& value)
 {
     return fmt::format("{:x}", XXH64(value.c_str(), value.size(), 0));
 }

@@ -1,5 +1,6 @@
 #include "Lib/Blocker.h"
 
+#include <fstream>
 #include <filesystem>
 #include <fcntl.h>
 #include <stdio.h>
@@ -7,99 +8,95 @@
 
 std::string Blocker::SyncBlockedFile = ".SyncBLOCKED";
 
-Blocker::Blocker()
+bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFile)
 {
-}
-
-Blocker::~Blocker()
-{
-}
-
-bool Blocker::Block(std::string pathToBlock)
-{
-    auto canonicalPath = std::filesystem::canonical(pathToBlock).string();
-    FILE* fd;
-    if ((fd = fopen((Utils::GetRootPath() + Blocker::SyncBlockedFile).c_str(), "a+")) == NULL)
-        return false;
-    
-    char* line = NULL;
-    size_t len = 0;
-    bool matches;
-
-    fseek(fd, 0, SEEK_SET);
-    while (getline(&line, &len, fd) != -1)
+    std::string canonicalPath;
+    try
     {
-        if (len >= canonicalPath.size())
-        {
-            matches = true;
-            for (size_t i = 0; i < canonicalPath.size(); i++)
-            {
-                if (line[i] != canonicalPath[i])
-                {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches)
-            {
-                fclose(fd);
-                return false;
-            }
-        }
-        else
-        {
-            matches = true;
-            for (size_t i = 0; i < len; i++)
-            {
-                if (line[i] != canonicalPath[i])
-                {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches)
-            {
-                fclose(fd);
-                return false;
-            }
-        }
+        canonicalPath = std::filesystem::canonical(pathToBlock).string();
+    }
+    catch(const std::exception& e)
+    {
+        return false;
     }
 
-    fwrite(canonicalPath.c_str(), sizeof(char), canonicalPath.size(), fd);
-    fclose(fd);
+    std::ifstream blockFileIStream(pathToFile);
+    bool matched = false;
+    bool empty = false;
+    
+    if (blockFileIStream.peek() == std::ifstream::traits_type::eof())
+        empty = true;
+
+    while (!empty && !matched && !blockFileIStream.eof())
+    {
+        std::string line;
+        blockFileIStream >> line;
+
+        if (line.size() == 0)
+            continue;
+
+        if (canonicalPath.size() > line.size())
+            matched = canonicalPath.substr(0, line.size()) == line;
+        else
+            matched = line.substr(0, canonicalPath.size()) == canonicalPath;
+    }
+
+    if (matched)
+        return false;
+    
+    std::ofstream blockFileOStream(pathToFile, std::ios_base::openmode::_S_app);
+    blockFileOStream << canonicalPath << std::endl;
+
     return true;
 }
 
-bool Blocker::Unblock(std::string pathToUnblock)
+bool Blocker::Block(const std::string& pathToBlock)
 {
-    auto canonicalPath = std::filesystem::canonical(pathToUnblock).string();
-    FILE* fd;
-    FILE* fd2;
-    if ((fd = fopen((Utils::GetRootPath() + Blocker::SyncBlockedFile).c_str(), "r+")) == NULL)
-        return false;
-    if ((fd2 = fopen((Utils::GetRootPath() + "temp").c_str(), "w+")) == NULL)
+    return Blocker::Block(pathToBlock, Utils::GetRootPath() + Blocker::SyncBlockedFile);
+}
+
+bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathToFile)
+{
+    std::string canonicalPath;
+    try
     {
-        fclose(fd);
+        canonicalPath = std::filesystem::canonical(pathToUnblock).string();
+    }
+    catch(const std::exception& e)
+    {
         return false;
     }
+
+    std::string tempFileName = pathToFile + ".tmp";
+    std::ifstream blockFileIStream(pathToFile);
+    std::ofstream blockFileOStream(tempFileName, std::ios_base::openmode::_S_app);
+    bool matched = false;
     
-    char* line = NULL;
-    size_t len = 0;
+    if (blockFileIStream.peek() == std::ifstream::traits_type::eof())
+        return true;
 
-    while (getline(&line, &len, fd) != -1)
+    while (!matched && !blockFileIStream.eof())
     {
-        if (line == canonicalPath)
-        {
-            // ignore
-        }
+        std::string line;
+        blockFileIStream >> line;
+
+        if (line.size() == 0)
+            continue;
+
+        if (canonicalPath.size() > line.size())
+            matched = canonicalPath.substr(0, line.size()) == line;
         else
-        {
-            fwrite(line, sizeof(char), strlen(line), fd2);
-        }
+            matched = line.substr(0, canonicalPath.size()) == canonicalPath;
+        
+        if (!matched)
+            blockFileOStream << line << std::endl;
     }
 
-    fclose(fd);
-    fclose(fd2);
-    rename((Utils::GetRootPath() + "temp").c_str(), (Utils::GetRootPath() + Blocker::SyncBlockedFile).c_str());
+    std::filesystem::rename(tempFileName, pathToFile);
     return true;
+}
+
+bool Blocker::Unblock(const std::string& pathToUnblock)
+{
+    return Blocker::Unblock(pathToUnblock, Utils::GetRootPath() + Blocker::SyncBlockedFile);
 }

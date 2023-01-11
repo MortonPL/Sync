@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WX_H
+#define WX_H
 
 #include <wx/wxprec.h>
 
@@ -9,3 +10,5 @@
 #include <wx/xrc/xmlres.h>
 #include <wx/filepicker.h>
 #include <wx/listctrl.h>
+
+#endif
