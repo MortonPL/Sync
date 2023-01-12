@@ -2,23 +2,31 @@
 # Init variables
 CONFIGURE=0;    # Configure CMake
 INSTALL=0;      # Install build
-REMOTE=0        # Copy to remote
-REMOTE_USER=""; # Remote user
-TEST=0          # Make tests
+OTHER_DIR=0     # Copy elsewhere after build
+OTHER_USER="";  # Other user
+TEST=0          # Run tests
 UNINSTALL=0;    # Uninstall build
 BUILD_TYPE="";  # CMake build type
 DIR="";         # Build output directory
+BUILD_NOT_ALL=0;
+BUILD_GUI="";
+BUILD_CLI="";
+BUILD_TEST="";
 
 # Example usage: ./action.sh debug -i
 # Show user help
 print_help() {
-    echo "Usage: action.sh build|debug [OPTIONS]...";
+    echo "Usage: action.sh build|debug [TARGETS] [OPTIONS]...";
     echo "All options (except help) require a valid target (build|debug)!"
+    echo "Targets:";
+    echo "\tgui";
+    echo "\tcli";
+    echo "\ttest";
     echo "Options:";
     echo "\t-c, --configure                 \t Force (re)generate CMake configuration files";
     echo "\t-h, --help                      \t Display this message";
     echo "\t-i, --install                   \t Install program (to ~/.sync) after build";
-    echo "\t-t, --tests                     \t Build and run tests";
+    echo "\t-t, --tests                     \t Run tests after build";
     echo "\t-u, --uninstall                 \t Uninstall program (from ~/.sync)";
 }
 
@@ -39,8 +47,8 @@ parse_args() {
         "-i" | "--install")
             INSTALL=1;
             ;;
-        "-r" | "--remote")
-            REMOTE=1;
+        "-o" | "--other")
+            OTHER_DIR=1;
             parse_mode="r"
             ;;
         "-t" | "--tests")
@@ -57,10 +65,22 @@ parse_args() {
             BUILD_TYPE="DEBUG";
             DIR="debug";
             ;;
+        "gui")
+            BUILD_GUI="syncgui";
+            BUILD_NOT_ALL=1;
+            ;;
+        "cli")
+            BUILD_CLI="synccli";
+            BUILD_NOT_ALL=1;
+            ;;
+        "test")
+            BUILD_TEST="synctest";
+            BUILD_NOT_ALL=1;
+            ;;
         *)
             case "$parse_mode" in
             "r")
-                REMOTE_USER="${!arg_num}";
+                OTHER_USER="${!arg_num}";
                 parse_mode="";
                 ;;
             *)
@@ -108,7 +128,11 @@ do_config() {
 
 do_build() {
     echo "Building...";
-    cmake --build .;
+    if [ $BUILD_NOT_ALL -eq 1 ]; then
+        cmake --build . --target "$BUILD_GUI" "$BUILD_CLI" "$BUILD_TEST";
+    else
+        cmake --build .;
+    fi
     rc=$?;
     if [ $rc -eq 0 ]; then
         echo "Build finished.";
@@ -129,15 +153,15 @@ do_install() {
     fi
 }
 
-do_remote() {
-    if [ $REMOTE -eq 1 ]; then
-        echo "Copying files to remote: /home/$REMOTE_USER/.sync";
-        sudo mkdir -p /home/$REMOTE_USER/.sync/bin;         # No clue why, but the normal way
-        sudo cp -r -t /home/$REMOTE_USER/.sync ~/.sync/bin; # doesn't work for bin
-        sudo cp -r ~/.sync/lib /home/$REMOTE_USER/.sync;
-        sudo cp -r ~/.sync/include /home/$REMOTE_USER/.sync;
-        sudo cp -r ~/.sync/res /home/$REMOTE_USER/.sync;
-        sudo chown -R $REMOTE_USER:$REMOTE_USER /home/$REMOTE_USER/.sync
+do_other_dir() {
+    if [ $OTHER_DIR -eq 1 ]; then
+        echo "Copying files to OTHER_DIR: /home/$OTHER_USER/.sync";
+        sudo mkdir -p /home/$OTHER_USER/.sync/bin;         # No clue why, but the normal way
+        sudo cp -r -t /home/$OTHER_USER/.sync ~/.sync/bin; # doesn't work for bin
+        sudo cp -r ~/.sync/lib /home/$OTHER_USER/.sync;
+        sudo cp -r ~/.sync/include /home/$OTHER_USER/.sync;
+        sudo cp -r ~/.sync/res /home/$OTHER_USER/.sync;
+        sudo chown -R $OTHER_USER:$OTHER_USER /home/$OTHER_USER/.sync
         echo "Copy complete!";
     fi
 }
@@ -146,7 +170,7 @@ do_tests() {
     if [ $TEST -eq 1 ]; then
         echo "Running tests...";
         cd test;
-        ./sync_test;
+        ./synctest;
         cd ..;
         rc=$?;
         if [ $rc -eq 0 ]; then
@@ -181,6 +205,6 @@ do_tests;
 # If success, install
 do_install;
 # Copy over to another location
-do_remote;
+do_other_dir;
 cd ..;
 # Done!

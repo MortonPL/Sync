@@ -18,8 +18,8 @@ set(CMAKE_INSTALL_PREFIX ${my_path})
 # set binary names
 set(GUI_NAME ${PROJECT_NAME}gui)
 set(CLI_NAME ${PROJECT_NAME}cli)
-set(LIB_NAME ${PROJECT_NAME}_lib)
-set(TEST_NAME ${PROJECT_NAME}_test)
+set(LIB_NAME ${PROJECT_NAME}lib)
+set(TEST_NAME ${PROJECT_NAME}test)
 
 add_subdirectory(src)
 add_subdirectory(test)
