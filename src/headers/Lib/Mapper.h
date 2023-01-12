@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIB_MAPPER_H
+#define LIB_MAPPER_H
 #include <string>
 #include <map>
 #include <unordered_map>
@@ -14,9 +15,9 @@ public:
     ~Mapper();
 
     void Clear();
-    PairedNode* FindMapPath(std::string& path);
-    PairedNode* FindMapLocalInode(FileNode::devinode inode);
-    PairedNode* FindMapRemoteInode(FileNode::devinode inode);
+    PairedNode* FindMapPath(std::string& path) const;
+    PairedNode* FindMapLocalInode(FileNode::devinode inode) const;
+    PairedNode* FindMapRemoteInode(FileNode::devinode inode) const;
     void EmplaceMapPath(const std::string& path, PairedNode& node);
     void EmplaceMapLocalInode(const FileNode::devinode inode, PairedNode& node);
     void EmplaceMapRemoteInode(const FileNode::devinode inode, PairedNode& node);
@@ -25,3 +26,5 @@ private:
     umap mapLocalInode;
     umap mapRemoteInode;
 };
+
+#endif

@@ -43,7 +43,7 @@ bool General::InitEverything(std::string logName)
         return false;
     if (!DBConnector::EnsureCreatedMain())
     {
-        std::cout << "Failed to ensure that the application database exists! Exiting.\n";
+        std::cerr << "Failed to ensure that the application database exists! Exiting.\n";
         LOG(ERROR) << "Failed to ensure that the application database exists! Exiting.";
         return false;
     }

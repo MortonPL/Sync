@@ -13,7 +13,6 @@ set(SRC_LIB_FILES
     Global.cpp
     FileSystem.cpp
     General.cpp
-    SocketListener.cpp
     Blocker.cpp
     Mapper.cpp
     Creeper.cpp

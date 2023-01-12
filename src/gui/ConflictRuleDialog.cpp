@@ -48,7 +48,7 @@ ConflictRuleDialog::ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindo
 
 void ConflictRuleDialog::PopulateRuleList()
 {
-    DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid));
+    DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid));
     try
     {
         pRules->clear();
@@ -135,7 +135,7 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
     {
         try
         {
-            DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
+            DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
             if (db.SwapConflictRule((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]))
             {
                 ctrl.listConflictRules->SetString(selectedRuleIdx - 1, (*pRules)[selectedRuleIdx].name);
@@ -166,7 +166,7 @@ void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
     {
         try
         {
-            DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
+            DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
             if (db.SwapConflictRule((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]))
             {
                 ctrl.listConflictRules->SetString(selectedRuleIdx + 1, (*pRules)[selectedRuleIdx].name);
@@ -195,7 +195,7 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
     event.GetId(); //unused
     try
     {
-        DBConnector db(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
         if (db.DeleteConflictRule((*pRules)[selectedRuleIdx].id))
         {
             GenericPopup("Conflict rules removed successfully.").ShowModal();

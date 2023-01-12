@@ -275,7 +275,7 @@ void MainFrame::OnAction(PairedNode::Action action)
 
 void MainFrame::ResolveConflict()
 {
-    auto cfg = Global::GetCurrentConfig();
+    auto cfg = Global::CurrentConfig();
     int ruleId;
     if ((ruleId = ConflictRuleDialog(conflictRules).ShowModal()) == CONFLICT_CANCEL)
         return;
@@ -369,7 +369,7 @@ bool MainFrame::DoScan()
     std::forward_list<FileNode> remoteNodes;
 
     //get current config
-    auto cfg = Global::GetCurrentConfig();
+    auto cfg = Global::CurrentConfig();
     LOG(INFO) << "Loaded config " << cfg.name << ".";
 
     //establish session
@@ -397,7 +397,7 @@ bool MainFrame::DoScan()
     // read history
     try
     {
-        auto db = DBConnector(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
         db.SelectAllFileNodes(historyNodes);
     }
     catch(const std::exception& e)
@@ -428,7 +428,7 @@ bool MainFrame::DoScan()
 bool MainFrame::DoSync()
 {
     auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
-    auto cfg = Global::GetCurrentConfig();
+    auto cfg = Global::CurrentConfig();
     try
     {
         std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
@@ -562,7 +562,7 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     pairedNodes.clear();
     selectedItems.clear();
 
-    if (!DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)))
+    if (!DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::CurrentConfig().uuid)))
     {
         GenericPopup("Couldn't read configuration file history.\nThis can happen if the configuration is scanned "
                      "for the first time\nor if it's corrupted/missing. All files will be marked as new or conflicting.").ShowModal();

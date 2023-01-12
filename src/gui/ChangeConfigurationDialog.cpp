@@ -157,7 +157,7 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
 void ChangeConfigurationDialog::OnOK(wxCommandEvent &event)
 {
     event.GetId(); //unused
-    Global::SetCurrentConfig(configs[selectedConfigIdx]);
+    Global::CurrentConfig(configs[selectedConfigIdx]);
     EndModal(wxID_OK);
 }
 

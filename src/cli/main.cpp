@@ -6,13 +6,42 @@
 #include "Lib/Creeper.h"
 #include "Lib/Blocker.h"
 #include "Lib/SSHConnector.h"
-#include "Lib/SocketListener.h"
 #include "Lib/Announcer.h"
 #include "CLI/Global.h"
 #include "CLI/CLIAnnouncer.h"
 #include "Utils.h"
 
 INITIALIZE_EASYLOGGINGPP
+
+int readall(int fd, char* buffer, unsigned buffer_size)
+{
+    int bytes_left = buffer_size;
+    int bytes_read = 0;
+    while (bytes_left > 0)
+    {
+        bytes_read = read(fd, buffer + buffer_size - bytes_left, bytes_left);
+        if (bytes_read == 0)
+            break;
+        if (bytes_read == -1)
+            return -1;
+        bytes_left -= bytes_read;
+    }
+    return buffer_size - bytes_left;
+}
+
+bool writeall(int fd, const char *buffer, unsigned buffer_size)
+{
+    int bytes_left = buffer_size;
+    int bytes_written = 0;
+    while (bytes_left > 0)
+    {
+        bytes_written = write(fd, buffer + buffer_size - bytes_left, bytes_left);
+        bytes_left -= bytes_written;
+        if (bytes_written <= 0)
+            return false;
+    }
+    return true;
+}
 
 void ParseArgs(int argc, char* argv[])
 {
@@ -82,7 +111,7 @@ void StatPath(std::string path)
     std::cout.flush();
     unsigned char* buf2 = new unsigned char[FileNode::MiniStatBinarySize];
     FileNode::SerializeStat(&buf, buf2);
-    SocketListener::writeall(1, (char*)&buf2, FileNode::MiniStatBinarySize);
+    writeall(1, (char*)&buf2, FileNode::MiniStatBinarySize);
     delete[] buf2;
 }
 
@@ -104,11 +133,11 @@ void CreepDir(std::string path)
     unsigned char* buf = new unsigned char[FileNode::MaxBinarySize];
     std::size_t nnodes = creeper.GetResultsCount();
     LOG(INFO) << "Writing " << nnodes << " nodes.";
-    SocketListener::writeall(1, (char*)&nnodes, sizeof(nnodes));
+    writeall(1, (char*)&nnodes, sizeof(nnodes));
     for (auto& node: nodes)
     {
         unsigned short size = node.Serialize(buf);
-        SocketListener::writeall(1, (char*)buf, size);
+        writeall(1, (char*)buf, size);
     }
     LOG(INFO) << "Done.";
     delete[] buf;
@@ -119,7 +148,7 @@ int GetHomePath()
     auto home = Utils::GetHomePath();
     unsigned short len = home.length();
 
-    SocketListener::writeall(1, (char*)&len, sizeof(len));
+    writeall(1, (char*)&len, sizeof(len));
 
     std::cout << home;
     std::cout.flush();
@@ -131,7 +160,7 @@ int BlockDir(std::string path)
 {
     LOG(INFO) << "Blocking directory " << path;
     bool blocked = Blocker::Block(path);
-    SocketListener::writeall(1, (char*)&blocked, sizeof(blocked));
+    writeall(1, (char*)&blocked, sizeof(blocked));
     return 0;
 }
 
@@ -139,7 +168,7 @@ int UnblockDir(std::string path)
 {
     LOG(INFO) << "Unblocking directory " << path;
     bool unblocked = Blocker::Unblock(path);
-    SocketListener::writeall(1, (char*)&unblocked, sizeof(unblocked));
+    writeall(1, (char*)&unblocked, sizeof(unblocked));
     return 0;
 }
 
@@ -231,7 +260,7 @@ int main(int argc, char* argv[])
         off_t compressedSize = 0;
         std::cout << (Compression::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize)? 0: 1);
         std::cout.flush();
-        SocketListener::writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+        writeall(1, (char*)&compressedSize, sizeof(compressedSize));
         return 0;
     }
 

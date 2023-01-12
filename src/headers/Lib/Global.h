@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIB_GLOBAL_H
+#define LIB_GLOBAL_H
 #include <uuid/uuid.h>
 
 #include "Domain/Configuration.h"
@@ -9,10 +10,12 @@ class Global
 {
 public:
     static bool IsLoadedConfig();
-    static const Configuration& GetCurrentConfig();
-    static void SetCurrentConfig(const Configuration& config);
+    static const Configuration& CurrentConfig();
+    static void CurrentConfig(const Configuration& config);
 
 private:
     static Configuration config;
     static bool hasLoadedConfig;
 };
+
+#endif

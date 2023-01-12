@@ -8,12 +8,12 @@ bool Global::IsLoadedConfig()
     return Global::hasLoadedConfig;
 }
 
-const Configuration& Global::GetCurrentConfig()
+const Configuration& Global::CurrentConfig()
 {
     return Global::config;
 }
 
-void Global::SetCurrentConfig(const Configuration& config)
+void Global::CurrentConfig(const Configuration& config)
 {
     Global::hasLoadedConfig = true;
     Global::config = config;
