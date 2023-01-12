@@ -543,12 +543,8 @@ bool SSHConnector::AuthenticateUser(passProviderType passProvider,
         }
         if (authMethods & SSH_AUTH_METHOD_GSSAPI_MIC)
         {
-//#ifdef WITH_GSSAPI
-            return AuthenticateGSSAPI();
-//#else
-//            authStatus = AUTH_STATUS_UNHANDLED;
-//            return false;
-//#endif
+            authStatus = AUTH_STATUS_UNHANDLED;
+            return false;
         }
         if (authMethods & SSH_AUTH_METHOD_HOSTBASED)
         {
@@ -769,7 +765,6 @@ bool SSHConnector::AuthenticateUserInteractive(interactiveProviderType provider,
     }
     return true;
 }
-
 
 bool SSHConnector::AuthenticateGSSAPI()
 {

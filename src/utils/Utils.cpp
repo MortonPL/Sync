@@ -62,7 +62,7 @@ std::string Utils::CorrectDirPath(const std::string& path)
     return path.back() != '/' ? path + '/' : path;
 }
 
-// TODO do seomthing about it
+//TODO: Replace or explain
 // See: https://stackoverflow.com/a/29752943
 void Utils::Replace(std::string& original, const std::string& from, const std::string& to)
 {
