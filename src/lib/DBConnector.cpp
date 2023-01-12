@@ -3,8 +3,6 @@
 #include <uuid/uuid.h>
 #include "Utils.h"
 
-#define MAIN_DB_FILE "sync.db3"
-
 DBConnector::DBConnector(std::string path, int mode): db(Utils::GetDatabasePath() + path, mode)
 {
 }
@@ -15,15 +13,15 @@ DBConnector::~DBConnector()
 
 std::string DBConnector::GetMainFileName()
 {
-    return MAIN_DB_FILE;
+    return "sync.db3";
 }
 
 // run this method ONCE at the start of the program!
-int DBConnector::EnsureCreatedMain()
+bool DBConnector::EnsureCreatedMain()
 {
     try
     {
-        SQLite::Database db(Utils::GetDatabasePath() + MAIN_DB_FILE, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);
+        SQLite::Database db(Utils::GetDatabasePath() + GetMainFileName(), SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE);
 
         // create tables
         db.exec(
@@ -41,13 +39,13 @@ int DBConnector::EnsureCreatedMain()
     catch(const std::exception& e)
     {
         LOG(ERROR) << e.what();
-        return DB_FAIL;
+        return false;
     };
 
-    return DB_GOOD;
+    return true;
 }
 
-int DBConnector::EnsureCreatedHistory(std::string path)
+bool DBConnector::EnsureCreatedHistory(std::string path)
 {
     try
     {
@@ -81,25 +79,19 @@ int DBConnector::EnsureCreatedHistory(std::string path)
         );
 
         SQLite::Statement query(db, "SELECT * from nodes");
-        if (query.executeStep())
-        {
-            return DB_GOOD;
-        }
-        else
-        {
-            return query.hasRow()? DB_GOOD: DB_EMPTY;
-        }
+        return query.executeStep()? true: query.hasRow();
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
-        return DB_FAIL;
+        LOG(ERROR) << "Failed to open history database " << path << " Reason: " << e.what();
+        return false;
     };
 }
 
 bool DBConnector::InsertConfig(Configuration config)
 {
-    char uuidstr[36+1];
+    const int uuidStringSize = 36;
+    char uuidstr[uuidStringSize+1];
     uuid_unparse(config.uuid, uuidstr);
     try
     {
@@ -111,7 +103,7 @@ bool DBConnector::InsertConfig(Configuration config)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to insert config. Reason: " << e.what();
         return false;
     }
 
@@ -131,7 +123,7 @@ bool DBConnector::UpdateConfig(Configuration config)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to update config. Reason: " << e.what();
         return false;
     }
 
@@ -146,22 +138,27 @@ bool DBConnector::DeleteConfig(int id)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to delete config. Reason: " << e.what();
         return false;
     }
 
     return true;
 }
 
-std::vector<Configuration> DBConnector::SelectAllConfigs()
+void DBConnector::SelectAllConfigs(std::vector<Configuration>& configs)
 {
-    std::vector<Configuration> configs;
-    SQLite::Statement query(this->db, "SELECT * from configs");
-    while(query.executeStep())
+    try
     {
-        configs.push_back(query.getColumns<Configuration, 8>());
+        SQLite::Statement query(this->db, "SELECT * from configs");
+        while(query.executeStep())
+        {
+            configs.push_back(query.getColumns<Configuration, 8>());
+        }
     }
-    return configs;
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to select configs. Reason: " << e.what();
+    }
 }
 
 bool DBConnector::InsertFileNode(const HistoryFileNode& file)
@@ -179,7 +176,7 @@ bool DBConnector::InsertFileNode(const HistoryFileNode& file)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to insert file node. Reason: " << e.what();
         return false;
     }
 
@@ -190,33 +187,18 @@ bool DBConnector::UpdateFileNode(const HistoryFileNode& file)
 {
     try
     {
-        /*if (file.status == FileNode::Status::MovedClean || file.status == FileNode::Status::MovedDirty) // is this necessary?
-        {
-            SQLite::Statement query(db, fmt::format(
-                "UPDATE nodes SET "
-                "path = \"{}\", mtime = {}, size = {}, "
-                "hash_high = ?, hash_low = ?"
-                "WHERE dev = {} AND inode = {}",
-                file.path, file.mtime, file.size, file.dev, file.inode));
-            query.bind(1, &file.hashHigh, 8);
-            query.bind(2, &file.hashLow, 8);
-            query.exec();
-        }
-        else*/
-        {
-            SQLite::Statement query(db, fmt::format(
-                "REPLACE INTO nodes "
-                "(path, dev, inode, r_dev, r_inode, mtime, r_mtime, size, hash_high, hash_low) "
-                "VALUES (\"{}\", {}, {}, {}, {}, {}, {}, {}, ?, ?)",
-                file.path, file.dev, file.inode, file.remoteDev, file.remoteInode, file.mtime, file.remoteMtime, file.size));
-            query.bind(1, &file.hashHigh, 8);
-            query.bind(2, &file.hashLow, 8);
-            query.exec();
-        }
+        SQLite::Statement query(db, fmt::format(
+            "REPLACE INTO nodes "
+            "(path, dev, inode, r_dev, r_inode, mtime, r_mtime, size, hash_high, hash_low) "
+            "VALUES (\"{}\", {}, {}, {}, {}, {}, {}, {}, ?, ?)",
+            file.path, file.dev, file.inode, file.remoteDev, file.remoteInode, file.mtime, file.remoteMtime, file.size));
+        query.bind(1, &file.hashHigh, 8);
+        query.bind(2, &file.hashLow, 8);
+        query.exec();
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to update file node. Reason: " << e.what();
         return false;
     }
 
@@ -231,7 +213,7 @@ bool DBConnector::DeleteFileNode(const std::string path)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to delete file node. Reason: " << e.what();
         return false;
     }
 
@@ -240,24 +222,30 @@ bool DBConnector::DeleteFileNode(const std::string path)
 
 void DBConnector::SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes)
 {
-    SQLite::Statement query(this->db, "SELECT * from nodes");
-    while(query.executeStep())
+    try
     {
-        nodes.push_front(HistoryFileNode
-        (
-            (std::string)query.getColumn(0),                // path
-            (uint32_t)query.getColumn(1),                   // dev
-            (int64_t)query.getColumn(2),                    // inode
-            (uint32_t)query.getColumn(3),                   // r_dev
-            (int64_t)query.getColumn(4),                    // r_inode
-            (uint32_t)query.getColumn(5),                   // mtime
-            (uint32_t)query.getColumn(6),                   // r_mtime
-            (uint32_t)query.getColumn(7),                   // size
-            *(XXH64_hash_t*)query.getColumn(8).getBlob(),   // hash_high
-            *(XXH64_hash_t*)query.getColumn(9).getBlob()    // hash_low
-        ));
+        SQLite::Statement query(this->db, "SELECT * from nodes");
+        while(query.executeStep())
+        {
+            nodes.push_front(HistoryFileNode
+            (
+                (std::string)query.getColumn(0),                // path
+                (uint32_t)query.getColumn(1),                   // dev
+                (int64_t)query.getColumn(2),                    // inode
+                (uint32_t)query.getColumn(3),                   // r_dev
+                (int64_t)query.getColumn(4),                    // r_inode
+                (uint32_t)query.getColumn(5),                   // mtime
+                (uint32_t)query.getColumn(6),                   // r_mtime
+                (uint32_t)query.getColumn(7),                   // size
+                *(XXH64_hash_t*)query.getColumn(8).getBlob(),   // hash_high
+                *(XXH64_hash_t*)query.getColumn(9).getBlob()    // hash_low
+            ));
+        }
     }
-    return;
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to select file nodes. Reason: " << e.what();
+    }
 }
 
 bool DBConnector::InsertConflictRule(const ConflictRule& rule)
@@ -274,7 +262,7 @@ bool DBConnector::InsertConflictRule(const ConflictRule& rule)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to insert conflict rule. Reason: " << e.what();
         return false;
     }
 
@@ -293,7 +281,7 @@ bool DBConnector::UpdateConflictRule(const ConflictRule& rule)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to update conflict rule. Reason: " << e.what();
         return false;
     }
 
@@ -308,7 +296,7 @@ bool DBConnector::DeleteConflictRule(int id)
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to delete conflict rule. Reason: " << e.what();
         return false;
     }
 
@@ -327,7 +315,7 @@ bool DBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule
     }
     catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Failed to swap conflict rules. Reason: " << e.what();
         return false;
     }
 
@@ -336,10 +324,16 @@ bool DBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule
 
 void DBConnector::SelectAllConflictRules(std::vector<ConflictRule>& nodes)
 {
-    SQLite::Statement query(this->db, "SELECT * from conflict_rules ORDER BY order_");
-    while(query.executeStep())
+    try
     {
-        nodes.push_back(query.getColumns<ConflictRule, 5>());
+        SQLite::Statement query(this->db, "SELECT * from conflict_rules ORDER BY order_");
+        while(query.executeStep())
+        {
+            nodes.push_back(query.getColumns<ConflictRule, 5>());
+        }
     }
-    return;
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to select conflict rules. Reason: " << e.what();
+    }
 }

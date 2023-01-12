@@ -411,7 +411,7 @@ bool MainFrame::DoScan()
     int rc;
     if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
     {
-        GUIAnnouncer::LogPopup("Failed to receive file info from the remote host. Error code: " + rc, Announcer::Severity::Error);
+        GUIAnnouncer::LogPopup(fmt::format("Failed to receive file info from the remote host. Error code: {}", rc), Announcer::Severity::Error);
         return false;
     }
     LOG(INFO) << "Received remote file nodes.";
@@ -562,10 +562,10 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     pairedNodes.clear();
     selectedItems.clear();
 
-    if (DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)) != DB_GOOD)
+    if (!DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::GetCurrentConfig().uuid)))
     {
-        GenericPopup("Configuration file history is empty.\nThis can happen if the configuration is scanned "
-                     "for the first time\nor if it's corrupted. All files will be marked as new or conflicting.").ShowModal();
+        GenericPopup("Couldn't read configuration file history.\nThis can happen if the configuration is scanned "
+                     "for the first time\nor if it's corrupted/missing. All files will be marked as new or conflicting.").ShowModal();
     }
 }
 

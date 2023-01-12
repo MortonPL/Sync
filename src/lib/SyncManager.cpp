@@ -200,9 +200,9 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
 
     FileNode local;
     FileNode remote;
-    if (Creeper::MakeSingleNode(tempLocal, local) != CREEP_OK)
+    if (Creeper::MakeSingleNode(tempLocal, local) != Creeper::Result::Ok)
         return -1;
-    if (Creeper::MakeSingleNode(tempRemote, remote) != CREEP_OK)
+    if (Creeper::MakeSingleNode(tempRemote, remote) != Creeper::Result::Ok)
         return -1;
     // if the "resolved" files are different, cancel
     if (!local.IsEqualHash(remote))
@@ -291,10 +291,10 @@ bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& 
     FileNode remote;
     switch(Creeper::MakeSingleNodeLight(pNode->path, local))
     {
-    case CREEP_OK:
+    case Creeper::Result::Ok:
         local.status = FileNode::Status::Changed;
         break;
-    case CREEP_EXIST:
+    case Creeper::Result::NotExists:
         break;
     default:
         pNode->progress = PairedNode::Progress::Failed;

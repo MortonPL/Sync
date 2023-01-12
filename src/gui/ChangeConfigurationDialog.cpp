@@ -47,7 +47,7 @@ void ChangeConfigurationDialog::PopulateConfigList()
     DBConnector db(DBConnector::GetMainFileName());
     try
     {
-        this->configs = db.SelectAllConfigs();
+        db.SelectAllConfigs(this->configs);
         auto arrs = wxArrayString();
         for(auto config: this->configs)
             arrs.Add(wxString::FromUTF8(config.name));

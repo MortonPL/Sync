@@ -7,22 +7,22 @@ void Announcer::NoAnnouncer(const std::string, Severity)
     return;
 }
 
-bool Announcer::CreeperResult(const int returnCode, announcerType announcer)
+bool Announcer::CreeperResult(const Creeper::Result result, announcerType announcer)
 {
-    switch (returnCode)
+    switch (result)
     {
-    case CREEP_OK:
+    case Creeper::Result::Ok:
         return true;
-    case CREEP_PERM:
+    case Creeper::Result::Permissions:
         announcer("Failed to scan for files in the given directory due to insufficient permissions.", Severity::Error);
         break;
-    case CREEP_EXIST:
+    case Creeper::Result::NotExists:
         announcer("Failed to scan for files, because the root directory does not exist.", Severity::Error);
         break;
-    case CREEP_NOTDIR:
+    case Creeper::Result::NotADir:
         announcer("Failed to scan for files, because the root path is not a directory.", Severity::Error);
         break;
-    case CREEP_ERROR:
+    case Creeper::Result::Error:
     default:
         announcer("Failed to scan for files in the given directory due to an unknown error.\nCheck logs for more information.", Severity::Error);
         break;

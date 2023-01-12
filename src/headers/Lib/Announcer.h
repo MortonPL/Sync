@@ -2,6 +2,7 @@
 #define LIB_ANNOUNCER_H
 
 #include <string>
+#include "Lib/Creeper.h"
 
 namespace Announcer
 {
@@ -16,7 +17,7 @@ namespace Announcer
 
     void NoAnnouncer(const std::string prompt, Severity severity);
 
-    bool CreeperResult(const int returnCode, announcerType announcer);
+    bool CreeperResult(const Creeper::Result result, announcerType announcer);
 }
 
 #endif

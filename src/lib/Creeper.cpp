@@ -32,14 +32,13 @@ void Creeper::SearchForLists(const std::string& path)
 {
     auto readList = [](const std::string& path, const std::string& filename, std::list<std::regex>& rules)
     {
-        std::ifstream in(path + filename, std::ios_base::in);
+        std::ifstream in(path + filename);
         if (in.is_open())
         {
             rules.clear();
             std::string out;
-            while (in.peek() != in.eof())
+            while (getline(in, out))
             {
-                getline(in, out);
                 if(*out.end() == '\r')
                     out.pop_back();
                 Utils::Replace(out, ".", "\\.");
@@ -85,13 +84,13 @@ XXH128_hash_t Creeper::HashFile(HasherState& state, const std::string& path)
     {
         std::ifstream inputStream(path, std::ios::binary);
         inputStream.read(state.buffer.data(), state.bufferSize);
-        auto len = inputStream? state.bufferSize: inputStream.gcount();
-        while(len > 0)
+        size_t len;
+        // NOTE: reading less than bufferSize bytes sets failbit, so we can't put read() as the condiiton!
+        while((len = inputStream? state.bufferSize: inputStream.gcount()) > 0)
         {
             if(XXH3_128bits_update(state.pState.get(), state.buffer.data(), len) == XXH_ERROR)
                 throw std::runtime_error("Unspecified hasher failure.");
             inputStream.read(state.buffer.data(), state.bufferSize);
-            len = inputStream? state.bufferSize: inputStream.gcount();
         }
         result = XXH3_128bits_digest(state.pState.get());
     }

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LIB_DBCONNECTOR_H
+#define LIB_DBCONNECTOR_H
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <string>
 #include <vector>
@@ -9,10 +10,6 @@
 #include "Domain/ConflictRule.h"
 
 #define NOID -1
-#define DB_FAIL 0
-#define DB_EMPTY 1
-#define DB_GOOD 2
-
 /*A class that connects to a specific SQLite database file and makes CRUD queries.*/
 class DBConnector
 {
@@ -22,13 +19,13 @@ public:
 
     static std::string GetMainFileName();
 
-    static int EnsureCreatedMain();
+    static bool EnsureCreatedMain();
     bool InsertConfig(const Configuration config);
     bool UpdateConfig(const Configuration config);
     bool DeleteConfig(int id);
-    std::vector<Configuration> SelectAllConfigs();
+    void SelectAllConfigs(std::vector<Configuration>& configs);
 
-    static int EnsureCreatedHistory(const std::string path);
+    static bool EnsureCreatedHistory(const std::string path);
     bool InsertFileNode(const HistoryFileNode& file);
     bool UpdateFileNode(const HistoryFileNode& file);
     bool DeleteFileNode(const std::string path);
@@ -43,3 +40,5 @@ public:
 private:
     SQLite::Database db;
 };
+
+#endif

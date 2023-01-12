@@ -17,7 +17,7 @@ bool FileSystem::CopyLocalFile(const std::string& sourcePath, const std::string&
     return true;
 }
 
-bool FileSystem::MoveLocalFile(const std::string sourcePath, const std::string destinationPath)
+bool FileSystem::MoveLocalFile(const std::string& sourcePath, const std::string& destinationPath)
 {
     // create parent directories if needed
     auto path = std::filesystem::path(destinationPath);
@@ -34,15 +34,17 @@ bool FileSystem::MoveLocalFile(const std::string sourcePath, const std::string d
         }
     }
     // try to move atomically, if it fails, copy the old fashioned way
-    if (rename(sourcePath.c_str(), destinationPath.c_str()) < 0)
+    try
     {
-        // error!
-        int err = errno;
-        LOG(WARNING) << "Error moving atomically temporary file " << sourcePath << ". Message: " << strerror(err);
-        if (err == EXDEV)
+        std::filesystem::rename(sourcePath, destinationPath);
+    }
+    catch(const std::filesystem::filesystem_error& e)
+    {
+        LOG(WARNING) << "Error moving atomically temporary file " << sourcePath << ". Reason: " << e.what();
+        if (e.code().value() == EXDEV)
         {
             if (FileSystem::CopyLocalFile(sourcePath, destinationPath, std::filesystem::copy_options::overwrite_existing))
-                remove(sourcePath.c_str());
+                std::filesystem::remove(sourcePath);
             else
                 return false;
         }

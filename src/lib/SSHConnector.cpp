@@ -138,10 +138,10 @@ int SSHConnector::CallCLICreep(std::string dirToCreep, std::forward_list<FileNod
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    if (rc != 0)
+    if (rc != '0')
     {
         FreeChannel(pChannel);
-        return rc;
+        return CALLCLI_ERROR;
     }
     // read node count
     if (ssh_channel_read(pChannel, &nnodes, sizeof(nnodes), 0) != sizeof(nnodes))

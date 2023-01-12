@@ -49,18 +49,18 @@ TEST_F(CreepingTest, Empty)
     const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
 
-    int rc = creeper.CreepPath(sandbox, scanNodes);
+    auto result = creeper.CreepPath(sandbox, scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
     EXPECT_EQ(creeper.GetResultsCount(), 0);
 }
 
 TEST_F(CreepingTest, NoRoot)
 {
-    int rc = creeper.CreepPath("sandbox", scanNodes);
+    auto result = creeper.CreepPath("sandbox", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_EXIST);
+    EXPECT_EQ(result, Creeper::Result::NotExists);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
     EXPECT_EQ(creeper.GetResultsCount(), 0);
 }
@@ -70,9 +70,9 @@ TEST_F(CreepingTest, RootNotADirectory)
     const std::filesystem::path sandbox{"sandbox"};
     std::ofstream{sandbox};
 
-    int rc = creeper.CreepPath("sandbox", scanNodes);
+    auto result = creeper.CreepPath("sandbox", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_NOTDIR);
+    EXPECT_EQ(result, Creeper::Result::NotADir);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
     EXPECT_EQ(creeper.GetResultsCount(), 0);
 }
@@ -84,9 +84,9 @@ TEST_F(CreepingTest, RootWrongPermissions)
     std::ofstream{sandbox/"a"};
     std::filesystem::permissions(sandbox, std::filesystem::perms::owner_exec, std::filesystem::perm_options::remove);
 
-    int rc = creeper.CreepPath(sandbox, scanNodes);
+    auto result = creeper.CreepPath(sandbox, scanNodes);
 
-    EXPECT_EQ(rc, CREEP_PERM);
+    EXPECT_EQ(result, Creeper::Result::Permissions);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
     EXPECT_EQ(creeper.GetResultsCount(), 0);
 }
@@ -106,9 +106,9 @@ TEST_F(CreepingTest, FlatDirectory)
         FileNode("a"),
     };
 
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 3);
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
@@ -132,9 +132,9 @@ TEST_F(CreepingTest, DeepDirectory)
         FileNode("a"),
     };
 
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 3);
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
@@ -152,9 +152,9 @@ TEST_F(CreepingTest, IgnoreSymLinks)
         FileNode("a"),
     };
 
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 1);
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
@@ -178,9 +178,9 @@ TEST_F(CreepingTest, HardLinks)
         FileNode("a"),
     };
 
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 4);
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
@@ -203,9 +203,9 @@ TEST_F(CreepingTest, SyncBlackListPresent)
         FileNode(Creeper::SyncBlackListFile),
     };
 
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 2);
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }
@@ -231,9 +231,9 @@ TEST_F(CreepingTest, SyncWhiteListPresent)
         FileNode(Creeper::SyncBlackListFile),
     };
 
-    int rc = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
 
-    EXPECT_EQ(rc, CREEP_OK);
+    EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 4);
     EXPECT_ALL_NODES(scanNodes, expectedResult);
 }

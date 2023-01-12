@@ -20,15 +20,9 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
 
     std::ifstream blockFileIStream(pathToFile);
     bool matched = false;
-    bool empty = false;
-    
-    if (blockFileIStream.peek() == blockFileIStream.eof())
-        empty = true;
-
-    while (!empty && !matched && !blockFileIStream.eof())
+    std::string line;
+    while (getline(blockFileIStream, line) && !matched)
     {
-        std::string line;
-        getline(blockFileIStream, line);
         if (line.size() == 0)
             continue;
 
@@ -37,6 +31,8 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
         else
             matched = line.substr(0, canonicalPath.size()) == canonicalPath;
     }
+
+    blockFileIStream.close();
 
     if (matched)
         return false;
@@ -68,14 +64,9 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
     std::ifstream blockFileIStream(pathToFile);
     std::ofstream blockFileOStream(tempFileName, std::ios::app);
     bool matched = false;
-    
-    if (blockFileIStream.peek() == blockFileOStream.eof())
-        return true;
-
-    while (!matched && !blockFileIStream.eof())
+    std::string line;
+    while (getline(blockFileIStream, line) && !matched)
     {
-        std::string line;
-        getline(blockFileIStream, line);
         if (line.size() == 0)
             continue;
 
@@ -87,6 +78,9 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
         if (!matched)
             blockFileOStream << line << std::endl;
     }
+
+    blockFileIStream.close();
+    blockFileOStream.close();
 
     std::filesystem::rename(tempFileName, pathToFile);
     return true;

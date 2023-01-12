@@ -90,14 +90,14 @@ void CreepDir(std::string path)
 {
     std::forward_list<FileNode> nodes;
     auto creeper = Creeper();
-    char rc = creeper.CreepPath(path, nodes);
-    if (!Announcer::CreeperResult(rc, CLIAnnouncer::Log))
+    auto result = creeper.CreepPath(path, nodes);
+    if (!Announcer::CreeperResult(result, CLIAnnouncer::Log))
     {
-        std::cout << rc; // alternative to writeall --- in text mode
+        std::cout << '1'; // alternative to writeall --- in text mode
         std::cout.flush();
         return;
     }
-    std::cout << rc;
+    std::cout << '0';
     std::cout.flush();
 
     //start sending node data

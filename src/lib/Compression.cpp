@@ -19,8 +19,6 @@ bool Compression::Compress(const std::string pathIn, const std::string pathOut, 
     {
         std::ifstream inputStream(pathIn, std::ios::binary);
         std::ofstream outputStream(pathOut, std::ios::binary);
-        inputStream.exceptions(std::ifstream::failbit|std::ifstream::badbit);
-        outputStream.exceptions(std::ofstream::failbit|std::ofstream::badbit);
 
         const auto inSize = ZSTD_CStreamInSize();
         const auto outSize = ZSTD_CStreamOutSize();
@@ -31,15 +29,16 @@ bool Compression::Compress(const std::string pathIn, const std::string pathOut, 
         ZSTD_CCtx_setParameter(context.get(), ZSTD_c_compressionLevel, ZSTD_defaultCLevel());
         ZSTD_CCtx_setParameter(context.get(), ZSTD_c_checksumFlag, 1);
 
-        for(bool isLastChunk = false; !isLastChunk;)
+        // NOTE: reading less than inSize bytes sets failbit, so we can't put read() as the condiiton!
+        inputStream.read(buffIn.data(), inSize);
+        size_t len;
+        while((len = !inputStream.eof()? inSize: inputStream.gcount()) > 0)
         {
-            inputStream.read(buffIn.data(), inSize);
-            auto read = inputStream? inSize: inputStream.gcount();
-            isLastChunk = read < inSize;
+            bool isLastChunk = len < inSize;
             ZSTD_EndDirective mode = isLastChunk? ZSTD_e_end : ZSTD_e_continue;
-            ZSTD_inBuffer input = {buffIn.data(), read, 0};
+            ZSTD_inBuffer input = {buffIn.data(), len, 0};
             bool finished = false;
-            do
+            while (!finished)
             {
                 ZSTD_outBuffer output = {buffOut.data(), outSize, 0};
                 size_t result = ZSTD_compressStream2(context.get(), &output, &input, mode);
@@ -48,7 +47,8 @@ bool Compression::Compress(const std::string pathIn, const std::string pathOut, 
                 outputStream.write(buffOut.data(), output.pos);
                 finished = isLastChunk? (result == 0) : (input.pos == input.size);
                 compressedSize += output.pos;
-            } while (!finished);
+            }
+            inputStream.read(buffIn.data(), inSize);
         }
     }
     catch(const std::exception& e)
@@ -68,8 +68,6 @@ bool Compression::Decompress(const std::string pathIn, const std::string pathOut
     {
         std::ifstream inputStream(pathIn, std::ios::binary);
         std::ofstream outputStream(pathOut, std::ios::binary);
-        inputStream.exceptions(std::ifstream::failbit|std::ifstream::badbit);
-        outputStream.exceptions(std::ofstream::failbit|std::ofstream::badbit);
 
         const auto inSize = ZSTD_DStreamInSize();
         const auto outSize = ZSTD_DStreamOutSize();
@@ -78,12 +76,13 @@ bool Compression::Decompress(const std::string pathIn, const std::string pathOut
 
         auto context = std::unique_ptr<ZSTD_DCtx, freeContext>(ZSTD_createDCtx(), freeContext());
 
-        size_t read;
+        // same NOTE as in Compress()
+        size_t len;
         inputStream.read(buffIn.data(), inSize);
-        while ((read = inputStream? inSize: inputStream.gcount()) > 0)
+        while ((len = !inputStream.eof()? inSize: inputStream.gcount()) > 0)
         {
             empty = false;
-            ZSTD_inBuffer input = {buffIn.data(), read, 0};
+            ZSTD_inBuffer input = {buffIn.data(), len, 0};
             while (input.pos < input.size)
             {
                 ZSTD_outBuffer output = {buffOut.data(), outSize, 0 };
