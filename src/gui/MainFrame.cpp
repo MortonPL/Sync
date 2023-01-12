@@ -4,6 +4,7 @@
 #include <uuid/uuid.h>
 #include <wx/busyinfo.h>
 
+#include "GUI/Misc.h"
 #include "GUI/SSHConnectorWrap.h"
 #include "GUI/GenericPopup.h"
 #include "GUI/NewConfigurationDialog.h"
@@ -138,7 +139,7 @@ void MainFrame::PopulateList()
         if (ShouldBeFiltered(pair))
             continue;
 
-        ctrl.listMain->InsertItem(i, wxString::FromUTF8(pair.path));
+        ctrl.listMain->InsertItem(i, Misc::stringToWx(pair.path));
         ctrl.listMain->SetItemData(i, (long)&pair);
         auto statuses = pair.GetStatusString();
         ctrl.listMain->SetItem(i, COL_STATUS_L, statuses.first);
@@ -212,8 +213,8 @@ void MainFrame::ShowDetails(long itemIndex)
     auto pPair = (PairedNode*)ctrl.listMain->GetItemData(itemIndex);
     ctrl.txtDetails->Clear();
     //general
-    *ctrl.txtDetails << "Name: " << wxString::FromUTF8(std::filesystem::path(pPair->path).filename().string()) << '\n';
-    *ctrl.txtDetails << "Directory: " << wxString::FromUTF8(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
+    *ctrl.txtDetails << "Name: " << Misc::stringToWx(std::filesystem::path(pPair->path).filename().string()) << '\n';
+    *ctrl.txtDetails << "Directory: " << Misc::stringToWx(std::filesystem::path(pPair->path).parent_path().string()) << '\n';
     *ctrl.txtDetails << "Path hash: " << pPair->pathHash << '\n';
     *ctrl.txtDetails << "Pair Action: " << pPair->GetActionString() << '\n';
     *ctrl.txtDetails << "Pair Default Action: " << pPair->GetDefaultActionString() << '\n';
@@ -772,7 +773,7 @@ void MainFrame::OnAbout(wxCommandEvent& event)
         "For more information see the README.md file distributed with the source code."
     ;
 
-    wxMessageBox(wxString::FromUTF8(msg), "About...",
+    wxMessageBox(Misc::stringToWx(msg), "About...",
                  wxOK | wxICON_INFORMATION);
 }
 

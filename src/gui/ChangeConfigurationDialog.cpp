@@ -1,6 +1,7 @@
 #include "GUI/ChangeConfigurationDialog.h"
 
 #include <cstdio>
+#include "GUI/Misc.h"
 #include "GUI/NewConfigurationDialog.h"
 #include "GUI/EditConfigurationDialog.h"
 #include "GUI/GenericPopup.h"
@@ -50,7 +51,7 @@ void ChangeConfigurationDialog::PopulateConfigList()
         db.SelectAllConfigs(this->configs);
         auto arrs = wxArrayString();
         for(auto config: this->configs)
-            arrs.Add(wxString::FromUTF8(config.name));
+            arrs.Add(Misc::stringToWx(config.name));
         ctrl.listConfigs->Clear();
         if (!arrs.IsEmpty())
             ctrl.listConfigs->InsertItems(arrs, 0);
@@ -71,12 +72,12 @@ void ChangeConfigurationDialog::PopulateConfigDetails()
     auto config = this->configs[this->selectedConfigIdx];
     ctrl.txtDetails->Clear();
     *ctrl.txtDetails << "General info:\n";
-    *ctrl.txtDetails << "\tName: " << wxString::FromUTF8(config.name) << "\n";
-    *ctrl.txtDetails << "\tPath A: " << wxString::FromUTF8(config.pathA) << "\n";
-    *ctrl.txtDetails << "\tPath B: " << wxString::FromUTF8(config.pathB) << "\n";
+    *ctrl.txtDetails << "\tName: " << Misc::stringToWx(config.name) << "\n";
+    *ctrl.txtDetails << "\tPath A: " << Misc::stringToWx(config.pathA) << "\n";
+    *ctrl.txtDetails << "\tPath B: " << Misc::stringToWx(config.pathB) << "\n";
     *ctrl.txtDetails << "\tLast config edit: " << Utils::TimestampToString(config.timestamp) << "\n";
-    *ctrl.txtDetails << "\tPath B Address/Hostname: " << wxString::FromUTF8(config.pathBaddress) << "\n";
-    *ctrl.txtDetails << "\tPath B User: " << wxString::FromUTF8(config.pathBuser) << "\n";
+    *ctrl.txtDetails << "\tPath B Address/Hostname: " << Misc::stringToWx(config.pathBaddress) << "\n";
+    *ctrl.txtDetails << "\tPath B User: " << Misc::stringToWx(config.pathBuser) << "\n";
 }
 
 void ChangeConfigurationDialog::CheckIfConfigSelected()

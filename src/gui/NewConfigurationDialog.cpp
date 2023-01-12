@@ -1,5 +1,6 @@
 #include "GUI/NewConfigurationDialog.h"
 
+#include "GUI/Misc.h"
 #include <uuid/uuid.h>
 #include "GUI/GenericPopup.h"
 #include "Lib/DBConnector.h"
@@ -34,11 +35,11 @@ NewConfigurationDialog::NewConfigurationDialog(wxWindow* pParent)
 
 void NewConfigurationDialog::CheckIfOK()
 {
-    bool isOK = !ctrl.txtConfigName->GetValue().utf8_string().empty()
-                && !ctrl.dirRootA->GetPath().utf8_string().empty()
-                && !ctrl.txtRootB->GetValue().utf8_string().empty()
-                && !ctrl.txtAddressB->GetValue().utf8_string().empty()
-                && !ctrl.txtUserB->GetValue().utf8_string().empty();
+    bool isOK = !Misc::wxToString(ctrl.txtConfigName->GetValue()).empty()
+                && !Misc::wxToString(ctrl.dirRootA->GetPath()).empty()
+                && !Misc::wxToString(ctrl.txtRootB->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtAddressB->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtUserB->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 
@@ -47,8 +48,8 @@ void NewConfigurationDialog::CheckIfOK()
 void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 {
     event.GetId(); //unused
-    std::string pathA = ctrl.dirRootA->GetPath().utf8_string();
-    std::string pathB = ctrl.txtRootB->GetValue().utf8_string();
+    std::string pathA = Misc::wxToString(ctrl.dirRootA->GetPath());
+    std::string pathB = Misc::wxToString(ctrl.txtRootB->GetValue());
     if (pathA.empty() || pathB.empty())
     {
         GenericPopup("Root paths cannot be empty!").ShowModal();
@@ -61,12 +62,12 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 
     config = Configuration(
         NOID,
-        ctrl.txtConfigName->GetValue().utf8_string(),
+        Misc::wxToString(ctrl.txtConfigName->GetValue()),
         uuid,
         Utils::CorrectDirPath(pathA),
         Utils::CorrectDirPath(pathB),
-        ctrl.txtAddressB->GetValue().utf8_string(),
-        ctrl.txtUserB->GetValue().utf8_string()
+        Misc::wxToString(ctrl.txtAddressB->GetValue()),
+        Misc::wxToString(ctrl.txtUserB->GetValue())
     );
 
     try

@@ -1,5 +1,6 @@
 #include "GUI/NewConflictRuleDialog.h"
 
+#include "GUI/Misc.h"
 #include "GUI/GenericPopup.h"
 #include "Lib/Global.h"
 #include "Lib/DBConnector.h"
@@ -30,9 +31,9 @@ NewConflictRuleDialog::NewConflictRuleDialog(wxWindow* pParent)
 
 void NewConflictRuleDialog::CheckIfOK()
 {
-    bool isOK = !ctrl.txtName->GetValue().utf8_string().empty()
-                && !ctrl.txtRule->GetValue().utf8_string().empty()
-                && !ctrl.txtCommand->GetValue().utf8_string().empty();
+    bool isOK = !Misc::wxToString(ctrl.txtName->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtRule->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtCommand->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 
@@ -42,9 +43,9 @@ void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
 {
     event.GetId(); //unused
     auto rule = ConflictRule(
-        ctrl.txtName->GetValue().utf8_string(),
-        ctrl.txtRule->GetValue().utf8_string(),
-        ctrl.txtCommand->GetValue().utf8_string()
+        std::string(Misc::wxToString(ctrl.txtName->GetValue())),
+        std::string(Misc::wxToString(ctrl.txtRule->GetValue())),
+        std::string(Misc::wxToString(ctrl.txtCommand->GetValue()))
     );
 
     if (rule.badRule)

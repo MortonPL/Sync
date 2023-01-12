@@ -1,5 +1,6 @@
 #include "GUI/ConflictRuleDialog.h"
 
+#include "GUI/Misc.h"
 #include "GUI/GenericPopup.h"
 #include "GUI/NewConflictRuleDialog.h"
 #include "GUI/EditConflictRuleDialog.h"
@@ -55,7 +56,7 @@ void ConflictRuleDialog::PopulateRuleList()
         db.SelectAllConflictRules(*pRules);
         auto arrs = wxArrayString();
         for(auto rule: *pRules)
-            arrs.Add(wxString::FromUTF8(rule.name));
+            arrs.Add(Misc::stringToWx(rule.name));
         ctrl.listConflictRules->Clear();
         if (!arrs.IsEmpty())
             ctrl.listConflictRules->InsertItems(arrs, 0);
@@ -75,9 +76,9 @@ void ConflictRuleDialog::PopulateRuleDetails()
 
     auto rule = (*pRules)[selectedRuleIdx];
     ctrl.txtDetails->Clear();
-    *ctrl.txtDetails << "Name:\t\t" << wxString::FromUTF8(rule.name) << "\n";
-    *ctrl.txtDetails << "Rule:\t\t" << wxString::FromUTF8(rule.rule) << "\n";
-    *ctrl.txtDetails << "Command:\t" << wxString::FromUTF8(rule.command) << "\n";
+    *ctrl.txtDetails << "Name:\t\t" << Misc::stringToWx(rule.name) << "\n";
+    *ctrl.txtDetails << "Rule:\t\t" << Misc::stringToWx(rule.rule) << "\n";
+    *ctrl.txtDetails << "Command:\t" << Misc::stringToWx(rule.command) << "\n";
 }
 
 void ConflictRuleDialog::CheckIfRuleSelected()

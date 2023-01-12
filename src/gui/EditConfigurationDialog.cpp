@@ -1,5 +1,6 @@
 #include "GUI/EditConfigurationDialog.h"
 
+#include "GUI/Misc.h"
 #include "GUI/GenericPopup.h"
 #include "Lib/DBConnector.h"
 #include "Utils.h"
@@ -32,11 +33,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
     this->oldConfig = oldConfig;
 
     //fill in controls
-    ctrl.txtConfigName->AppendText(wxString::FromUTF8(oldConfig.name));
-    ctrl.dirRootA->SetPath(wxString::FromUTF8(oldConfig.pathA));
-    ctrl.txtRootB->AppendText(wxString::FromUTF8(oldConfig.pathB));
-    ctrl.txtAddressB->AppendText(wxString::FromUTF8(oldConfig.pathBaddress));
-    ctrl.txtUserB->AppendText(wxString::FromUTF8(oldConfig.pathBuser));
+    ctrl.txtConfigName->AppendText(Misc::stringToWx(oldConfig.name));
+    ctrl.dirRootA->SetPath(Misc::stringToWx(oldConfig.pathA));
+    ctrl.txtRootB->AppendText(Misc::stringToWx(oldConfig.pathB));
+    ctrl.txtAddressB->AppendText(Misc::stringToWx(oldConfig.pathBaddress));
+    ctrl.txtUserB->AppendText(Misc::stringToWx(oldConfig.pathBuser));
 
     ctrl.btnOK->SetLabel("Edit");
     ctrl.btnOK->Disable();
@@ -44,11 +45,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
 
 void EditConfigurationDialog::CheckIfOK()
 {
-    bool isOK = !ctrl.txtConfigName->GetValue().utf8_string().empty()
-                && !ctrl.dirRootA->GetPath().utf8_string().empty()
-                && !ctrl.txtRootB->GetValue().utf8_string().empty()
-                && !ctrl.txtAddressB->GetValue().utf8_string().empty()
-                && !ctrl.txtUserB->GetValue().utf8_string().empty();
+    bool isOK = !Misc::wxToString(ctrl.txtConfigName->GetValue()).empty()
+                && !Misc::wxToString(ctrl.dirRootA->GetPath()).empty()
+                && !Misc::wxToString(ctrl.txtRootB->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtAddressB->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtUserB->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 
@@ -57,8 +58,8 @@ void EditConfigurationDialog::CheckIfOK()
 void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 {
     event.GetId(); //unused
-    std::string pathA = ctrl.dirRootA->GetPath().utf8_string();
-    std::string pathB = ctrl.txtRootB->GetValue().utf8_string();
+    std::string pathA = Misc::wxToString(ctrl.dirRootA->GetPath());
+    std::string pathB = Misc::wxToString(ctrl.txtRootB->GetValue());
     if (pathA.empty() || pathB.empty())
     {
         GenericPopup("Root paths cannot be empty!").ShowModal();
@@ -68,13 +69,13 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
     Configuration config;
     config = Configuration(
         oldConfig.id,
-        ctrl.txtConfigName->GetValue().utf8_string(),
+        Misc::wxToString(ctrl.txtConfigName->GetValue()),
         oldConfig.uuid,
         oldConfig.timestamp,
         Utils::CorrectDirPath(pathA),
         Utils::CorrectDirPath(pathB),
-        ctrl.txtAddressB->GetValue().utf8_string(),
-        ctrl.txtUserB->GetValue().utf8_string(),
+        Misc::wxToString(ctrl.txtAddressB->GetValue()),
+        Misc::wxToString(ctrl.txtUserB->GetValue()),
         0
     );
 

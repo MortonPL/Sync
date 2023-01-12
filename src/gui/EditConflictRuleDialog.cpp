@@ -1,5 +1,6 @@
 #include "GUI/EditConflictRuleDialog.h"
 
+#include "GUI/Misc.h"
 #include "GUI/GenericPopup.h"
 #include "Lib/Global.h"
 #include "Lib/DBConnector.h"
@@ -29,9 +30,9 @@ EditConflictRuleDialog::EditConflictRuleDialog(ConflictRule& oldRule, wxWindow* 
     this->oldRule = oldRule;
 
     //fill in controls
-    ctrl.txtName->AppendText(wxString::FromUTF8(oldRule.name));
-    ctrl.txtRule->AppendText(wxString::FromUTF8(oldRule.rule));
-    ctrl.txtCommand->AppendText(wxString::FromUTF8(oldRule.command));
+    ctrl.txtName->AppendText(Misc::stringToWx(oldRule.name));
+    ctrl.txtRule->AppendText(Misc::stringToWx(oldRule.rule));
+    ctrl.txtCommand->AppendText(Misc::stringToWx(oldRule.command));
 
     ctrl.btnOK->SetLabel("Edit");
     ctrl.btnOK->Disable();
@@ -39,9 +40,9 @@ EditConflictRuleDialog::EditConflictRuleDialog(ConflictRule& oldRule, wxWindow* 
 
 void EditConflictRuleDialog::CheckIfOK()
 {
-    bool isOK = !ctrl.txtName->GetValue().utf8_string().empty()
-                && !ctrl.txtRule->GetValue().utf8_string().empty()
-                && !ctrl.txtCommand->GetValue().utf8_string().empty();
+    bool isOK = !Misc::wxToString(ctrl.txtName->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtRule->GetValue()).empty()
+                && !Misc::wxToString(ctrl.txtCommand->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 
@@ -53,9 +54,9 @@ void EditConflictRuleDialog::OnOK(wxCommandEvent &event)
     auto rule = ConflictRule(
         oldRule.id,
         oldRule.order,
-        ctrl.txtName->GetValue().utf8_string(),
-        ctrl.txtRule->GetValue().utf8_string(),
-        ctrl.txtCommand->GetValue().utf8_string()
+        Misc::wxToString(ctrl.txtName->GetValue()),
+        Misc::wxToString(ctrl.txtRule->GetValue()),
+        Misc::wxToString(ctrl.txtCommand->GetValue())
     );
 
     if (rule.badRule)

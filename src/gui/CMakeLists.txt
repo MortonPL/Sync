@@ -8,6 +8,7 @@ set(SRC_GUI_FILES
     GenericPopup.cpp
     # utilities
     SSHConnectorWrap.cpp
+    Misc.cpp
     # custom dialog
     NewConfigurationDialog.cpp
     EditConfigurationDialog.cpp

@@ -1,5 +1,6 @@
 #include "GUI/GenericPopup.h"
 
+#include "GUI/Misc.h"
 #include "Utils.h"
 
 wxBEGIN_EVENT_TABLE(GenericPopup, wxDialog)
@@ -16,7 +17,7 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "GenericPopup");
 
-    ((wxStaticText*)(this->FindWindow("lblMessage")))->SetLabelText(wxString::FromUTF8(message));
+    ((wxStaticText*)(this->FindWindow("lblMessage")))->SetLabelText(Misc::stringToWx(message));
 
     ctrl = Controls
     {
@@ -34,7 +35,7 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
         ctrl.btnCancel->Hide();
     if (this->input)
     {
-        ctrl.txtOutput->AppendText(wxString::FromUTF8(*input));
+        ctrl.txtOutput->AppendText(Misc::stringToWx(*input));
         ctrl.txtOutput->Show();
     }
     if (this->output)
@@ -55,9 +56,9 @@ void GenericPopup::OnOK(wxCommandEvent &event)
     if (this->output)
     {
         if (this->isPassword)
-            *(this->output) = ctrl.txtInputPass->GetValue().utf8_string();
+            *(this->output) = Misc::wxToString(ctrl.txtInputPass->GetValue());
         else
-            *(this->output) = ctrl.txtInputStd->GetValue().utf8_string();
+            *(this->output) = Misc::wxToString(ctrl.txtInputStd->GetValue());
     }
     EndModal(wxID_OK);
 }
