@@ -13,12 +13,12 @@ BUILD_GUI="";
 BUILD_CLI="";
 BUILD_TEST="";
 
-# Example usage: ./action.sh debug -i
+# Example usage: ./build.sh release -i
 # Show user help
 print_help() {
-    echo "Usage: action.sh build|debug [TARGETS] [OPTIONS]...";
-    echo "All options (except help) require a valid target (build|debug)!"
-    echo "Targets:";
+    echo "Usage: build.sh release|debug [TARGETS] [OPTIONS]...";
+    echo "All options (except help) require a valid target (release|debug)!"
+    echo "Targets (if none set, build all):";
     echo "\tgui";
     echo "\tcli";
     echo "\ttest";
@@ -57,9 +57,9 @@ parse_args() {
         "-u" | "--uninstall")
             UNINSTALL=1;
             ;;
-        "build")
+        "release")
             BUILD_TYPE="RELEASE";
-            DIR="build";
+            DIR="release";
             ;;
         "debug")
             BUILD_TYPE="DEBUG";
@@ -202,9 +202,9 @@ do_build;
 printf '\a';  # Ring ring
 # Run tests
 do_tests;
-# If success, install
+# If success, install (opt-in)
 do_install;
-# Copy over to another location
+# Copy over to another location (opt-in)
 do_other_dir;
 cd ..;
 # Done!

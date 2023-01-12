@@ -25,6 +25,6 @@ FetchContent_Declare(
   GIT_TAG v0.8.1
   SOURCE_SUBDIR  cmake_unofficial
 )
-set(XXHASH_BUILD_XXHSUM OFF)
-set(BUILD_SHARED_LIBS OFF)
+set(XXHASH_BUILD_XXHSUM OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(xxHash)
