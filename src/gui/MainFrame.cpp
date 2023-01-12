@@ -102,7 +102,7 @@ MainFrame::MainFrame(wxWindow* pParent): ssh()
 {
     wxXmlResource::Get()->LoadFrame(this, pParent, "MainFrame");
     SetMenuBar(wxDynamicCast(wxXmlResource::Get()->LoadObjectRecursively(this, "MenuBar", "wxMenuBar"), wxMenuBar));
-    SetStatusText("This is the status bar!");
+    SetStatusText("");
 
     ctrl = Controls
     {
