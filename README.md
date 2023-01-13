@@ -17,15 +17,18 @@ Uruchamianie skanowania: skrót `Ctrl+R` lub przycisk `Scan directories` lub men
 Uwierzytelnianie użytkownika następuje automatycznie. Jeżeli wymagane jest hasło, wyzwanie, lub klucz jest chroniony hasłem, użytkownik zostanie poproszony o wpisanie.
 
 Pliki mogą znajdować się w następujących stanach:
+
 * New - istnieje plik, którego nie było podczas ostatniej synchronizacji
 * Absent - brak pliku
 * Clean - brak zmian zawartości od ostatniej synchronizacji
 * Dirty - zmiany zawartości od ostatniej synchronizacji
 * Changed - stan pliku zmienił się pomiędzy skanowaniem a synchronizacją
 
+### Akcje
 Program automatycznie sugeruje domyślne akcje:
-* Left to Right (oznaczone ==>>) - propaguj zmiany z maszyny lokalnej na zdalną
-* Right to Left (oznaczone <<==) - propaguj zmiany z maszyny zdalnej na lokalną
+
+* Left to Right (oznaczone `==>>`) - propaguj zmiany z maszyny lokalnej na zdalną
+* Right to Left (oznaczone `<<==`) - propaguj zmiany z maszyny zdalnej na lokalną
 * Ignore - nie rób nic
 * Fast Forward - zaktualizuj sam wpis w historii pliku
 * Conflict - wystąpił konflikt, żadna akcja nie może zostać podjęta (oprócz rozwiązania konfliktu)
