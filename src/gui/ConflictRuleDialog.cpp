@@ -49,9 +49,9 @@ ConflictRuleDialog::ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindo
 
 void ConflictRuleDialog::PopulateRuleList()
 {
-    DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid));
     try
     {
+        DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid));
         pRules->clear();
         db.SelectAllConflictRules(*pRules);
         auto arrs = wxArrayString();

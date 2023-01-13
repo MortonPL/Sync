@@ -45,9 +45,9 @@ ChangeConfigurationDialog::ChangeConfigurationDialog(wxWindow* pParent)
 
 void ChangeConfigurationDialog::PopulateConfigList()
 {
-    DBConnector db(DBConnector::GetMainFileName());
     try
     {
+        DBConnector db(DBConnector::GetMainFileName());
         db.SelectAllConfigs(this->configs);
         auto arrs = wxArrayString();
         for(auto config: this->configs)
