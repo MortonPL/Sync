@@ -111,7 +111,7 @@ void StatPath(std::string path)
     std::cout.flush();
     unsigned char* buf2 = new unsigned char[FileNode::MiniStatBinarySize];
     FileNode::SerializeStat(&buf, buf2);
-    writeall(1, (char*)&buf2, FileNode::MiniStatBinarySize);
+    writeall(1, (char*)buf2, FileNode::MiniStatBinarySize);
     delete[] buf2;
 }
 

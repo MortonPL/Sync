@@ -313,6 +313,8 @@ void MainFrame::ResolveConflict()
         for (auto index: selectedItems)
         {
             auto node = *(PairedNode*)(ctrl.listMain->GetItemData(index));
+            if (node.action != PairedNode::Action::Conflict)
+                continue;
             {
                 wxBusyInfo wait("Fetching conflicting files. Please wait...");
                 wxYield();
@@ -338,6 +340,8 @@ void MainFrame::ResolveConflict()
         for (auto index: selectedItems)
         {
             auto node = *(PairedNode*)(ctrl.listMain->GetItemData(index));
+            if (node.action != PairedNode::Action::Conflict)
+                continue;
             auto rule = ConflictRule::Match(node.path, conflictRules);
             {
                 wxBusyInfo wait("Fetching conflicting files. Please wait...");
@@ -428,6 +432,7 @@ bool MainFrame::DoScan()
 
 bool MainFrame::DoSync()
 {
+    LOG(INFO) << "Begin synchronizing...";
     auto previousCWD = std::filesystem::canonical(std::filesystem::current_path());
     auto cfg = Global::CurrentConfig();
     try
@@ -478,6 +483,7 @@ bool MainFrame::DoSync()
 
         std::string tempPath = Utils::GetTempPath(remoteHome);
 
+        LOG(INFO) << "Propagating changes...";
         wxBusyInfo wait("Propagating changes. Please wait...");
         wxYield();
 
@@ -522,6 +528,7 @@ bool MainFrame::DoSync()
     ssh.CallCLIUnblock(cfg.pathB);
     Blocker::Unblock(cfg.pathA);
     std::filesystem::current_path(previousCWD);
+    LOG(INFO) << "Sync finished.";
 
     return true;
 }
@@ -638,6 +645,10 @@ void MainFrame::OnSync(wxCommandEvent& event)
     // sync proper
     DoSync();
 
+    selectedItems.clear();
+    viewedItemIndex = -1;
+    ctrl.txtDetails->Clear();
+
     // update item list
     int index = 0;
     for (auto it = pairedNodes.begin(); it != pairedNodes.end();)
@@ -648,12 +659,10 @@ void MainFrame::OnSync(wxCommandEvent& event)
                 && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &*it)
             {
                 ctrl.listMain->DeleteItem(index);
-                selectedItems.erase(index);
             }
 
-            pairedNodes.erase(it++);
-            if (index == viewedItemIndex)
-                viewedItemIndex = -1;
+            pairedNodes.erase(it);
+            it++;
         }
         else if (ShouldBeFiltered(*it))
         {
@@ -661,12 +670,9 @@ void MainFrame::OnSync(wxCommandEvent& event)
                 && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &*it)
             {
                 ctrl.listMain->DeleteItem(index);
-                selectedItems.erase(index);
             }
 
             it++;
-            if (index == viewedItemIndex)
-                viewedItemIndex = -1;
         }
         else
         {
@@ -675,10 +681,6 @@ void MainFrame::OnSync(wxCommandEvent& event)
             index++;
         }
     }
-
-    ctrl.txtDetails->Clear();
-    if (viewedItemIndex != -1)
-        ShowDetails(viewedItemIndex);
 }
 
 void MainFrame::OnActionDefault(wxCommandEvent& event)

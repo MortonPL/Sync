@@ -42,6 +42,8 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
         if (!sftp.Delete(remotePath))
             return -1;
         pNode->deleted = wasDeleted = true;
+        pNode->localNode.status = FileNode::Status::Absent;
+        pNode->remoteNode.status = FileNode::Status::Absent;
         break;
     case FileNode::Status::Clean:
     case FileNode::Status::Dirty:
@@ -121,6 +123,8 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
         if (remove(pNode->path.c_str()) != 0)
             return -1;
         pNode->deleted = wasDeleted = true;
+        pNode->localNode.status = FileNode::Status::Absent;
+        pNode->remoteNode.status = FileNode::Status::Absent;
         break;
     case FileNode::Status::Clean:
     case FileNode::Status::Dirty:

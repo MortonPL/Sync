@@ -9,7 +9,7 @@ const unsigned short FileNode::MaxBinarySize = sizeof(unsigned short) + sizeof(u
                                                + PATH_MAX + sizeof(FileNode::size) + sizeof(FileNode::mtime)
                                                + sizeof(FileNode::dev) + sizeof(FileNode::inode)
                                                + sizeof(FileNode::hashHigh) + sizeof(FileNode::hashLow);
-const unsigned short FileNode::MiniStatBinarySize = sizeof(dev_t) + sizeof(ino_t) + sizeof(off_t) + sizeof(timespec);
+const unsigned short FileNode::MiniStatBinarySize = sizeof(dev_t) + sizeof(ino_t) + sizeof(off_t) + sizeof(time_t);
 
 const std::map<FileNode::Status, std::string> FileNode::StatusAsString =
 {
@@ -135,7 +135,7 @@ void FileNode::SerializeStat(struct stat* in, unsigned char* out)
     SERIALIZE(out, dev_t, in->st_dev);
     SERIALIZE(out, ino_t, in->st_ino);
     SERIALIZE(out, off_t, in->st_size);
-    SERIALIZE(out, timespec, in->st_mtim);
+    SERIALIZE(out, time_t, in->st_mtim.tv_sec);
 }
 
 void FileNode::DeserializeStat(unsigned char* in, struct stat* out)
@@ -145,7 +145,7 @@ void FileNode::DeserializeStat(unsigned char* in, struct stat* out)
     DESERIALIZE(in, dev_t, out->st_dev);
     DESERIALIZE(in, ino_t, out->st_ino);
     DESERIALIZE(in, off_t, out->st_size);
-    DESERIALIZE(in, timespec, out->st_mtim);
+    DESERIALIZE(in, time_t, out->st_mtim.tv_sec);
 }
 
 #undef SERIALIZE
