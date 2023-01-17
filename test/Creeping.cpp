@@ -13,16 +13,17 @@ class CreepingTest: public ::testing::Test
 protected:
     CreepingTest()
     {
-        std::filesystem::remove_all("sandbox");
+        std::filesystem::remove_all(sandbox);
     };
 
     ~CreepingTest()
     {
-        std::filesystem::remove_all("sandbox");
+        std::filesystem::remove_all(sandbox);
     };
 
     std::forward_list<FileNode> scanNodes;
     Creeper creeper;
+    const std::filesystem::path sandbox{"sandbox"};
 };
 
 #define EXPECT_FILE_NODE(node, expected)\
@@ -48,7 +49,6 @@ protected:
 
 TEST_F(CreepingTest, Empty)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
 
     auto result = creeper.CreepPath(sandbox, scanNodes);
@@ -60,7 +60,7 @@ TEST_F(CreepingTest, Empty)
 
 TEST_F(CreepingTest, NoRoot)
 {
-    auto result = creeper.CreepPath("sandbox", scanNodes);
+    auto result = creeper.CreepPath(sandbox, scanNodes);
 
     EXPECT_EQ(result, Creeper::Result::NotExists);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
@@ -69,10 +69,9 @@ TEST_F(CreepingTest, NoRoot)
 
 TEST_F(CreepingTest, RootNotADirectory)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::ofstream{sandbox};
 
-    auto result = creeper.CreepPath("sandbox", scanNodes);
+    auto result = creeper.CreepPath(sandbox, scanNodes);
 
     EXPECT_EQ(result, Creeper::Result::NotADir);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
@@ -81,12 +80,12 @@ TEST_F(CreepingTest, RootNotADirectory)
 
 TEST_F(CreepingTest, RootWrongPermissions)
 {
-    const std::filesystem::path sandbox{"sandboxProtected"};
     std::filesystem::create_directory(sandbox);
-    std::ofstream{sandbox/"a"};
-    std::filesystem::permissions(sandbox, std::filesystem::perms::owner_exec, std::filesystem::perm_options::remove);
+    std::filesystem::permissions(sandbox, std::filesystem::perms::owner_all, std::filesystem::perm_options::remove);
 
     auto result = creeper.CreepPath(sandbox, scanNodes);
+
+    std::filesystem::permissions(sandbox, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);
 
     EXPECT_EQ(result, Creeper::Result::Permissions);
     EXPECT_EQ(scanNodes.begin(), scanNodes.end());
@@ -95,7 +94,6 @@ TEST_F(CreepingTest, RootWrongPermissions)
 
 TEST_F(CreepingTest, FlatDirectory)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
     std::ofstream{sandbox/"a"};
     std::ofstream{sandbox/"b"};
@@ -118,7 +116,6 @@ TEST_F(CreepingTest, FlatDirectory)
 
 TEST_F(CreepingTest, DeepDirectory)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
     std::filesystem::create_directories(sandbox/"dir1");
     std::filesystem::create_directories(sandbox/"dir2"/"dir3");
@@ -145,7 +142,6 @@ TEST_F(CreepingTest, DeepDirectory)
 
 TEST_F(CreepingTest, IgnoreSymLinks)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
     std::ofstream{sandbox/"a"};
     std::filesystem::create_symlink(sandbox/"a", sandbox/"link");
@@ -167,7 +163,6 @@ TEST_F(CreepingTest, IgnoreSymLinks)
 // note - hard links can cause funny effects, and only the first of them (last alphabetically) will be mapped
 TEST_F(CreepingTest, HardLinks)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
     std::filesystem::create_directories(sandbox/"dir1");
     std::ofstream{sandbox/"a"};
@@ -193,7 +188,6 @@ TEST_F(CreepingTest, HardLinks)
 
 TEST_F(CreepingTest, SyncBlackListPresent)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
     std::filesystem::create_directories(sandbox/"dir1");
     std::filesystem::create_directories(sandbox/"dir2"/"dir3");
@@ -219,7 +213,6 @@ TEST_F(CreepingTest, SyncBlackListPresent)
 
 TEST_F(CreepingTest, SyncWhiteListPresent)
 {
-    const std::filesystem::path sandbox{"sandbox"};
     std::filesystem::create_directory(sandbox);
     std::filesystem::create_directories(sandbox/"dir1");
     std::filesystem::create_directories(sandbox/"dir2"/"dir3");
