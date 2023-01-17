@@ -49,11 +49,12 @@
 										<flag>wxALL</flag>
 										<border>5</border>
 										<object class="wxButton" name="btnNewConfig">
+											<style>wxBU_LEFT</style>
 											<label>New</label>
 											<default>0</default>
 											<auth_needed>0</auth_needed>
 											<markup>0</markup>
-											<bitmap stock_id="wxART_NEW" stock_client="wxART_BUTTON">undefined.png</bitmap>
+											<bitmap>ico/btn_new.png</bitmap>
 										</object>
 									</object>
 									<object class="sizeritem">
@@ -61,39 +62,13 @@
 										<flag>wxALL</flag>
 										<border>5</border>
 										<object class="wxButton" name="btnEditConfig">
+											<style>wxBU_LEFT</style>
 											<enabled>0</enabled>
 											<label>Edit</label>
 											<default>0</default>
 											<auth_needed>0</auth_needed>
 											<markup>0</markup>
-											<bitmap stock_id="wxART_EDIT" stock_client="wxART_BUTTON">undefined.png</bitmap>
-										</object>
-									</object>
-									<object class="sizeritem">
-										<option>0</option>
-										<flag>wxALL</flag>
-										<border>5</border>
-										<object class="wxButton" name="btnImportConfig">
-											<hidden>1</hidden>
-											<label>Import</label>
-											<default>0</default>
-											<auth_needed>0</auth_needed>
-											<markup>0</markup>
-											<bitmap>ico/xxx.png</bitmap>
-										</object>
-									</object>
-									<object class="sizeritem">
-										<option>0</option>
-										<flag>wxALL</flag>
-										<border>5</border>
-										<object class="wxButton" name="btnExportConfig">
-											<enabled>0</enabled>
-											<hidden>1</hidden>
-											<label>Export</label>
-											<default>0</default>
-											<auth_needed>0</auth_needed>
-											<markup>0</markup>
-											<bitmap>ico/xxx.png</bitmap>
+											<bitmap>ico/btn_edit.png</bitmap>
 										</object>
 									</object>
 									<object class="sizeritem">
@@ -101,12 +76,13 @@
 										<flag>wxALL</flag>
 										<border>5</border>
 										<object class="wxButton" name="btnDeleteConfig">
+											<style>wxBU_LEFT</style>
 											<enabled>0</enabled>
 											<label>Delete</label>
 											<default>0</default>
 											<auth_needed>0</auth_needed>
 											<markup>0</markup>
-											<bitmap stock_id="wxART_DELETE" stock_client="wxART_BUTTON">undefined.png</bitmap>
+											<bitmap>ico/btn_delete.png</bitmap>
 										</object>
 									</object>
 								</object>

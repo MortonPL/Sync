@@ -44,6 +44,11 @@ public:
         };
     };
 
+    bool operator<(const FileNode& other) const
+    {
+        return path < other.path;
+    }
+
     static const unsigned short MaxBinarySize;
     static const unsigned short MiniStatBinarySize;
     static const std::map<Status, std::string> StatusAsString;

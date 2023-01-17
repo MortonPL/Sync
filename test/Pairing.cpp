@@ -46,25 +46,27 @@ T* GetNodeAt(C<T>& list, int index)
     return &*it;
 }
 
-void ExpectPairedNode(PairedNode* pair, PairedNode* expected)
-{
-    EXPECT_NE(pair, nullptr) << "PairedNode does not exist!";
-    EXPECT_NE(expected, nullptr) << "Too many PairedNodes!";
-    EXPECT_EQ(pair->path, expected->path) << "PairedNode " << expected->path << " has wrong path!";
-    EXPECT_EQ(pair->action, expected->action) << "PairedNode " << expected->path << " has wrong action!";
-    EXPECT_EQ(pair->defaultAction, expected->defaultAction) << "PairedNode " << expected->path << " has wrong default action!";
-    if (!expected->localNode.IsEmpty())
-        EXPECT_EQ(pair->localNode.status, expected->localNode.status) << "PairedNode " << expected->path << " has local status mismatch!";
-    else
-        EXPECT_EQ(pair->localNode.IsEmpty(), true);
-    if (!expected->historyNode.IsEmpty())
-        EXPECT_EQ(pair->historyNode.status, expected->historyNode.status) << "PairedNode " << expected->path << " has history status mismatch!";
-    else
-        EXPECT_EQ(pair->historyNode.IsEmpty(), true);
-    if (!expected->remoteNode.IsEmpty())
-        EXPECT_EQ(pair->remoteNode.status, expected->remoteNode.status) << "PairedNode " << expected->path << " has remote status mismatch!";
-    else
-        EXPECT_EQ(pair->remoteNode.IsEmpty(), true);
+#define EXPECT_PAIRED_NODE(pair, expected)\
+{\
+    PairedNode* pPair = pair;\
+    PairedNode* pExpected = expected;\
+    EXPECT_NE(pPair, nullptr) << "PairedNode does not exist!";\
+    EXPECT_NE(pExpected, nullptr) << "Too many PairedNodes!";\
+    EXPECT_EQ(pPair->path, pExpected->path) << "PairedNode " << pExpected->path << " has wrong path!";\
+    EXPECT_EQ(pPair->action, pExpected->action) << "PairedNode " << pExpected->path << " has wrong action!";\
+    EXPECT_EQ(pPair->defaultAction, pExpected->defaultAction) << "PairedNode " << pExpected->path << " has wrong default action!";\
+    if (!pExpected->localNode.IsEmpty())\
+        EXPECT_EQ(pPair->localNode.status, pExpected->localNode.status) << "PairedNode " << pExpected->path << " has local status mismatch!";\
+    else\
+        EXPECT_EQ(pPair->localNode.IsEmpty(), true);\
+    if (!pExpected->historyNode.IsEmpty())\
+        EXPECT_EQ(pPair->historyNode.status, pExpected->historyNode.status) << "PairedNode " << pExpected->path << " has history status mismatch!";\
+    else\
+        EXPECT_EQ(pPair->historyNode.IsEmpty(), true);\
+    if (!pExpected->remoteNode.IsEmpty())\
+        EXPECT_EQ(pPair->remoteNode.status, pExpected->remoteNode.status) << "PairedNode " << pExpected->path << " has remote status mismatch!";\
+    else\
+        EXPECT_EQ(pPair->remoteNode.IsEmpty(), true);\
 }
 
 //COMMONLY USED NAMES IN TESTS:
@@ -92,7 +94,7 @@ protected:
     auto eit = expectedResult.begin();\
     for (int i = 0; i < expectedResult.size(); i++)\
     {\
-        ExpectPairedNode(pit != pairedNodes.end()? &*pit: nullptr, eit != expectedResult.end()? &*eit: nullptr);\
+        EXPECT_PAIRED_NODE(pit != pairedNodes.end()? &*pit: nullptr, eit != expectedResult.end()? &*eit: nullptr);\
         pit++;\
         eit++;\
     }\

@@ -25,11 +25,13 @@ protected:
     Creeper creeper;
 };
 
-void ExpectFileNode(FileNode* node, FileNode* expected)
-{
-    EXPECT_NE(node, nullptr) << "FileNode does not exist!";
-    EXPECT_NE(expected, nullptr) << "Too many FileNodes!";
-    EXPECT_EQ(node->path, expected->path) << "FileNode " << expected->path << " has wrong path!";
+#define EXPECT_FILE_NODE(node, expected)\
+{\
+    FileNode* pNode = node;\
+    FileNode* pExpected = expected;\
+    EXPECT_NE(pNode, nullptr) << "FileNode does not exist!";\
+    EXPECT_NE(pExpected, nullptr) << "Too many FileNodes!";\
+    EXPECT_EQ(pNode->path, pExpected->path) << "FileNode " << pExpected->path << " has wrong path!";\
 }
 
 #define EXPECT_ALL_NODES(scanNodes, expectedResult)\
@@ -38,7 +40,7 @@ void ExpectFileNode(FileNode* node, FileNode* expected)
     auto eit = expectedResult.begin();\
     for (int i = 0; i < expectedResult.size(); i++)\
     {\
-        ExpectFileNode(sit != scanNodes.end()? &*sit: nullptr, eit != expectedResult.end()? &*eit: nullptr);\
+        EXPECT_FILE_NODE(sit != scanNodes.end()? &*sit: nullptr, eit != expectedResult.end()? &*eit: nullptr);\
         sit++;\
         eit++;\
     }\
@@ -101,12 +103,13 @@ TEST_F(CreepingTest, FlatDirectory)
 
     std::list<FileNode> expectedResult =
     {
-        FileNode("c"),
-        FileNode("b"),
         FileNode("a"),
+        FileNode("b"),
+        FileNode("c"),
     };
 
     auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    scanNodes.sort();
 
     EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 3);
@@ -126,13 +129,14 @@ TEST_F(CreepingTest, DeepDirectory)
 
     std::list<FileNode> expectedResult =
     {
-        // no emptydir!
-        FileNode("dir2/dir3/c"),
-        FileNode("dir1/b"),
         FileNode("a"),
+        FileNode("dir1/b"),
+        FileNode("dir2/dir3/c"),
+        // no emptydir!
     };
 
     auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    scanNodes.sort();
 
     EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 3);
@@ -148,11 +152,12 @@ TEST_F(CreepingTest, IgnoreSymLinks)
 
     std::list<FileNode> expectedResult =
     {
-        // no link!
         FileNode("a"),
+        // no link!
     };
 
     auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    scanNodes.sort();
 
     EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 1);
@@ -172,13 +177,14 @@ TEST_F(CreepingTest, HardLinks)
 
     std::list<FileNode> expectedResult =
     {
-        FileNode("link2"),
-        FileNode("link"),
-        FileNode("dir1/link3"),
         FileNode("a"),
+        FileNode("dir1/link3"),
+        FileNode("link"),
+        FileNode("link2"),     
     };
 
     auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    scanNodes.sort();
 
     EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 4);
@@ -198,12 +204,13 @@ TEST_F(CreepingTest, SyncBlackListPresent)
 
     std::list<FileNode> expectedResult =
     {
-        // no dir*!
-        FileNode("a"),
         FileNode(Creeper::SyncBlackListFile),
+        FileNode("a"),
+        // no dir*!
     };
 
     auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    scanNodes.sort();
 
     EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 2);
@@ -224,14 +231,15 @@ TEST_F(CreepingTest, SyncWhiteListPresent)
 
     std::list<FileNode> expectedResult =
     {
+        FileNode(Creeper::SyncBlackListFile),
+        FileNode(Creeper::SyncWhiteListFile),
+        FileNode("a"),
         // no dir*!
         FileNode("dir2/dir3/c"),
-        FileNode("a"),
-        FileNode(Creeper::SyncWhiteListFile),
-        FileNode(Creeper::SyncBlackListFile),
     };
 
     auto result = creeper.CreepPath(sandbox.string() + "/", scanNodes);
+    scanNodes.sort();
 
     EXPECT_EQ(result, Creeper::Result::Ok);
     EXPECT_EQ(creeper.GetResultsCount(), 4);

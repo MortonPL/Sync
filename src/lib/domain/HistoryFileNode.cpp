@@ -18,6 +18,7 @@ HistoryFileNode::HistoryFileNode(std::string path, dev_t dev, ino_t inode, dev_t
     this->hashHigh = hashHigh;
     this->hashLow = hashLow;
     this->status = FileNode::Status::HistoryPresent;
+    this->noHash = false;
 }
 
 FileNode::devinode HistoryFileNode::GetRemoteDevInode() const

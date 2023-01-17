@@ -107,14 +107,14 @@
 				<label>Change Configuration</label>
 				<tooltip>Change Configuration</tooltip>
 				<longhelp>Change Configuration.</longhelp>
-				<bitmap stock_id="wxART_FILE_OPEN" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+				<bitmap>ico/open_dir.png</bitmap>
 			</object>
 			<object class="separator" />
 			<object class="tool" name="tlb_scan">
 				<label>Scan directories</label>
 				<tooltip>Scan directories</tooltip>
 				<longhelp>Scan directories, looking for changes.</longhelp>
-				<bitmap stock_id="wxART_FIND" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+				<bitmap>ico/find.png</bitmap>
 			</object>
 			<object class="tool" name="tlb_sync">
 				<label>Go Synchronize!</label>
@@ -124,28 +124,28 @@
 			</object>
 			<object class="separator" />
 			<object class="tool" name="tlb_ltor">
-				<label>Left to Right</label>
+				<label>Local to Remote</label>
 				<tooltip>Propagate Local version to the Remote.</tooltip>
 				<longhelp>Propagate Local version to the Remote.</longhelp>
-				<bitmap stock_id="wxART_GO_FORWARD" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+				<bitmap>ico/ltor.png</bitmap>
 			</object>
 			<object class="tool" name="tlb_ignore">
 				<label>Ignore</label>
 				<tooltip>Ignore this file during this synchronization.</tooltip>
 				<longhelp>Ignore this file during this synchronization.</longhelp>
-				<bitmap stock_id="wxART_DELETE" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+				<bitmap>ico/exit.png</bitmap>
 			</object>
 			<object class="tool" name="tlb_rtol">
-				<label>Right to Left</label>
+				<label>Remote to Local</label>
 				<tooltip>Propagate Remote version to the Local.</tooltip>
 				<longhelp>Propagate Remote version to the Local.</longhelp>
-				<bitmap stock_id="wxART_GO_BACK" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+				<bitmap>ico/rtol.png</bitmap>
 			</object>
 			<object class="tool" name="tlb_tool">
 				<label>Resolve Conflict</label>
 				<tooltip>Launch a third party tool to resolve conflicting changes.</tooltip>
 				<longhelp>Launch a third party tool to resolve conflicting changes.</longhelp>
-				<bitmap stock_id="wxART_FIND_AND_REPLACE" stock_client="wxART_TOOLBAR">undefined.png</bitmap>
+				<bitmap>ico/replace.png</bitmap>
 			</object>
 		</object>
 		<object class="wxFlexGridSizer">
@@ -161,7 +161,7 @@
 				<border>5</border>
 				<object class="wxListCtrl" name="listMain">
 					<style>wxLC_REPORT</style>
-					<size>600,400</size>
+					<size>650,400</size>
 				</object>
 			</object>
 			<object class="sizeritem">

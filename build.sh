@@ -16,18 +16,18 @@ BUILD_TEST="";
 # Example usage: ./build.sh release -i
 # Show user help
 print_help() {
-    echo "Usage: build.sh release|debug [TARGETS] [OPTIONS]...";
-    echo "All options (except help) require a valid target (release|debug)!"
-    echo "Targets (if none set, build all):";
-    echo "\tgui";
-    echo "\tcli";
-    echo "\ttest";
-    echo "Options:";
-    echo "\t-c, --configure                 \t Force (re)generate CMake configuration files";
-    echo "\t-h, --help                      \t Display this message";
-    echo "\t-i, --install                   \t Install program (to ~/.sync) after build";
-    echo "\t-t, --tests                     \t Run tests after build";
-    echo "\t-u, --uninstall                 \t Uninstall program (from ~/.sync)";
+    echo -e "Usage: build.sh release|debug [TARGETS] [OPTIONS]...";
+    echo -e "All options (except help) require a valid target (release|debug)!"
+    echo -e "Targets (if none set, build all):";
+    echo -e "\tgui";
+    echo -e "\tcli";
+    echo -e "\ttest";
+    echo -e "Options:";
+    echo -e "\t-c, --configure                 \t Force (re)generate CMake configuration files";
+    echo -e "\t-h, --help                      \t Display this message";
+    echo -e "\t-i, --install                   \t Install program (to ~/.sync) after build";
+    echo -e "\t-t, --tests                     \t Run tests after build";
+    echo -e "\t-u, --uninstall                 \t Uninstall program (from ~/.sync)";
 }
 
 parse_args() {
@@ -148,11 +148,24 @@ do_install() {
         mkdir -p ~/.sync;
         mkdir -p ~/.sync/bin;
         mkdir -p ~/.sync/res;
-        cmake --install .;
+        if [ $BUILD_NOT_ALL -eq 1 ]; then
+            if [ ! -z "$BUILD_GUI" ]; then
+                cmake --install . --component $BUILD_GUI;
+            fi
+            if [ ! -z "$BUILD_CLI" ]; then
+                cmake --install . --component $BUILD_CLI;
+            fi
+            if [ ! -z "$BUILD_TEST" ]; then
+                cmake --install . --component $BUILD_TEST;
+            fi
+        else
+            cmake --install .;
+        fi
         echo "Installation complete!";
     fi
 }
 
+# currently unused
 do_other_dir() {
     if [ $OTHER_DIR -eq 1 ]; then
         echo "Copying files to OTHER_DIR: /home/$OTHER_USER/.sync";

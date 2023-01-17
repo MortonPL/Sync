@@ -25,3 +25,5 @@ add_executable(${TEST_NAME} ${TEST_FILES})
 target_include_directories(${TEST_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/src/headers")
 target_link_libraries(${TEST_NAME} GTest::gtest_main ${LIB_NAME})
 gtest_discover_tests(${TEST_NAME})
+
+install(TARGETS ${TEST_NAME} DESTINATION bin COMPONENT ${TEST_NAME})

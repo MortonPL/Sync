@@ -16,8 +16,6 @@ private:
         wxListBox* listConfigs;
         wxButton* btnNewConfig;
         wxButton* btnEditConfig;
-        wxButton* btnImportConfig;
-        wxButton* btnExportConfig;
         wxButton* btnDeleteConfig;
         wxTextCtrl* txtDetails;
         wxButton* btnOK;

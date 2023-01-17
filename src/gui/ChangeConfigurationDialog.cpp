@@ -29,15 +29,13 @@ ChangeConfigurationDialog::ChangeConfigurationDialog(wxWindow* pParent)
         (wxListBox*)(FindWindow("listConfigs")),
         (wxButton*)(FindWindow("btnNewConfig")),
         (wxButton*)(FindWindow("btnEditConfig")),
-        (wxButton*)(FindWindow("btnImportConfig")),
-        (wxButton*)(FindWindow("btnExportConfig")),
         (wxButton*)(FindWindow("btnDeleteConfig")),
         (wxTextCtrl*)(FindWindow("txtDetails")),
         (wxButton*)(FindWindow("wxID_OK")),
         (wxButton*)(FindWindow("wxID_CANCEL")),
     };
 
-    this->selectedConfigIdx = -1;
+    selectedConfigIdx = -1;
     PopulateConfigList();
 }
 
@@ -48,9 +46,10 @@ void ChangeConfigurationDialog::PopulateConfigList()
     try
     {
         DBConnector db(DBConnector::GetMainFileName());
-        db.SelectAllConfigs(this->configs);
+        configs.clear();
+        db.SelectAllConfigs(configs);
         auto arrs = wxArrayString();
-        for(auto config: this->configs)
+        for(auto config: configs)
             arrs.Add(Misc::stringToWx(config.name));
         ctrl.listConfigs->Clear();
         if (!arrs.IsEmpty())
@@ -66,10 +65,10 @@ void ChangeConfigurationDialog::PopulateConfigList()
 
 void ChangeConfigurationDialog::PopulateConfigDetails()
 {
-    if (this->selectedConfigIdx < 0)
+    if (selectedConfigIdx < 0)
         return;
 
-    auto config = this->configs[this->selectedConfigIdx];
+    auto config = configs[selectedConfigIdx];
     ctrl.txtDetails->Clear();
     *ctrl.txtDetails << "General info:\n";
     *ctrl.txtDetails << "\tName: " << Misc::stringToWx(config.name) << "\n";
@@ -87,7 +86,6 @@ void ChangeConfigurationDialog::CheckIfConfigSelected()
     {
         PopulateConfigDetails();
         ctrl.btnEditConfig->Enable();
-        ctrl.btnExportConfig->Enable();
         ctrl.btnDeleteConfig->Enable();
         ctrl.btnOK->Enable();
     }
@@ -95,7 +93,6 @@ void ChangeConfigurationDialog::CheckIfConfigSelected()
     {
         ctrl.txtDetails->Clear();
         ctrl.btnEditConfig->Disable();
-        ctrl.btnExportConfig->Disable();
         ctrl.btnDeleteConfig->Disable();
         ctrl.btnOK->Disable();
     }
