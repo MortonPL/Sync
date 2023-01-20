@@ -3,7 +3,7 @@
 #include "Lib/FileSystem.h"
 #include "Lib/PairingManager.h"
 #include "Lib/ConflictManager.h"
-#include "Lib/Compression.h"
+#include "Lib/Compressor.h"
 #include "Utils.h"
 
 std::string MakeTempPathForLocal(PairedNode* pNode)
@@ -62,7 +62,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
             if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
             {
                 off_t compressedSize = 0;
-                if (!Compression::Compress(pNode->path, tempFilePathLocal+".zst", compressedSize))
+                if (!Compressor::Compress(pNode->path, tempFilePathLocal+".zst", compressedSize))
                     return -1;
                 if (!sftp.Send(tempFilePathLocal+".zst", tempFilePathRemote+".zst", compressedSize))
                     return -1;
@@ -147,7 +147,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
                     return -1;
                 if (!sftp.Receive(tempFilePathRemote+".zst", tempFilePathLocal+".zst", compressedSize))
                     return -1;
-                if (!Compression::Decompress(tempFilePathLocal+".zst", tempFilePathLocal))
+                if (!Compressor::Decompress(tempFilePathLocal+".zst", tempFilePathLocal))
                     return -1;
             }
             if (!FileSystem::MoveLocalFile(tempFilePathLocal, pNode->path))
@@ -236,7 +236,7 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
         if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
         {
             off_t compressedSize = 0;
-            if (!Compression::Compress(tempRemote, tempRemote+".zst", compressedSize))
+            if (!Compressor::Compress(tempRemote, tempRemote+".zst", compressedSize))
                 return -1;
             if (!sftp.Send(tempRemote+".zst", tempFilePathRemote+".zst", compressedSize))
                 return -1;
@@ -333,7 +333,7 @@ bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& 
     return true;
 }
 
-int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, DBConnector& db)
+int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, HistoryFileNodeDBConnector& db)
 {
     if (pNode->action == PairedNode::Action::Ignore
         || pNode->action == PairedNode::Action::DoNothing
@@ -381,7 +381,7 @@ int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& t
 
     if (wasDeleted)
     {
-        if (!db.DeleteFileNode(pNode->path))
+        if (!db.Delete(pNode->path))
         {
             pNode->progress = PairedNode::Progress::Failed;
             return 2;
@@ -389,7 +389,7 @@ int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& t
     }
     else
     {
-        if (!db.UpdateFileNode(pNode->historyNode))
+        if (!db.Update(pNode->historyNode))
         {
             pNode->progress = PairedNode::Progress::Failed;
             return 2;

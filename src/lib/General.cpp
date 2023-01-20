@@ -41,7 +41,7 @@ bool General::InitEverything(std::string logName)
 
     if (!ensureDirectory(Utils::GetDatabasePath(), "Failed to make sure that the database directory exists! Exiting."))
         return false;
-    if (!DBConnector::EnsureCreatedMain())
+    if (!DBConnectorStatic::EnsureCreatedMain())
     {
         std::cerr << "Failed to ensure that the application database exists! Exiting.\n";
         LOG(ERROR) << "Failed to ensure that the application database exists! Exiting.";

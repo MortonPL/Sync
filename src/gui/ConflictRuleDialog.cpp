@@ -51,9 +51,9 @@ void ConflictRuleDialog::PopulateRuleList()
 {
     try
     {
-        DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid));
+        ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid));
         pRules->clear();
-        db.SelectAllConflictRules(*pRules);
+        db.SelectAll(*pRules);
         auto arrs = wxArrayString();
         for(auto rule: *pRules)
             arrs.Add(Misc::stringToWx(rule.name));
@@ -136,7 +136,7 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
     {
         try
         {
-            DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
+            ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
             if (db.SwapConflictRule((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]))
             {
                 ctrl.listConflictRules->SetString(selectedRuleIdx - 1, (*pRules)[selectedRuleIdx].name);
@@ -167,7 +167,7 @@ void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
     {
         try
         {
-            DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
+            ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
             if (db.SwapConflictRule((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]))
             {
                 ctrl.listConflictRules->SetString(selectedRuleIdx + 1, (*pRules)[selectedRuleIdx].name);
@@ -196,8 +196,8 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
     event.GetId(); //unused
     try
     {
-        DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.DeleteConflictRule((*pRules)[selectedRuleIdx].id))
+        ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        if (db.Delete((*pRules)[selectedRuleIdx].id))
         {
             GenericPopup("Conflict rules removed successfully.").ShowModal();
         }

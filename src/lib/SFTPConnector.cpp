@@ -18,6 +18,9 @@ SFTPConnector::~SFTPConnector()
 
 bool SFTPConnector::Connect()
 {
+    if (!ssh)
+        return false;
+
     if ((sftp = ssh->MakeSFTPSession()) == NULL)
         return false;
     
@@ -50,7 +53,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t 
     // open both
     if ((pFile = sftp_open(sftp, tempFileName.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
     {
-        LOG(ERROR) << "Failed to open remote file " << tempFileName << " with error: " << ssh->GetError();
+        LOG(ERROR) << "Failed to open remote file " << tempFileName << " with error: " << (ssh? ssh->GetError(): "");
         return false;
     }
     if ((localFd = open(localPath.c_str(), O_RDONLY)) == -1)
@@ -97,7 +100,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t 
 
     if (sftp_close(pFile) == SSH_ERROR)
     {
-        LOG(ERROR) << "Failed to close remote file because: " << ssh->GetError();
+        LOG(ERROR) << "Failed to close remote file because: " << (ssh? ssh->GetError(): "");
         return false;
     }
     close(localFd);
@@ -116,7 +119,7 @@ bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, of
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {
-        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << ssh->GetError();
+        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << (ssh? ssh->GetError(): "");
         return false;
     }
     if ((localFd = open(tempFileName.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)
@@ -184,7 +187,7 @@ bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPa
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {
-        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << ssh->GetError();
+        LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << (ssh? ssh->GetError(): "");
         return false;
     }
     if ((localFd = open(localPath.c_str(), O_WRONLY | O_CREAT, S_IRWXU|S_IRGRP|S_IROTH)) == -1)

@@ -45,9 +45,9 @@ void ChangeConfigurationDialog::PopulateConfigList()
 {
     try
     {
-        DBConnector db(DBConnector::GetMainFileName());
+        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName());
         configs.clear();
-        db.SelectAllConfigs(configs);
+        db.SelectAll(configs);
         auto arrs = wxArrayString();
         for(auto config: configs)
             arrs.Add(Misc::stringToWx(config.name));
@@ -128,8 +128,8 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
     event.GetId(); //unused
     try
     {
-        DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);
-        if (db.DeleteConfig(configs[selectedConfigIdx].id))
+        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
+        if (db.Delete(configs[selectedConfigIdx].id))
         {
             remove(Utils::UUIDToDBPath(configs[selectedConfigIdx].uuid).c_str());
             GenericPopup("Configuration removed successfully.").ShowModal();

@@ -1,11 +1,11 @@
-#include "Lib/Compression.h"
+#include "Lib/Compressor.h"
 
 #include <fstream>
 
 #include "Utils.h"
 #include "Zstd.h"
 
-const off_t Compression::minimumCompressibleSize = 50000000;
+const off_t Compressor::minimumCompressibleSize = 50000000;
 
 struct freeContext
 {
@@ -13,7 +13,7 @@ struct freeContext
     void operator()(ZSTD_DCtx* ptr){ZSTD_freeDCtx(ptr);}
 };
 
-bool Compression::Compress(const std::string pathIn, const std::string pathOut, off_t& compressedSize)
+bool Compressor::Compress(const std::string pathIn, const std::string pathOut, off_t& compressedSize)
 {
     try
     {
@@ -60,7 +60,7 @@ bool Compression::Compress(const std::string pathIn, const std::string pathOut, 
     return true;
 }
 
-bool Compression::Decompress(const std::string pathIn, const std::string pathOut)
+bool Compressor::Decompress(const std::string pathIn, const std::string pathOut)
 {
     bool empty = true;
 

@@ -2,7 +2,7 @@
 
 #include "Lib/FileSystem.h"
 #include "Lib/Creeper.h"
-#include "Lib/Compression.h"
+#include "Lib/Compressor.h"
 #include "Utils.h"
 
 std::string ConflictManager::tempSuffixLocal = ".SyncLOCAL";
@@ -32,7 +32,7 @@ bool ConflictManager::Fetch(const PairedNode& node, const ConflictRule& rule, co
     
     // receive the remote file
     // compress if > 50MB
-    if (node.remoteNode.size >= Compression::minimumCompressibleSize)
+    if (node.remoteNode.size >= Compressor::minimumCompressibleSize)
     {
         // only transfer if we don't have the matching uncompressed file
         struct stat buf;
@@ -43,7 +43,7 @@ bool ConflictManager::Fetch(const PairedNode& node, const ConflictRule& rule, co
                 return false;
             if (!sftp.ReceiveNonAtomic(remoteTempPath + compressedExtension, hashedPath + compressedExtension))
                 return false;
-            if (!Compression::Decompress(hashedPath + compressedExtension, hashedPath))
+            if (!Compressor::Decompress(hashedPath + compressedExtension, hashedPath))
                 return false;
         }
         if (!FileSystem::MoveLocalFile(hashedPath, tempFileRemote))

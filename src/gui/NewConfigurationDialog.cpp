@@ -61,7 +61,7 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
     uuid_generate(uuid);
 
     config = Configuration(
-        NOID,
+        DBConnectorStatic::NoID,
         Misc::wxToString(ctrl.txtConfigName->GetValue()),
         uuid,
         Utils::CorrectDirPath(pathA),
@@ -72,8 +72,8 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
 
     try
     {
-        DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);
-        db.InsertConfig(config);
+        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
+        db.Insert(config);
     }
     catch(const std::exception& e)
     {

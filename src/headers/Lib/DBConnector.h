@@ -8,37 +8,64 @@
 #include "Domain/Configuration.h"
 #include "Domain/HistoryFileNode.h"
 #include "Domain/ConflictRule.h"
+#include "Utils.h"
 
-#define NOID -1
-/*A class that connects to a specific SQLite database file and makes CRUD queries.*/
+class DBConnectorStatic
+{
+public:
+    static std::string GetMainFileName();
+    static bool EnsureCreatedMain();
+    static bool EnsureCreatedHistory(const std::string path);
+    static const int NoID = -1;
+};
+template <typename TObject, typename TId, template<class, class> class TContainter>
 class DBConnector
 {
 public:
-    DBConnector(std::string path, int mode=SQLite::OPEN_READONLY);
-    ~DBConnector();
+    DBConnector(std::string path, int mode=SQLite::OPEN_READONLY): db(Utils::GetDatabasePath() + path, mode) {};
+    virtual ~DBConnector() {};
 
-    static std::string GetMainFileName();
-
-    static bool EnsureCreatedMain();
-    bool InsertConfig(const Configuration config);
-    bool UpdateConfig(const Configuration config);
-    bool DeleteConfig(int id);
-    void SelectAllConfigs(std::vector<Configuration>& configs);
-
-    static bool EnsureCreatedHistory(const std::string path);
-    bool InsertFileNode(const HistoryFileNode& file);
-    bool UpdateFileNode(const HistoryFileNode& file);
-    bool DeleteFileNode(const std::string path);
-    void SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes);
-
-    bool InsertConflictRule(const ConflictRule& rule);
-    bool UpdateConflictRule(const ConflictRule& rule);
-    bool DeleteConflictRule(int id);
-    bool SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2);
-    void SelectAllConflictRules(std::vector<ConflictRule>& nodes);
-
-private:
+    virtual bool Insert(const TObject& object) = 0;
+    virtual bool Update(const TObject& object) = 0;
+    virtual bool Delete(TId id) = 0;
+    virtual void SelectAll(TContainter<TObject, std::allocator<TObject>>& objects) = 0;
+protected:
     SQLite::Database db;
+};
+
+class ConfigurationDBConnector: DBConnector<Configuration, int, std::vector>
+{
+public:
+    ConfigurationDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
+
+    bool Insert(const Configuration& config);
+    bool Update(const Configuration& config);
+    bool Delete(int id);
+    void SelectAll(std::vector<Configuration>& configs);
+};
+
+class HistoryFileNodeDBConnector: DBConnector<HistoryFileNode, std::string, std::forward_list>
+{
+public:
+    HistoryFileNodeDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
+
+    bool Insert(const HistoryFileNode& fileNode);
+    bool Update(const HistoryFileNode& fileNode);
+    bool Delete(std::string path);
+    void SelectAll(std::forward_list<HistoryFileNode>& fileNodes);
+};
+
+class ConflictRuleDBConnector: DBConnector<ConflictRule, int, std::vector>
+{
+public:
+    ConflictRuleDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
+
+    bool Insert(const ConflictRule& rule);
+    bool Update(const ConflictRule& rule);
+    bool Delete(int id);
+    void SelectAll(std::vector<ConflictRule>& rules);
+
+    bool SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2);
 };
 
 #endif

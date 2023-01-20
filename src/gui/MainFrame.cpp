@@ -402,8 +402,8 @@ bool MainFrame::DoScan()
     // read history
     try
     {
-        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
-        db.SelectAllFileNodes(historyNodes);
+        auto db = HistoryFileNodeDBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
+        db.SelectAll(historyNodes);
     }
     catch(const std::exception& e)
     {
@@ -445,11 +445,11 @@ bool MainFrame::DoSync()
                 "Failed to sync files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
                 "directory is already being synchronized by another instance, or if the last \n"
                 "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
-                "nothing is being synchronized, find and delete " + Blocker::SyncBlockedFile + " manually.", Announcer::Severity::Error);
+                "nothing is being synchronized, delete " + Blocker::SyncBlockedFile + " manually.", Announcer::Severity::Error);
             return false;
         }
 
-        auto db = DBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
+        auto db = HistoryFileNodeDBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
         if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
         {
             Blocker::Unblock(cfg.pathA);
@@ -500,6 +500,7 @@ bool MainFrame::DoSync()
                         && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &pair)
                     {
                         UpdateItem(&pair, index);
+                        ctrl.listMain->EnsureVisible(index);
                     }
                     index++;
                 }
@@ -512,6 +513,7 @@ bool MainFrame::DoSync()
                 auto pNode = (PairedNode*)(ctrl.listMain->GetItemData(index));
                 SyncManager::Sync(pNode, cfg.pathB, tempPath, ssh, sftp, db);
                 UpdateItem(pNode, index);
+                ctrl.listMain->EnsureVisible(index);
             }
         }
     }
@@ -570,7 +572,7 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     pairedNodes.clear();
     selectedItems.clear();
 
-    if (!DBConnector::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::CurrentConfig().uuid)))
+    if (!DBConnectorStatic::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::CurrentConfig().uuid)))
     {
         GenericPopup("Couldn't read configuration file history.\nThis can happen if the configuration is scanned "
                      "for the first time\nor if it's corrupted/missing. All files will be marked as new or conflicting.").ShowModal();

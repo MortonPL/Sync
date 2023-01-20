@@ -5,6 +5,7 @@
 #include "Lib/General.h"
 #include "Lib/Creeper.h"
 #include "Lib/Blocker.h"
+#include "Lib/Compressor.h"
 #include "Lib/SSHConnector.h"
 #include "Lib/Announcer.h"
 #include "CLI/Global.h"
@@ -241,7 +242,6 @@ int Serve()
     return 0;
 }
 
-#include "Lib/Compression.h"
 int main(int argc, char* argv[])
 {
     ParseArgs(argc, argv);
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Compress)
     {
         off_t compressedSize = 0;
-        std::cout << (Compression::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize)? 0: 1);
+        std::cout << (Compressor::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize)? 0: 1);
         std::cout.flush();
         writeall(1, (char*)&compressedSize, sizeof(compressedSize));
         return 0;
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Decompress)
     {
-        std::cout << (Compression::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
+        std::cout << (Compressor::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
         std::cout.flush();
         return 0;
     }

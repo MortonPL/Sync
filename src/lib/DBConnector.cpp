@@ -1,23 +1,13 @@
 #include "Lib/DBConnector.h"
 
 #include <uuid/uuid.h>
-#include "Utils.h"
 
-DBConnector::DBConnector(std::string path, int mode): db(Utils::GetDatabasePath() + path, mode)
-{
-}
-
-DBConnector::~DBConnector()
-{
-}
-
-std::string DBConnector::GetMainFileName()
+std::string DBConnectorStatic::GetMainFileName()
 {
     return "sync.db3";
 }
 
-// run this method ONCE at the start of the program!
-bool DBConnector::EnsureCreatedMain()
+bool DBConnectorStatic::EnsureCreatedMain()
 {
     try
     {
@@ -32,8 +22,8 @@ bool DBConnector::EnsureCreatedMain()
             "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,"
             "root_A TEXT NOT NULL,"
             "root_B TEXT NOT NULL,"
-            "root_B_address TEXT,"
-            "root_B_user TEXT)"
+            "root_B_address TEXT NOT NULL,"
+            "root_B_user TEXT NOT NULL)"
         );
     }
     catch(const std::exception& e)
@@ -45,7 +35,7 @@ bool DBConnector::EnsureCreatedMain()
     return true;
 }
 
-bool DBConnector::EnsureCreatedHistory(std::string path)
+bool DBConnectorStatic::EnsureCreatedHistory(const std::string path)
 {
     try
     {
@@ -88,7 +78,7 @@ bool DBConnector::EnsureCreatedHistory(std::string path)
     };
 }
 
-bool DBConnector::InsertConfig(Configuration config)
+bool ConfigurationDBConnector::Insert(const Configuration& config)
 {
     const int uuidStringSize = 36;
     char uuidstr[uuidStringSize+1];
@@ -110,7 +100,7 @@ bool DBConnector::InsertConfig(Configuration config)
     return true;
 }
 
-bool DBConnector::UpdateConfig(Configuration config)
+bool ConfigurationDBConnector::Update(const Configuration& config)
 {
     try
     {
@@ -130,7 +120,7 @@ bool DBConnector::UpdateConfig(Configuration config)
     return true;
 }
 
-bool DBConnector::DeleteConfig(int id)
+bool ConfigurationDBConnector::Delete(int id)
 {
     try
     {
@@ -145,7 +135,7 @@ bool DBConnector::DeleteConfig(int id)
     return true;
 }
 
-void DBConnector::SelectAllConfigs(std::vector<Configuration>& configs)
+void ConfigurationDBConnector::SelectAll(std::vector<Configuration>& configs)
 {
     try
     {
@@ -161,7 +151,7 @@ void DBConnector::SelectAllConfigs(std::vector<Configuration>& configs)
     }
 }
 
-bool DBConnector::InsertFileNode(const HistoryFileNode& file)
+bool HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
 {
     try
     {
@@ -183,7 +173,7 @@ bool DBConnector::InsertFileNode(const HistoryFileNode& file)
     return true;
 }
 
-bool DBConnector::UpdateFileNode(const HistoryFileNode& file)
+bool HistoryFileNodeDBConnector::Update(const HistoryFileNode& file)
 {
     try
     {
@@ -205,7 +195,7 @@ bool DBConnector::UpdateFileNode(const HistoryFileNode& file)
     return true;
 }
 
-bool DBConnector::DeleteFileNode(const std::string path)
+bool HistoryFileNodeDBConnector::Delete(const std::string path)
 {
     try
     {
@@ -220,7 +210,7 @@ bool DBConnector::DeleteFileNode(const std::string path)
     return true;
 }
 
-void DBConnector::SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes)
+void HistoryFileNodeDBConnector::SelectAll(std::forward_list<HistoryFileNode>& nodes)
 {
     try
     {
@@ -248,7 +238,7 @@ void DBConnector::SelectAllFileNodes(std::forward_list<HistoryFileNode>& nodes)
     }
 }
 
-bool DBConnector::InsertConflictRule(const ConflictRule& rule)
+bool ConflictRuleDBConnector::Insert(const ConflictRule& rule)
 {
     try
     {
@@ -269,7 +259,7 @@ bool DBConnector::InsertConflictRule(const ConflictRule& rule)
     return true;
 }
 
-bool DBConnector::UpdateConflictRule(const ConflictRule& rule)
+bool ConflictRuleDBConnector::Update(const ConflictRule& rule)
 {
     try
     {
@@ -288,7 +278,7 @@ bool DBConnector::UpdateConflictRule(const ConflictRule& rule)
     return true;
 }
 
-bool DBConnector::DeleteConflictRule(int id)
+bool ConflictRuleDBConnector::Delete(int id)
 {
     try
     {
@@ -303,7 +293,7 @@ bool DBConnector::DeleteConflictRule(int id)
     return true;
 }
 
-bool DBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2)
+bool ConflictRuleDBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2)
 {
     try
     {
@@ -322,7 +312,7 @@ bool DBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule
     return true;
 }
 
-void DBConnector::SelectAllConflictRules(std::vector<ConflictRule>& nodes)
+void ConflictRuleDBConnector::SelectAll(std::vector<ConflictRule>& nodes)
 {
     try
     {

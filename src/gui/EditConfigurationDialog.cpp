@@ -87,8 +87,8 @@ void EditConfigurationDialog::OnOK(wxCommandEvent &event)
 
     try
     {
-        DBConnector db(DBConnector::GetMainFileName(), SQLite::OPEN_READWRITE);
-        db.UpdateConfig(config);
+        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
+        db.Update(config);
     }
     catch(const std::exception& e)
     {

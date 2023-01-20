@@ -1,8 +1,8 @@
-#ifndef LIB_COMPRESSION_H
-#define LIB_COMPRESSION_H
+#ifndef LIB_COMPRESSOR_H
+#define LIB_COMPRESSOR_H
 #include <string>
 
-namespace Compression
+namespace Compressor
 {
     extern const off_t minimumCompressibleSize;
 

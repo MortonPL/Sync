@@ -73,8 +73,8 @@ void EditConflictRuleDialog::OnOK(wxCommandEvent &event)
 
     try
     {
-        DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.UpdateConflictRule(rule))
+        ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        if (db.Update(rule))
         {
             GenericPopup("Successfully updated the conflict rule.").ShowModal();
         }

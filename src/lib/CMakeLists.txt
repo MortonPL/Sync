@@ -8,7 +8,7 @@ set(SRC_LIB_FILES
     domain/HistoryFileNode.cpp
     domain/PairedNode.cpp
     domain/ConflictRule.cpp
-    Compression.cpp
+    Compressor.cpp
     Announcer.cpp
     Global.cpp
     FileSystem.cpp

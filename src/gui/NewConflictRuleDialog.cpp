@@ -56,8 +56,8 @@ void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
 
     try
     {
-        DBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.InsertConflictRule(rule))
+        ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        if (db.Insert(rule))
         {
             GenericPopup("Successfully created a new conflict rule.").ShowModal();
         }
