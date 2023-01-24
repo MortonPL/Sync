@@ -64,11 +64,11 @@ void Creeper::SearchForLists(const std::string& path)
 bool Creeper::CheckIfFileIsIgnored(const std::string& path) const
 {
     for (auto const& regex: whitelist)
-        if (std::regex_search(path, regex))
+        if (std::regex_match(path, regex))
             return false;
 
     for (auto const& regex: blacklist)
-        if (std::regex_search(path, regex))
+        if (std::regex_match(path, regex))
             return true;
 
     return false;

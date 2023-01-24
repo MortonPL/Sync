@@ -27,8 +27,8 @@ Pliki mogą znajdować się w następujących stanach:
 ### Akcje
 Program automatycznie sugeruje domyślne akcje:
 
-* Left to Right (oznaczone `==>>`) - propaguj zmiany z maszyny lokalnej na zdalną
-* Right to Left (oznaczone `<<==`) - propaguj zmiany z maszyny zdalnej na lokalną
+* Local to Remote (oznaczone `==>>`) - propaguj zmiany z maszyny lokalnej na zdalną
+* Remote to Local (oznaczone `<<==`) - propaguj zmiany z maszyny zdalnej na lokalną
 * Ignore - nie rób nic
 * Fast Forward - zaktualizuj sam wpis w historii pliku
 * Conflict - wystąpił konflikt, żadna akcja nie może zostać podjęta (oprócz rozwiązania konfliktu)

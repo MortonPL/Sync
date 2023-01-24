@@ -392,6 +392,15 @@ bool MainFrame::DoScan()
     wxBusyInfo wait("Looking for changes. Please wait...");
     wxYield();
 
+    // call syncli
+    int rc;
+    if ((rc = ssh.CallCLICreep(cfg.pathB)) != CALLCLI_OK)
+    {
+        GUIAnnouncer::LogPopup(fmt::format("Failed to start scan on the remote host. Error code: {}", rc), Announcer::Severity::Error);
+        return false;
+    }
+    LOG(INFO) << "Requested remote scan.";
+
     // scan
     LOG(INFO) << "Begin local scan...";
     auto creeper = Creeper();
@@ -413,8 +422,7 @@ bool MainFrame::DoScan()
     LOG(INFO) << "Read file history.";
 
     // get remote nodes
-    int rc;
-    if ((rc = ssh.CallCLICreep(cfg.pathB, remoteNodes)) != CALLCLI_OK)
+    if ((rc = ssh.CallCLICreepReturn(remoteNodes)) != CALLCLI_OK)
     {
         GUIAnnouncer::LogPopup(fmt::format("Failed to receive file info from the remote host. Error code: {}", rc), Announcer::Severity::Error);
         return false;

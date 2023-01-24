@@ -40,7 +40,8 @@ public:
     void EndSession();
     sftp_session MakeSFTPSession();
 
-    int CallCLICreep(std::string dirToCreep, std::forward_list<FileNode>& nodes);
+    int CallCLICreep(std::string dirToCreep);
+    int CallCLICreepReturn(std::forward_list<FileNode>& nodes);
     int CallCLIHomeAndBlock(std::string pathToCheck, std::string* result);
     int CallCLIHome(std::string* result);
     int CallCLIUnblock(std::string path);

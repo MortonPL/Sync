@@ -55,7 +55,7 @@ ConflictRule& ConflictRule::Match(std::string path, std::vector<ConflictRule>& r
         if (rule.badRule)
             continue;
         
-        if (std::regex_search(path, rule.regex))
+        if (std::regex_match(path, rule.regex))
             return rule;
     }
 

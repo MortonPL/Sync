@@ -15,6 +15,11 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 get_filename_component(my_path "~/.sync" ABSOLUTE)
 set(CMAKE_INSTALL_PREFIX ${my_path})
 
+# release mode
+if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+    add_compile_options(-O3)
+endif()
+
 # set binary names
 set(GUI_NAME ${PROJECT_NAME}gui)
 set(CLI_NAME ${PROJECT_NAME}cli)

@@ -118,6 +118,9 @@ void StatPath(std::string path)
 
 void CreepDir(std::string path)
 {
+    std::cout << '0';
+    std::cout.flush();
+
     std::forward_list<FileNode> nodes;
     auto creeper = Creeper();
     auto result = creeper.CreepPath(path, nodes);
@@ -129,6 +132,23 @@ void CreepDir(std::string path)
     }
     std::cout << '0';
     std::cout.flush();
+
+    const int timeout = 300;
+    fd_set rfds;
+    struct timeval tv;
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds);
+    {
+        tv = {timeout, 0};
+        int retval = select(1, &rfds, NULL, NULL, &tv);
+        if (retval == -1 || !retval)
+            return;
+
+        char ack;
+        std::cin >> ack;
+        if (ack != '0')
+            return;
+    }
 
     //start sending node data
     unsigned char* buf = new unsigned char[FileNode::MaxBinarySize];
@@ -258,14 +278,23 @@ int main(int argc, char* argv[])
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Compress)
     {
         off_t compressedSize = 0;
-        std::cout << (Compressor::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize)? 0: 1);
+        std::cout << 0;
         std::cout.flush();
-        writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+        if (Compressor::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize))
+        {
+            writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+        }
+        else
+        {
+            compressedSize = 0;
+            writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+        }
         return 0;
     }
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Decompress)
     {
+        std::cout << 0;
         std::cout << (Compressor::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
         std::cout.flush();
         return 0;
