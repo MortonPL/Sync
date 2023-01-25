@@ -42,6 +42,8 @@ void SFTPConnector::EndSession()
     }
 }
 
+static const int bufferSize = 4096 * 4;
+
 bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t size) const
 {
     sftp_file pFile;
@@ -49,7 +51,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t 
     int len = 0;
     int len2 = 0;
     int initlen = 0;
-    char buf[BUFSIZ];
+    char buf[bufferSize];
     // open both
     if ((pFile = sftp_open(sftp, tempFileName.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
     {
@@ -115,7 +117,7 @@ bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, of
     int len = 0;
     int len2 = 0;
     int initlen = 0;
-    char buf[BUFSIZ];
+    char buf[bufferSize];
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {
@@ -183,7 +185,7 @@ bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPa
     int len = 0;
     int len2 = 0;
     int initlen = 0;
-    char buf[BUFSIZ];
+    char buf[bufferSize];
     // open both
     if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
     {

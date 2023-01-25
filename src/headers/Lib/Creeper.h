@@ -47,7 +47,7 @@ private:
 
         std::unique_ptr<XXH3_state_t, hasherFree> pState;
         std::vector<char> buffer;
-        static const int bufferSize = 4096;
+        static const int bufferSize = 1024 * 32;
     };
 
     void SearchForLists(const std::string& path);

@@ -83,14 +83,15 @@ XXH128_hash_t Creeper::HashFile(HasherState& state, const std::string& path)
     try
     {
         std::ifstream inputStream(path, std::ios::binary);
-        inputStream.read(state.buffer.data(), state.bufferSize);
+        auto pData = state.buffer.data();
+        inputStream.read(pData, state.bufferSize);
         size_t len;
         // NOTE: reading less than bufferSize bytes sets failbit, so we can't put read() as the condiiton!
         while((len = inputStream? state.bufferSize: inputStream.gcount()) > 0)
         {
-            if(XXH3_128bits_update(state.pState.get(), state.buffer.data(), len) == XXH_ERROR)
+            if(XXH3_128bits_update(state.pState.get(), pData, len) == XXH_ERROR)
                 throw std::runtime_error("Unspecified hasher failure.");
-            inputStream.read(state.buffer.data(), state.bufferSize);
+            inputStream.read(pData, state.bufferSize);
         }
         result = XXH3_128bits_digest(state.pState.get());
     }
