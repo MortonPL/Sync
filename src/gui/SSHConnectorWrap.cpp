@@ -10,7 +10,7 @@ void genericPopuper(std::string prompt)
 std::string passwordProvider(bool& isCanceled, std::string& prompt)
 {
     std::string password;
-    isCanceled = GenericPopup(prompt, NULL, &password, nullptr, GenericPopup::Flags::PasswordCancel).ShowModal() != wxID_OK;
+    isCanceled = GenericPopup(prompt, nullptr, &password, nullptr, GenericPopup::Flags::PasswordCancel).ShowModal() != wxID_OK;
     return password;
 }
 
@@ -20,26 +20,26 @@ std::string interactiveProvider(bool& isCanceled, std::string& challenge, bool s
     GenericPopup::Flags flags = GenericPopup::Flags::Cancel;
     if (shouldBeHidden)
         flags = GenericPopup::Flags::PasswordCancel;
-    isCanceled = GenericPopup(challenge, NULL, &password, nullptr, flags).ShowModal() != wxID_OK;
+    isCanceled = GenericPopup(challenge, nullptr, &password, nullptr, flags).ShowModal() != wxID_OK;
     return password;
 }
 
 bool unknownCallback(std::string& pubkeyHash)
 {
     std::string msg = "This host is unknown. Do you trust this host?\nKey:";
-    return GenericPopup(msg, NULL, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
+    return GenericPopup(msg, nullptr, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
 }
 
 bool otherCallback(std::string& pubkeyHash)
 {
     std::string msg = "Couldn't find the key for this host, but another type of key exists.\nThis might be dangerous. Do you trust this host?\nKey: ";
-    return GenericPopup(msg, NULL, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
+    return GenericPopup(msg, nullptr, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
 }
 
 bool changedCallback(std::string& pubkeyHash)
 {
     std::string msg = "Host key for this server has changed.\nTHIS MIGHT BE DANGEROUS. Do you trust this host?\nKey: ";
-    return GenericPopup(msg, NULL, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
+    return GenericPopup(msg, nullptr, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
 }
 
 bool errorCallback(std::string& pubkeyHash)

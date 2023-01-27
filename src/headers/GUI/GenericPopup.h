@@ -12,7 +12,7 @@ public:
     };
 
     GenericPopup();
-    GenericPopup(std::string message, wxWindow* pParent=(wxWindow*)NULL, std::string* output=nullptr, std::string* input=nullptr, Flags flags=Flags::None);
+    GenericPopup(std::string message, wxWindow* pParent=nullptr, std::string* output=nullptr, std::string* input=nullptr, Flags flags=Flags::None);
     ~GenericPopup(){}
 
 private:

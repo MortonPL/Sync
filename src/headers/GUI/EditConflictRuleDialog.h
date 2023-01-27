@@ -6,7 +6,7 @@
 class EditConflictRuleDialog : public wxDialog
 {
 public:
-    EditConflictRuleDialog(ConflictRule& oldRule, wxWindow* pParent=(wxWindow*)NULL);
+    EditConflictRuleDialog(ConflictRule& oldRule, wxWindow* pParent=nullptr);
     ~EditConflictRuleDialog(){}
 
 private:

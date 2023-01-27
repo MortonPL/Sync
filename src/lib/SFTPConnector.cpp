@@ -21,7 +21,7 @@ bool SFTPConnector::Connect()
     if (!ssh)
         return false;
 
-    if ((sftp = ssh->MakeSFTPSession()) == NULL)
+    if ((sftp = ssh->MakeSFTPSession()) == nullptr)
         return false;
     
     if (sftp_init(sftp) != SSH_OK)
@@ -35,10 +35,10 @@ bool SFTPConnector::Connect()
 
 void SFTPConnector::EndSession()
 {
-    if (sftp != NULL)
+    if (sftp != nullptr)
     {
         sftp_free(sftp);
-        sftp = NULL;
+        sftp = nullptr;
     }
 }
 
@@ -53,7 +53,7 @@ bool SFTPConnector::Send(std::string localPath, std::string tempFileName, off_t 
     int initlen = 0;
     char buf[bufferSize];
     // open both
-    if ((pFile = sftp_open(sftp, tempFileName.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == NULL)
+    if ((pFile = sftp_open(sftp, tempFileName.c_str(), O_CREAT | O_WRONLY, S_IRWXU|S_IRGRP|S_IROTH)) == nullptr)
     {
         LOG(ERROR) << "Failed to open remote file " << tempFileName << " with error: " << (ssh? ssh->GetError(): "");
         return false;
@@ -119,7 +119,7 @@ bool SFTPConnector::Receive(std::string remotePath, std::string tempFileName, of
     int initlen = 0;
     char buf[bufferSize];
     // open both
-    if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
+    if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) ==nullptr)
     {
         LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << (ssh? ssh->GetError(): "");
         return false;
@@ -187,7 +187,7 @@ bool SFTPConnector::ReceiveNonAtomic(std::string remotePath, std::string localPa
     int initlen = 0;
     char buf[bufferSize];
     // open both
-    if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == NULL)
+    if ((pFile = sftp_open(sftp, remotePath.c_str(), O_RDONLY, S_IRWXU)) == nullptr)
     {
         LOG(ERROR) << "Failed to open remote file " << remotePath << " with error: " << (ssh? ssh->GetError(): "");
         return false;

@@ -82,8 +82,8 @@ private:
     bool AuthenticateUserPass(std::string password);
     bool AuthenticateResult(int rc);
 
-    ssh_session session = NULL;
-    ssh_channel channel = NULL;
+    ssh_session session = nullptr;
+    ssh_channel channel = nullptr;
 
     int authStatus = AUTH_STATUS_NONE;
     int authMethods = 0;

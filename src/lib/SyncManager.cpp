@@ -1,5 +1,7 @@
 #include "Lib/SyncManager.h"
 
+#include <chrono>
+
 #include "Lib/FileSystem.h"
 #include "Lib/PairingManager.h"
 #include "Lib/ConflictManager.h"
@@ -34,6 +36,17 @@ int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
     return 0;
 }
 
+void Finalize(PairedNode* pNode)
+{
+    pNode->localNode.status = FileNode::Status::Clean;
+    pNode->remoteNode.status = FileNode::Status::Clean;
+    pNode->historyNode = HistoryFileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
+                                            pNode->remoteNode.dev, pNode->remoteNode.inode, pNode->localNode.mtime,
+                                            pNode->remoteNode.mtime, pNode->localNode.size, pNode->localNode.hashHigh,
+                                            pNode->localNode.hashLow);
+    pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+}
+
 int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
     switch (pNode->localNode.status)
@@ -59,7 +72,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
         {
             // if we already have the uncompressed file transfered, don't bother, just move
             sftp_attributes info;
-            if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
+            if ((info = sftp.Stat(tempFilePathRemote.c_str())) == nullptr || (off_t)info->size != pNode->localNode.size)
             {
                 off_t compressedSize = 0;
                 if (!Compressor::Compress(pNode->path, tempFilePathLocal+".zst", compressedSize))
@@ -81,31 +94,12 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
             if (ssh.ReplaceFile(tempFilePathRemote, remotePath) != CALLCLI_OK)
                 return -1;
         }
-        //stat local for dev/inode
-        auto path = pNode->path.c_str();
-        struct stat buf;
-        stat(path, &buf);
-        auto newLocalDev = buf.st_dev;
-        auto newLocalInode = buf.st_ino;
-        //stat remote for dev/inode, mtime
-        if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
-        {
-            return -1;
-        }
-        auto newRemoteDev = buf.st_dev;
-        auto newRemoteInode = buf.st_ino;
-        auto remoteMtime = buf.st_mtim.tv_sec;
 
-        pNode->remoteNode = FileNode(pNode->path, newRemoteDev, newRemoteInode,
-                                     remoteMtime, pNode->localNode.size, pNode->localNode.hashHigh,
+        std::time_t mtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        pNode->remoteNode = FileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
+                                     mtime, pNode->localNode.size, pNode->localNode.hashHigh,
                                      pNode->localNode.hashLow);
-        pNode->localNode.status = FileNode::Status::Clean;
-        pNode->remoteNode.status = FileNode::Status::Clean;
-        pNode->historyNode = HistoryFileNode(pNode->path, newLocalDev, newLocalInode,
-                                             newRemoteDev, newRemoteInode, pNode->localNode.mtime,
-                                             remoteMtime, pNode->localNode.size, pNode->localNode.hashHigh,
-                                             pNode->localNode.hashLow);
-        pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+        Finalize(pNode);
         break;
     }
     default:
@@ -163,31 +157,11 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
                 return -1;
         }
 
-        //stat local for dev/inode, mtime
-        auto path = pNode->path.c_str();
-        struct stat buf;
-        stat(path, &buf);
-        auto newLocalDev = buf.st_dev;
-        auto newLocalInode = buf.st_ino;
-        auto newLocalMtime = buf.st_mtim.tv_sec;
-        //stat remote for dev/inode
-        if (ssh.StatRemote(remotePath, &buf) != CALLCLI_OK)
-        {
-            return -1;
-        }
-        auto newRemoteDev = buf.st_dev;
-        auto newRemoteInode = buf.st_ino;
-
-        pNode->localNode = FileNode(pNode->path, newLocalDev, newLocalInode,
-                                    newLocalMtime, pNode->remoteNode.size, pNode->remoteNode.hashHigh,
+        std::time_t mtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        pNode->localNode = FileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
+                                    mtime, pNode->remoteNode.size, pNode->remoteNode.hashHigh,
                                     pNode->remoteNode.hashLow);
-        pNode->localNode.status = FileNode::Status::Clean;
-        pNode->remoteNode.status = FileNode::Status::Clean;
-        pNode->historyNode = HistoryFileNode(pNode->path, newLocalDev, newLocalInode,
-                                             newRemoteDev, newRemoteInode, newLocalMtime, pNode->remoteNode.mtime,
-                                             pNode->remoteNode.size, pNode->remoteNode.hashHigh,
-                                             pNode->remoteNode.hashLow);
-        pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+        Finalize(pNode);
         break;
     }
     default:
@@ -233,7 +207,7 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     {
         // if we already have the uncompressed file transfered, don't bother, just move
         sftp_attributes info;
-        if ((info = sftp.Stat(tempFilePathRemote.c_str())) == NULL || (off_t)info->size != pNode->localNode.size)
+        if ((info = sftp.Stat(tempFilePathRemote.c_str())) == nullptr || (off_t)info->size != pNode->localNode.size)
         {
             off_t compressedSize = 0;
             if (!Compressor::Compress(tempRemote, tempRemote+".zst", compressedSize))
@@ -267,21 +241,14 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     auto newRemoteInode = buf.st_ino;
     auto newRemoteMtime = buf.st_mtim.tv_sec;
     auto newRemoteSize = buf.st_size;
-
-    // resolve history
+    
     pNode->localNode = FileNode(pNode->path, newLocalDev, newLocalInode,
                                 newLocalMtime, newLocalSize, local.hashHigh,
                                 local.hashLow);
     pNode->remoteNode = FileNode(pNode->path, newRemoteDev, newRemoteInode,
                                  newRemoteMtime, newRemoteSize, remote.hashHigh,
                                  remote.hashLow);
-    pNode->historyNode = HistoryFileNode(pNode->path, newLocalDev, newLocalInode,
-                                         newRemoteDev, newRemoteInode, newLocalMtime,
-                                         newRemoteMtime, newLocalSize, pNode->localNode.hashHigh,
-                                         pNode->localNode.hashLow);
-    pNode->localNode.status = FileNode::Status::Clean;
-    pNode->remoteNode.status = FileNode::Status::Clean;
-    pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+    Finalize(pNode);
 
     return 0;
 }
@@ -306,7 +273,7 @@ bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& 
     }
 
     sftp_attributes info;
-    if ((info = sftp.Stat(remotePath)) == NULL)
+    if ((info = sftp.Stat(remotePath)) == nullptr)
     {
         if (!sftp.IsAbsent())
         {

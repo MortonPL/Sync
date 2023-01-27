@@ -4,7 +4,7 @@
 class NewConfigurationDialog : public wxDialog
 {
 public:
-    NewConfigurationDialog(wxWindow* pParent=(wxWindow*)NULL);
+    NewConfigurationDialog(wxWindow* pParent=(nullptr));
     ~NewConfigurationDialog(){}
 
 private:

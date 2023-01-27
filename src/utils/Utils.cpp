@@ -11,7 +11,7 @@ void Utils::FindHomePath()
     if (homePath.length() <= 0)
     {
         char* home = getenv("HOME");
-        if (home == NULL)
+        if (home == nullptr)
             home = getpwuid(getuid())->pw_dir;
         homePath = home;
     }

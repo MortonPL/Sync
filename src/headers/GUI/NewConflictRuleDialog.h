@@ -4,7 +4,7 @@
 class NewConflictRuleDialog : public wxDialog
 {
 public:
-    NewConflictRuleDialog(wxWindow* pParent=(wxWindow*)NULL);
+    NewConflictRuleDialog(wxWindow* pParent=nullptr);
     ~NewConflictRuleDialog(){}
 
 private:

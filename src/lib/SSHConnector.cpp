@@ -20,7 +20,7 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
                    serverHashCallbackType errorCallback, passProviderType passwordProvider,
                    interactiveProviderType interactiveProvider, keyProviderType keyProvider)
 {
-    if (session != NULL)
+    if (session != nullptr)
     {
         if (!(ssh_is_connected(session) && (authStatus == AUTH_STATUS_OK)))
         {
@@ -77,7 +77,7 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
 
 bool SSHConnector::BeginSession(std::string host, std::string user)
 {
-    if ((session = ssh_new()) == NULL)
+    if ((session = ssh_new()) == nullptr)
         return false;
     long timeout = 300;
     ssh_options_set(session, SSH_OPTIONS_HOST, host.c_str());
@@ -86,7 +86,7 @@ bool SSHConnector::BeginSession(std::string host, std::string user)
     if (ssh_connect(session) != SSH_OK)
     {
         ssh_free(session);
-        session = NULL;
+        session = nullptr;
         return false;
     }
     return true;
@@ -98,19 +98,19 @@ void SSHConnector::EndSession()
     authMethods = 0;
     isAuthDenied = false;
     retryCount = 0;
-    if (channel != NULL)
+    if (channel != nullptr)
     {
         if (ssh_channel_is_open(channel))
             EndCLIServe();
         else
-            channel = NULL;
+            channel = nullptr;
     }
-    if (session != NULL)
+    if (session != nullptr)
     {
         if (ssh_is_connected(session))
             ssh_disconnect(session);
         ssh_free(session);
-        session = NULL;
+        session = nullptr;
     }
 }
 
@@ -461,7 +461,7 @@ bool SSHConnector::AuthenticateServer(serverHashCallbackType unknownCallback,
                                       serverHashCallbackType errorCallback)
 {
     auto key = ssh_key_new();
-    unsigned char* hash = NULL;
+    unsigned char* hash = nullptr;
     size_t len;
 
     if (ssh_get_server_publickey(session, &key) != SSH_OK)
@@ -596,7 +596,7 @@ bool SSHConnector::AuthenticateResult(int rc)
         retryCount += 1;
         return false;
     case SSH_AUTH_PARTIAL:
-        authMethods = ssh_userauth_list(session, NULL);
+        authMethods = ssh_userauth_list(session, nullptr);
         authStatus = AUTH_STATUS_PARTIAL;
         isAuthDenied = false;
         retryCount = 0;
@@ -615,13 +615,13 @@ bool SSHConnector::AuthenticateResult(int rc)
 
 bool SSHConnector::AuthenticateUserNone()
 {
-    switch(ssh_userauth_none(session, NULL))
+    switch(ssh_userauth_none(session, nullptr))
     {
     case SSH_AUTH_ERROR:
         break;
     case SSH_AUTH_DENIED:
     case SSH_AUTH_PARTIAL:
-        authMethods = ssh_userauth_list(session, NULL);
+        authMethods = ssh_userauth_list(session, nullptr);
         authStatus = AUTH_STATUS_PARTIAL;
         return true;
     case SSH_AUTH_SUCCESS:
@@ -637,12 +637,12 @@ bool SSHConnector::AuthenticateUserNone()
 
 bool SSHConnector::AuthenticateUserPass(std::string password)
 {
-    return AuthenticateResult(ssh_userauth_password(session, NULL, password.c_str()));
+    return AuthenticateResult(ssh_userauth_password(session, nullptr, password.c_str()));
 }
 
 bool SSHConnector::AuthenticateUserKeyAuto()
 {
-    switch(ssh_userauth_agent(session, NULL))
+    switch(ssh_userauth_agent(session, nullptr))
     {
     case SSH_AUTH_ERROR:
         authStatus = AUTH_STATUS_ERROR;
@@ -650,7 +650,7 @@ bool SSHConnector::AuthenticateUserKeyAuto()
     case SSH_AUTH_DENIED:
         return false;
     case SSH_AUTH_PARTIAL:
-        authMethods = ssh_userauth_list(session, NULL);
+        authMethods = ssh_userauth_list(session, nullptr);
         authStatus = AUTH_STATUS_PARTIAL;
         isAuthDenied = false;
         retryCount = 0;
@@ -688,7 +688,7 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
             continue;
         }
         
-        if (ssh_userauth_try_publickey(session, NULL, key) != SSH_AUTH_SUCCESS)
+        if (ssh_userauth_try_publickey(session, nullptr, key) != SSH_AUTH_SUCCESS)
         {
             ssh_key_free(key);
             continue;
@@ -696,7 +696,7 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
 
         std::string passphrase;
         std::string prompt;
-        switch(ssh_pki_import_privkey_file(privPath.c_str(), NULL, NULL, NULL, pPrivate))
+        switch(ssh_pki_import_privkey_file(privPath.c_str(), nullptr, nullptr, nullptr, pPrivate))
         {
         case SSH_ERROR:
             prompt = keyPrompt + privPath + ":";
@@ -707,7 +707,7 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
                 authStatus = AUTH_STATUS_ERROR;
                 return false;
             }
-            if (ssh_pki_import_privkey_file(privPath.c_str(), passphrase.c_str(), NULL, NULL, pPrivate) != SSH_OK)
+            if (ssh_pki_import_privkey_file(privPath.c_str(), passphrase.c_str(), nullptr, nullptr, pPrivate) != SSH_OK)
             {
                 isAuthDenied = true;
                 retryCount += 1;
@@ -733,12 +733,12 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
 
 bool SSHConnector::AuthenticateUserKey(ssh_key* pPrivate)
 {
-    return AuthenticateResult(ssh_userauth_publickey(session, NULL, *pPrivate));
+    return AuthenticateResult(ssh_userauth_publickey(session, nullptr, *pPrivate));
 }
 
 bool SSHConnector::AuthenticateUserInteractiveFetch(std::string& name, std::string& instruction, int& nprompts)
 {
-    switch(ssh_userauth_kbdint(session, NULL, NULL))
+    switch(ssh_userauth_kbdint(session, nullptr, nullptr))
     {
     case SSH_AUTH_INFO:
         name = ssh_userauth_kbdint_getname(session);
@@ -754,7 +754,7 @@ bool SSHConnector::AuthenticateUserInteractiveFetch(std::string& name, std::stri
         retryCount += 1;
         return false;
     case SSH_AUTH_PARTIAL:
-        authMethods = ssh_userauth_list(session, NULL);
+        authMethods = ssh_userauth_list(session, nullptr);
         authStatus = AUTH_STATUS_PARTIAL;
         isAuthDenied = false;
         retryCount = 0;
@@ -797,7 +797,7 @@ bool SSHConnector::AuthenticateGSSAPI()
 ssh_channel SSHConnector::GetChannel() const
 {
     auto pChannel = ssh_channel_new(session);
-    if (pChannel == NULL)
+    if (pChannel == nullptr)
         return nullptr;
     if (ssh_channel_open_session(pChannel) != SSH_OK)
         return nullptr;

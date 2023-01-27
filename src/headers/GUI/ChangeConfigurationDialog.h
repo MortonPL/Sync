@@ -6,7 +6,7 @@
 
 class ChangeConfigurationDialog : public wxDialog {
 public:
-    ChangeConfigurationDialog(wxWindow* pParent=(wxWindow*)NULL);
+    ChangeConfigurationDialog(wxWindow* pParent=nullptr);
     ~ChangeConfigurationDialog(){}
 
 private:

@@ -6,7 +6,7 @@
 class EditConfigurationDialog : public wxDialog
 {
 public:
-    EditConfigurationDialog(Configuration& oldConfig, wxWindow* pParent=(wxWindow*)NULL);
+    EditConfigurationDialog(Configuration& oldConfig, wxWindow* pParent=nullptr);
     ~EditConfigurationDialog(){}
 
 private:

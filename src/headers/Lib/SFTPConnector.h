@@ -25,7 +25,7 @@ public:
     bool IsAbsent() const;
 
 private:
-    sftp_session sftp = NULL;
+    sftp_session sftp = nullptr;
     SSHConnector* ssh;
 };
 

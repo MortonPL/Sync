@@ -8,7 +8,7 @@
 #define CONFLICT_AUTO -2
 class ConflictRuleDialog : public wxDialog {
 public:
-    ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindow* pParent=(wxWindow*)NULL);
+    ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindow* pParent=nullptr);
     ~ConflictRuleDialog(){}
 
 private:

@@ -10,7 +10,7 @@
 
 class MainFrame : public wxFrame {
 public:
-    MainFrame(wxWindow* pParent=(wxWindow*)NULL);
+    MainFrame(wxWindow* pParent=nullptr);
 
 private:
     // control struct

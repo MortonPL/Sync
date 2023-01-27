@@ -139,7 +139,7 @@ void CreepDir(std::string path)
     FD_SET(0, &rfds);
     {
         tv = {timeout, 0};
-        int retval = select(1, &rfds, NULL, NULL, &tv);
+        int retval = select(1, &rfds, nullptr, nullptr, &tv);
         if (retval == -1 || !retval)
             return;
 
@@ -257,7 +257,7 @@ int Serve()
     while (!isDone)
     {
         tv = {60, 0};
-        int retval = select(1, &rfds, NULL, NULL, &tv);
+        int retval = select(1, &rfds, nullptr, nullptr, &tv);
 
         if (retval == -1)
         {
