@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_CLI_CLI_ANNOUNCER_H
+#define SRC_CLI_CLI_ANNOUNCER_H
 
 #include "Lib/Announcer.h"
 #include "Utils.h"
@@ -23,3 +24,5 @@ namespace CLIAnnouncer
         }
     }
 }
+
+#endif

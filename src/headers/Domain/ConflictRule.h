@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_DOMAIN_CONFLICT_RULE_H
+#define SRC_DOMAIN_CONFLICT_RULE_H
 #include <string>
 #include <regex>
 
@@ -31,3 +32,5 @@ public:
     bool badRule = false;
     static ConflictRule emptyRule;
 };
+
+#endif

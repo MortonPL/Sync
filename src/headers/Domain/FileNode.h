@@ -1,5 +1,7 @@
-#pragma once
+#ifndef SRC_DOMAIN_FILE_NODE_H
+#define SRC_DOMAIN_FILE_NODE_H
 #include <string>
+#include <vector>
 #include <sys/stat.h>
 #include <map>
 #include "xxhash.h"
@@ -49,9 +51,12 @@ public:
         return path < other.path;
     }
 
-    static const unsigned short MaxBinarySize;
-    static const unsigned short MiniStatBinarySize;
+    static const std::size_t MiniStatBinarySize;
     static const std::map<Status, std::string> StatusAsString;
+    static const std::size_t minimumNodeBinarySize;
+
+    typedef std::byte MarshallingUnit;
+    typedef std::vector<MarshallingUnit> MarshallingContainer;
 
     std::string path;
     dev_t dev;
@@ -68,8 +73,10 @@ public:
     std::string HashToString() const;
     bool IsEmpty() const;
 
-    unsigned short Serialize(unsigned char* buf) const;
-    static FileNode Deserialize(unsigned char* buf);
-    static void SerializeStat(struct stat* in, unsigned char* out);
-    static void DeserializeStat(unsigned char* in, struct stat* out);
+    std::size_t Serialize(MarshallingContainer& buf) const;
+    static FileNode Deserialize(MarshallingContainer& buf);
+    static void SerializeStat(struct stat* in, MarshallingContainer& out);
+    static void DeserializeStat(MarshallingContainer& in, struct stat* out);
 };
+
+#endif

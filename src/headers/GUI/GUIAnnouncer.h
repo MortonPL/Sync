@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_GUI_ANNOUNCER_H
+#define SRC_GUI_GUI_ANNOUNCER_H
 
 #include "GUI/GenericPopup.h"
 #include "Lib/Announcer.h"
@@ -49,3 +50,5 @@ namespace GUIAnnouncer
         GenericPopup(prompt).Show();
     }
 }
+
+#endif

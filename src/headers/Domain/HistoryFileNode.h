@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_DOMAIN_HISTORY_FILE_NODE_H
+#define SRC_DOMAIN_HISTORY_FILE_NODE_H
 #include "Domain/FileNode.h"
 
 class HistoryFileNode: public FileNode
@@ -14,3 +15,5 @@ public:
 
     FileNode::devinode GetRemoteDevInode() const;
 };
+
+#endif

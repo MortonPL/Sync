@@ -45,7 +45,7 @@
 				<flag>wxALL|wxEXPAND</flag>
 				<border>5</border>
 				<object class="wxTextCtrl" name="txtInputPass">
-					<style>wxTE_PASSWORD|wxTE_PROCESS_TAB</style>
+					<style>wxTE_PASSWORD|wxTE_PROCESS_ENTER</style>
 					<hidden>1</hidden>
 					<value></value>
 				</object>

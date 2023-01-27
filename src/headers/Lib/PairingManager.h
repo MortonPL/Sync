@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_LIB_PAIRING_MANAGER_H
+#define SRC_LIB_PAIRING_MANAGER_H
 #include <list>
 #include <forward_list>
 #include "Domain/PairedNode.h"
@@ -17,3 +18,5 @@ namespace PairingManager
 
     bool CheckChanges(FileNode& localOld, FileNode& localNew, FileNode& remoteOld, FileNode& remoteNew);
 }
+
+#endif

@@ -110,10 +110,9 @@ void StatPath(std::string path)
     }
     std::cout << 's';
     std::cout.flush();
-    unsigned char* buf2 = new unsigned char[FileNode::MiniStatBinarySize];
+    FileNode::MarshallingContainer buf2(FileNode::MiniStatBinarySize, FileNode::MarshallingUnit(0));
     FileNode::SerializeStat(&buf, buf2);
-    writeall(1, (char*)buf2, FileNode::MiniStatBinarySize);
-    delete[] buf2;
+    writeall(1, (char*)buf2.data(), FileNode::MiniStatBinarySize);
 }
 
 void CreepDir(std::string path)
@@ -151,20 +150,21 @@ void CreepDir(std::string path)
     }
 
     //start sending node data
-    unsigned char* buf = new unsigned char[FileNode::MaxBinarySize];
+    //prealocate decent size to avoid resizing later
+    FileNode::MarshallingContainer buf;
+    buf.reserve(PATH_MAX);
     std::size_t nnodes = creeper.GetResultsCount();
     LOG(INFO) << "Writing " << nnodes << " nodes.";
     writeall(1, (char*)&nnodes, sizeof(nnodes));
     for (auto& node: nodes)
     {
         unsigned short size = node.Serialize(buf);
-        writeall(1, (char*)buf, size);
+        writeall(1, (char*)buf.data(), size);
     }
     LOG(INFO) << "Done.";
-    delete[] buf;
 }
 
-int GetHomePath()
+void GetHomePath()
 {
     auto home = Utils::GetHomePath();
     unsigned short len = home.length();
@@ -173,28 +173,50 @@ int GetHomePath()
 
     std::cout << home;
     std::cout.flush();
-
-    return 0;
 }
 
-int BlockDir(std::string path)
+void BlockDir(std::string path)
 {
     LOG(INFO) << "Blocking directory " << path;
     bool blocked = Blocker::Block(path);
     writeall(1, (char*)&blocked, sizeof(blocked));
-    return 0;
 }
 
-int UnblockDir(std::string path)
+void UnblockDir(std::string path)
 {
     LOG(INFO) << "Unblocking directory " << path;
     bool unblocked = Blocker::Unblock(path);
     writeall(1, (char*)&unblocked, sizeof(unblocked));
-    return 0;
 }
 
+void Compress()
+{
+    off_t compressedSize = 0;
+    std::cout << 0;
+    std::cout.flush();
+    if (Compressor::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize))
+    {
+        writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+    }
+    else
+    {
+        compressedSize = 0;
+        writeall(1, (char*)&compressedSize, sizeof(compressedSize));
+    }
+}
+
+void Decompress()
+{
+    std::cout << 0;
+    std::cout << (Compressor::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
+    std::cout.flush();
+}
+
+// NOTE: Unused
 int ServeOnce(char mode)
 {
+    (void)mode;
+    /*
     unsigned short pathSize;
 
     switch (mode)
@@ -213,12 +235,14 @@ int ServeOnce(char mode)
     default:
         break;
     }
-
+    */
     return 0;
 }
 
+// NOTE: Unused
 int Serve()
 {
+    /*
     bool isDone = false;
     char mode = 0;
 
@@ -258,7 +282,7 @@ int Serve()
 
     std::cout << 0;
     std::cout.flush();
-
+    */
     return 0;
 }
 
@@ -277,26 +301,13 @@ int main(int argc, char* argv[])
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Compress)
     {
-        off_t compressedSize = 0;
-        std::cout << 0;
-        std::cout.flush();
-        if (Compressor::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize))
-        {
-            writeall(1, (char*)&compressedSize, sizeof(compressedSize));
-        }
-        else
-        {
-            compressedSize = 0;
-            writeall(1, (char*)&compressedSize, sizeof(compressedSize));
-        }
+        Compress();
         return 0;
     }
 
     if (GlobalCLI::mode & GlobalCLI::CLIMode::Decompress)
     {
-        std::cout << 0;
-        std::cout << (Compressor::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
-        std::cout.flush();
+        Decompress();
         return 0;
     }
 

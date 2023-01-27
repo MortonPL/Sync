@@ -41,7 +41,7 @@ void NewConflictRuleDialog::CheckIfOK()
 
 void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     auto rule = ConflictRule(
         std::string(Misc::wxToString(ctrl.txtName->GetValue())),
         std::string(Misc::wxToString(ctrl.txtRule->GetValue())),
@@ -77,6 +77,6 @@ void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
 
 void NewConflictRuleDialog::OnAnyChange(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     this->CheckIfOK();
 }

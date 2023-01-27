@@ -102,20 +102,20 @@ void ChangeConfigurationDialog::CheckIfConfigSelected()
 
 void ChangeConfigurationDialog::OnListBoxChange(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     CheckIfConfigSelected();
 }
 
 void ChangeConfigurationDialog::OnNewConfig(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     NewConfigurationDialog().ShowModal();
     PopulateConfigList();
 }
 
 void ChangeConfigurationDialog::OnEditConfig(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     if (EditConfigurationDialog(configs[selectedConfigIdx]).ShowModal() == wxID_OK)
     {
         PopulateConfigList();
@@ -125,7 +125,7 @@ void ChangeConfigurationDialog::OnEditConfig(wxCommandEvent &event)
 
 void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     try
     {
         ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
@@ -154,13 +154,13 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent &event)
 
 void ChangeConfigurationDialog::OnOK(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     Global::CurrentConfig(configs[selectedConfigIdx]);
     EndModal(wxID_OK);
 }
 
 void ChangeConfigurationDialog::OnCancel(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     EndModal(wxID_CANCEL);
 }

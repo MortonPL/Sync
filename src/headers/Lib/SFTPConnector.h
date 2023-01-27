@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_LIB_SFTP_CONNECTOR_H
+#define SRC_LIB_SFTP_CONNECTOR_H
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
 #include <string>
@@ -27,3 +28,5 @@ private:
     sftp_session sftp = NULL;
     SSHConnector* ssh;
 };
+
+#endif

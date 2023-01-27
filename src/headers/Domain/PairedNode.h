@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_DOMAIN_PAIRED_NODE_H
+#define SRC_DOMAIN_PAIRED_NODE_H
 #include <string>
 #include "Domain/FileNode.h"
 #include "Domain/HistoryFileNode.h"
@@ -59,3 +60,5 @@ public:
     HistoryFileNode historyNode;
     FileNode remoteNode;
 };
+
+#endif

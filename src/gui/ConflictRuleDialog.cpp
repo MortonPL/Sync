@@ -108,20 +108,20 @@ void ConflictRuleDialog::CheckIfRuleSelected()
 
 void ConflictRuleDialog::OnListBoxChange(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     CheckIfRuleSelected();
 }
 
 void ConflictRuleDialog::OnNewRule(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     if (NewConflictRuleDialog().ShowModal() == wxID_OK)
         PopulateRuleList();
 }
 
 void ConflictRuleDialog::OnEditRule(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     if (EditConflictRuleDialog((*pRules)[selectedRuleIdx]).ShowModal() == wxID_OK)
     {
         PopulateRuleList();
@@ -131,7 +131,7 @@ void ConflictRuleDialog::OnEditRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     if (selectedRuleIdx > 0)
     {
         try
@@ -162,7 +162,7 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     if (selectedRuleIdx < (long)pRules->size() - 1)
     {
         try
@@ -193,7 +193,7 @@ void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     try
     {
         ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
@@ -220,18 +220,18 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
 
 void ConflictRuleDialog::OnAuto(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     EndModal(CONFLICT_AUTO);
 }
 
 void ConflictRuleDialog::OnOK(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     EndModal(selectedRuleIdx);
 }
 
 void ConflictRuleDialog::OnCancel(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     EndModal(CONFLICT_CANCEL);
 }

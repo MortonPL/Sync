@@ -50,7 +50,7 @@ void EditConflictRuleDialog::CheckIfOK()
 
 void EditConflictRuleDialog::OnOK(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     auto rule = ConflictRule(
         oldRule.id,
         oldRule.order,
@@ -94,6 +94,6 @@ void EditConflictRuleDialog::OnOK(wxCommandEvent &event)
 
 void EditConflictRuleDialog::OnAnyChange(wxCommandEvent &event)
 {
-    event.GetId(); //unused
+    (void)event; //unused
     this->CheckIfOK();
 }

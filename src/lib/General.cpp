@@ -37,7 +37,6 @@ bool General::InitEverything(std::string logName)
     if (!ensureDirectory(Utils::GetLogsPath(), "Failed to make sure that the logging directory exists! Exiting.", true))
         return false;
     SetUpLogger(Utils::GetLogsPath() + logName);
-    LOG(INFO) << "Starting Sync.";
 
     if (!ensureDirectory(Utils::GetDatabasePath(), "Failed to make sure that the database directory exists! Exiting."))
         return false;

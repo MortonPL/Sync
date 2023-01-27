@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_DOMAIN_CONFIGURATION_H
+#define SRC_DOMAIN_CONFIGURATION_H
 #include <string>
 #include <uuid/uuid.h>
 
@@ -35,3 +36,5 @@ public:
     std::string pathBaddress;
     std::string pathBuser;
 };
+
+#endif

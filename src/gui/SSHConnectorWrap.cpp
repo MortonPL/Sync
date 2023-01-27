@@ -44,7 +44,7 @@ bool changedCallback(std::string& pubkeyHash)
 
 bool errorCallback(std::string& pubkeyHash)
 {
-    pubkeyHash.size(); // unused
+    (void)pubkeyHash; // unused
     return GenericPopup("An error has occured while attempting to authenticate the server.").ShowModal() == wxID_OK;
 }
 

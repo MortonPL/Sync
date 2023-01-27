@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_LIB_SSH_CONNECTOR_H
+#define SRC_LIB_SSH_CONNECTOR_H
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
 #include <string>
@@ -49,8 +50,8 @@ public:
     int CallCLIDecompress(std::string pathFrom, std::string pathTo);
     int CallCLIServe();
     int EndCLIServe();
-    int StatRemote(std::string pathToStat, struct stat* pBuf);
-    int ServerStatRemote(std::string pathToStat, struct stat* pBuf);
+    int StatRemote(std::string pathToStat, struct stat* pStatBuf);
+    int ServerStatRemote(std::string pathToStat, struct stat* pStatBuf);
     int ReplaceFile(std::string pathFrom, std::string pathTo);
 
     std::string GetError();
@@ -89,3 +90,5 @@ private:
     bool isAuthDenied = false;
     int retryCount = 0;
 };
+
+#endif

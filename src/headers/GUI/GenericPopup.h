@@ -34,6 +34,7 @@ private:
 
     // event handlers
     void OnOK(wxCommandEvent &event);
+    void CharHook(wxKeyEvent& event);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();

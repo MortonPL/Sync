@@ -145,8 +145,10 @@ int SSHConnector::CallCLICreep(std::string dirToCreep)
 
 int SSHConnector::CallCLICreepReturn(std::forward_list<FileNode>& nodes)
 {
-    unsigned char* buf2 = new unsigned char[FileNode::MaxBinarySize];
-    unsigned short len = 0;
+    FileNode::MarshallingContainer buf;
+    // prealocate 4096 to avoid resizing frequently
+    buf.reserve(PATH_MAX);
+    std::size_t len = 0;
     char rc;
     std::size_t nnodes = 0;
     // read return code for creep
@@ -177,13 +179,14 @@ int SSHConnector::CallCLICreepReturn(std::forward_list<FileNode>& nodes)
     while (nnodes > 0)
     {
         ssh_channel_read(channel, &len, sizeof(len), 0);
-        ssh_channel_read(channel, buf2, len, 0);
-        auto node = FileNode::Deserialize(buf2);
+        if (buf.size() < len)
+            buf.resize(len);
+        ssh_channel_read(channel, buf.data(), len, 0);
+        auto node = FileNode::Deserialize(buf);
         nodes.push_front(node);
         nnodes--;
     }
 
-    delete[] buf2;
     FreeChannel(channel);
     return CALLCLI_OK;
 }
@@ -191,7 +194,6 @@ int SSHConnector::CallCLICreepReturn(std::forward_list<FileNode>& nodes)
 int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* result)
 {
     ssh_channel pChannel;
-    char buf[PATH_MAX];
     if ((pChannel = CallCLI("h", pathToCheck)) == nullptr)
     {
         return CALLCLI_NOANSWER;
@@ -203,14 +205,9 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* resu
         return CALLCLI_404;
     }
 
-    if (len > PATH_MAX)
-    {
-        FreeChannel(pChannel);
-        return CALLCLI_ERROR;
-    }
-
-    ssh_channel_read(pChannel, buf, len, 0);
-    *result = std::string(buf, len);
+    std::string buf(len, '\0');
+    ssh_channel_read(pChannel, buf.data(), len, 0);
+    *result = buf;
 
     bool blocked;
     ssh_channel_read(pChannel, &blocked, sizeof(blocked), 0);
@@ -222,7 +219,6 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* resu
 int SSHConnector::CallCLIHome(std::string* result)
 {
     ssh_channel pChannel;
-    char buf[PATH_MAX];
     if ((pChannel = CallCLI("h")) == nullptr)
     {
         return CALLCLI_NOANSWER;
@@ -234,14 +230,9 @@ int SSHConnector::CallCLIHome(std::string* result)
         return CALLCLI_404;
     }
 
-    if (len > PATH_MAX)
-    {
-        FreeChannel(pChannel);
-        return CALLCLI_ERROR;
-    }
-
-    ssh_channel_read(pChannel, buf, len, 0);
-    *result = std::string(buf, len);
+    std::string buf(len, '\0');
+    ssh_channel_read(pChannel, buf.data(), len, 0);
+    *result = buf;
 
     FreeChannel(pChannel);
     return CALLCLI_OK;
@@ -351,7 +342,7 @@ int SSHConnector::EndCLIServe()
 }
 
 // NOTE - unused and unfinished
-int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
+int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pStatBuf)
 {
     pathToStat.size();
 
@@ -368,7 +359,7 @@ int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
         return CALLCLI_ERROR;
     }
 
-    unsigned char* buf = new unsigned char[FileNode::MiniStatBinarySize];
+    FileNode::MarshallingContainer buf(FileNode::MiniStatBinarySize, FileNode::MarshallingUnit(0));
     
     if (ssh_channel_read(channel, &rc, sizeof(rc), 0) != sizeof(rc))
     {
@@ -380,17 +371,16 @@ int SSHConnector::ServerStatRemote(std::string pathToStat, struct stat* pBuf)
         EndCLIServe();
         return CALLCLI_ERROR;
     }
-    if (ssh_channel_read(channel, buf, FileNode::MiniStatBinarySize, 0) != FileNode::MiniStatBinarySize)
+    if ((std::size_t)ssh_channel_read(channel, buf.data(), FileNode::MiniStatBinarySize, 0) != FileNode::MiniStatBinarySize)
     {
         EndCLIServe();
         return CALLCLI_404;
     }
-    FileNode::DeserializeStat(buf, pBuf);
-    delete[] buf;
+    FileNode::DeserializeStat(buf, pStatBuf);
     return CALLCLI_OK;
 }
 
-int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
+int SSHConnector::StatRemote(std::string pathToStat, struct stat* pStatBuf)
 {
     ssh_channel_struct* pChannel;
     if ((pChannel = CallCLI("s", pathToStat)) == nullptr)
@@ -398,7 +388,7 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
         FreeChannel(pChannel);
         return CALLCLI_NOANSWER;
     }
-    unsigned char* buf = new unsigned char[FileNode::MiniStatBinarySize];
+    FileNode::MarshallingContainer buf(FileNode::MiniStatBinarySize, FileNode::MarshallingUnit(0));
     char rc;
     if (ssh_channel_read(pChannel, &rc, sizeof(rc), 0) != sizeof(rc))
     {
@@ -410,13 +400,12 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pBuf)
         FreeChannel(pChannel);
         return CALLCLI_ERROR;
     }
-    if (ssh_channel_read(pChannel, buf, FileNode::MiniStatBinarySize, 0) != FileNode::MiniStatBinarySize)
+    if ((std::size_t)ssh_channel_read(pChannel, buf.data(), FileNode::MiniStatBinarySize, 0) != FileNode::MiniStatBinarySize)
     {
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    FileNode::DeserializeStat(buf, pBuf);
-    delete[] buf;
+    FileNode::DeserializeStat(buf, pStatBuf);
     FreeChannel(pChannel);
     return CALLCLI_OK;
 }

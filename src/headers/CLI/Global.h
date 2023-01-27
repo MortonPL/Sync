@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_CLI_GLOBAL_H
+#define SRC_CLI_GLOBAL_H
 #include <string>
 
 class GlobalCLI
@@ -26,3 +27,5 @@ public:
     static std::string pathDecompressIn;
     static std::string pathDecompressOut;
 };
+
+#endif
