@@ -8,12 +8,12 @@
 #include "Lib/Compressor.h"
 #include "Utils.h"
 
-std::string MakeTempPathForLocal(PairedNode* pNode)
+static inline std::string MakeTempPathForLocal(PairedNode* pNode)
 {
     return pNode->pathHash + '-' + pNode->localNode.HashToString() + ".SyncTEMP";
 }
 
-std::string MakeTempPathForRemote(PairedNode* pNode)
+static inline std::string MakeTempPathForRemote(PairedNode* pNode)
 {
     return pNode->pathHash + '-' + pNode->remoteNode.HashToString() + ".SyncTEMP";
 }
@@ -47,7 +47,7 @@ void Finalize(PairedNode* pNode)
     pNode->SetDefaultAction(PairedNode::Action::DoNothing);
 }
 
-int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
+int SyncFileLocalToRemote(PairedNode* pNode, const std::string& remotePath, const std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
     switch (pNode->localNode.status)
     {
@@ -63,16 +63,16 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
     case FileNode::Status::New:
     {
         //send
-        std::string tempFilePath = MakeTempPathForLocal(pNode);
-        std::string tempFilePathLocal = Utils::GetTempPath() + tempFilePath;
-        std::string tempFilePathRemote = tempPath + tempFilePath;
+        const std::string tempFilePath = MakeTempPathForLocal(pNode);
+        const std::string tempFilePathLocal = Utils::GetTempPath() + tempFilePath;
+        const std::string tempFilePathRemote = tempPath + tempFilePath;
 
         //compress if > 50MB
         if (pNode->localNode.size > 50000000)
         {
             // if we already have the uncompressed file transfered, don't bother, just move
-            sftp_attributes info;
-            if ((info = sftp.Stat(tempFilePathRemote.c_str())) == nullptr || (off_t)info->size != pNode->localNode.size)
+            sftp_attributes info = sftp.Stat(tempFilePathRemote.c_str());
+            if (info == nullptr || (off_t)info->size != pNode->localNode.size)
             {
                 off_t compressedSize = 0;
                 if (!Compressor::Compress(pNode->path, tempFilePathLocal+".zst", compressedSize))
@@ -82,6 +82,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
                 if (ssh.CallCLIDecompress(tempFilePathRemote+".zst", tempFilePathRemote) != CALLCLI_OK)
                     return -1;
             }
+            sftp_attributes_free(info);
             if (ssh.ReplaceFile(tempFilePathRemote, remotePath) != CALLCLI_OK)
                 return -1;
             sftp.Delete(tempFilePathRemote+".zst");
@@ -95,7 +96,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
                 return -1;
         }
 
-        std::time_t mtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        const std::time_t mtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         pNode->remoteNode = FileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
                                      mtime, pNode->localNode.size, pNode->localNode.hashHigh,
                                      pNode->localNode.hashLow);
@@ -109,7 +110,7 @@ int SyncFileLocalToRemote(PairedNode* pNode, std::string& remotePath, std::strin
     return 0;
 }
 
-int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
+int SyncFileRemoteToLocal(PairedNode* pNode, const std::string& remotePath, const std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
 {
     switch (pNode->remoteNode.status)
     {
@@ -125,9 +126,9 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
     case FileNode::Status::New:
     {
         //receive
-        std::string tempFilePath = MakeTempPathForRemote(pNode);
-        std::string tempFilePathLocal = Utils::GetTempPath() + tempFilePath;
-        std::string tempFilePathRemote = tempPath + tempFilePath;
+        const std::string tempFilePath = MakeTempPathForRemote(pNode);
+        const std::string tempFilePathLocal = Utils::GetTempPath() + tempFilePath;
+        const std::string tempFilePathRemote = tempPath + tempFilePath;
 
         //compress if > 50MB
         if (pNode->remoteNode.size > 50000000)
@@ -157,7 +158,7 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
                 return -1;
         }
 
-        std::time_t mtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        const std::time_t mtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         pNode->localNode = FileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
                                     mtime, pNode->remoteNode.size, pNode->remoteNode.hashHigh,
                                     pNode->remoteNode.hashLow);
@@ -171,10 +172,10 @@ int SyncFileRemoteToLocal(PairedNode* pNode, std::string& remotePath, std::strin
     return 0;
 }
 
-int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp)
+int SyncResolve(PairedNode* pNode, const std::string& remotePath, const std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp)
 {
-    std::string tempLocal = Utils::GetTempPath() + pNode->pathHash + ConflictManager::tempSuffixLocal;
-    std::string tempRemote = Utils::GetTempPath() + pNode->pathHash + ConflictManager::tempSuffixRemote;
+    const std::string tempLocal = Utils::GetTempPath() + pNode->pathHash + ConflictManager::tempSuffixLocal;
+    const std::string tempRemote = Utils::GetTempPath() + pNode->pathHash + ConflictManager::tempSuffixRemote;
 
     FileNode local;
     FileNode remote;
@@ -199,15 +200,14 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     auto newLocalSize = buf.st_size;
 
     // move temp/remote second
-    //send
-    std::string tempFilePathRemote = tempPath + pNode->pathHash + ConflictManager::tempSuffixRemote;
+    const std::string tempFilePathRemote = tempPath + pNode->pathHash + ConflictManager::tempSuffixRemote;
 
     //compress if > 50MB
     if (pNode->localNode.size > 50000000)
     {
         // if we already have the uncompressed file transfered, don't bother, just move
-        sftp_attributes info;
-        if ((info = sftp.Stat(tempFilePathRemote.c_str())) == nullptr || (off_t)info->size != pNode->localNode.size)
+        sftp_attributes info = sftp.Stat(tempFilePathRemote.c_str());
+        if (info == nullptr || (off_t)info->size != pNode->localNode.size)
         {
             off_t compressedSize = 0;
             if (!Compressor::Compress(tempRemote, tempRemote+".zst", compressedSize))
@@ -217,6 +217,7 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
             if (ssh.CallCLIDecompress(tempFilePathRemote+".zst", tempFilePathRemote) != CALLCLI_OK)
                 return -1;
         }
+        sftp_attributes_free(info);
         if (ssh.ReplaceFile(tempFilePathRemote, remotePath) != CALLCLI_OK)
             return -1;
         sftp.Delete(tempFilePathRemote+".zst");
@@ -253,7 +254,7 @@ int SyncResolve(PairedNode* pNode, std::string& remotePath, std::string& tempPat
     return 0;
 }
 
-bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& sftp)
+bool LastMinuteCheck(PairedNode* pNode, const std::string& remotePath, SFTPConnector& sftp)
 {
     if (pNode->progress == PairedNode::Progress::Canceled)
         return false;
@@ -272,8 +273,8 @@ bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& 
         return false;
     }
 
-    sftp_attributes info;
-    if ((info = sftp.Stat(remotePath)) == nullptr)
+    sftp_attributes info = sftp.Stat(remotePath);
+    if (info == nullptr)
     {
         if (!sftp.IsAbsent())
         {
@@ -287,27 +288,26 @@ bool LastMinuteCheck(PairedNode* pNode, std::string& remotePath, SFTPConnector& 
         remote.size = info->size;
         remote.mtime = info->mtime;
     }
+    sftp_attributes_free(info);
     
     if (!PairingManager::CheckChanges(pNode->localNode, local, pNode->remoteNode, remote))
     {
         pNode->progress = PairedNode::Progress::Canceled;
         pNode->action = PairedNode::Action::Ignore;
-        sftp_attributes_free(info);
         return false;
     }
-    sftp_attributes_free(info);
 
     return true;
 }
 
-int SyncManager::Sync(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, HistoryFileNodeDBConnector& db)
+int SyncManager::Sync(PairedNode* pNode, const std::string& remoteRoot, const std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, HistoryFileNodeDBConnector& db)
 {
     if (pNode->action == PairedNode::Action::Ignore
         || pNode->action == PairedNode::Action::DoNothing
         || pNode->action == PairedNode::Action::Conflict)
         return 1;
 
-    std::string remotePath = remoteRoot + pNode->path;
+    const std::string remotePath = remoteRoot + pNode->path;
 
     // check for cancel here
     if (!LastMinuteCheck(pNode, remotePath, sftp))

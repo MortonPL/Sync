@@ -2,9 +2,9 @@
 
 #include "Utils.h"
 
-void PairingManager::PairAllLocal(std::forward_list<FileNode>& scanNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
+void PairingManager::PairAllLocal(const std::forward_list<FileNode>& scanNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
 {
-    for (auto& scanNode: scanNodes)
+    for (const auto& scanNode: scanNodes)
     {
         auto pair = PairedNode(scanNode.path);
         pair.localNode = scanNode;
@@ -13,9 +13,9 @@ void PairingManager::PairAllLocal(std::forward_list<FileNode>& scanNodes, std::l
     }
 }
 
-void PairingManager::PairAllHistory(std::forward_list<HistoryFileNode>& historyNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
+void PairingManager::PairAllHistory(const std::forward_list<HistoryFileNode>& historyNodes, std::list<PairedNode>& pairedNodes, Mapper& mapper)
 {
-    for (auto& historyNode: historyNodes)
+    for (const auto& historyNode: historyNodes)
     {
         auto pPair = mapper.FindMapPath(historyNode.path);
         if (pPair)
@@ -174,7 +174,7 @@ void PairingManager::PairAll(std::forward_list<FileNode>& scanNodes, std::forwar
     PairingManager::SolveFinalAction(pairedNodes);
 }
 
-bool PairingManager::CheckChanges(FileNode& localOld, FileNode& localNew, FileNode& remoteOld, FileNode& remoteNew)
+bool PairingManager::CheckChanges(FileNode& localOld, const FileNode& localNew, FileNode& remoteOld, const FileNode& remoteNew)
 {
     bool isOk = true;
 

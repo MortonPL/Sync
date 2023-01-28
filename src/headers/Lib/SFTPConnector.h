@@ -17,11 +17,11 @@ public:
     bool Connect();
     void EndSession();
 
-    bool Send(std::string localPath, std::string tempFileName, off_t size) const;
-    bool Receive(std::string remotePath, std::string tempFileName, off_t size) const;
-    bool ReceiveNonAtomic(std::string remotePath, std::string localPath) const ;
-    bool Delete(std::string path) const;
-    sftp_attributes Stat(std::string path) const;
+    bool Send(const std::string localPath, const std::string tempFileName, const off_t size) const;
+    bool Receive(const std::string remotePath, const std::string tempFileName, const off_t size) const;
+    bool ReceiveNonAtomic(const std::string remotePath, const std::string localPath) const ;
+    bool Delete(const std::string path) const;
+    sftp_attributes Stat(const std::string path) const;
     bool IsAbsent() const;
 
 private:

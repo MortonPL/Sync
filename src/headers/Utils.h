@@ -8,8 +8,7 @@
 
 namespace Utils
 {
-    //TODO: Replace or explain
-    void Replace(std::string& original, const std::string& from, const std::string& to);
+    void Replace(std::string& string, const std::string& replaceWhat, const std::string& replaceWith);
 
     void FindHomePath();
 

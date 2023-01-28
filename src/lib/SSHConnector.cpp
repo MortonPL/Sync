@@ -22,7 +22,7 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
 {
     if (session != nullptr)
     {
-        if (!(ssh_is_connected(session) && (authStatus == AUTH_STATUS_OK)))
+        if (!(ssh_is_connected(session) && (authStatus == AuthStatus::Ok)))
         {
             EndSession();
             return false;
@@ -45,26 +45,25 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
         return false;
     }
 
-    std::string passPrompt = fmt::format("Enter password for {}@{}:", user, address);
-    std::string keyPrompt = fmt::format("Enter passphrase for private key ");
+    const std::string passPrompt = fmt::format("Enter password for {}@{}:", user, address);
+    const std::string keyPrompt = "Enter passphrase for private key ";
 
-    while(authStatus != AUTH_STATUS_OK)
+    while(authStatus != AuthStatus::Ok)
     {
-        while (!AuthenticateUser(passwordProvider, interactiveProvider, keyProvider,
-                                     passPrompt, keyPrompt)
-               && (authStatus != AUTH_STATUS_ERROR && authStatus != AUTH_STATUS_UNHANDLED))
+        while (!AuthenticateUser(passwordProvider, interactiveProvider, keyProvider, passPrompt, keyPrompt)
+               && (authStatus != AuthStatus::Error && authStatus != AuthStatus::Unhandled))
         {
             if (isAuthDenied)
                 genericMessenger("Permission denied. Please try again.");
         }
 
-        if (authStatus == AUTH_STATUS_ERROR)
+        if (authStatus == AuthStatus::Error)
         {
             genericMessenger("Failed to connect.");
             EndSession();
             return false;
         }
-        else if (authStatus == AUTH_STATUS_UNHANDLED)
+        else if (authStatus == AuthStatus::Unhandled)
         {
             genericMessenger("Server requires an authentication method that is not supported (hostbased or gssapi).");
             EndSession();
@@ -75,9 +74,10 @@ bool SSHConnector::Connect(const std::string& address, const std::string& user,
     return true;
 }
 
-bool SSHConnector::BeginSession(std::string host, std::string user)
+bool SSHConnector::BeginSession(const std::string host, const std::string user)
 {
-    if ((session = ssh_new()) == nullptr)
+    session = ssh_new();
+    if (session == nullptr)
         return false;
     long timeout = 300;
     ssh_options_set(session, SSH_OPTIONS_HOST, host.c_str());
@@ -94,7 +94,7 @@ bool SSHConnector::BeginSession(std::string host, std::string user)
 
 void SSHConnector::EndSession()
 {
-    authStatus = AUTH_STATUS_NONE;
+    authStatus = AuthStatus::None;
     authMethods = 0;
     isAuthDenied = false;
     retryCount = 0;
@@ -513,30 +513,31 @@ bool SSHConnector::AuthenticateServer(serverHashCallbackType unknownCallback,
 bool SSHConnector::AuthenticateUser(passProviderType passProvider,
                                     interactiveProviderType interactiveProvider,
                                     keyProviderType keyProvider,
-                                    std::string& passPrompt, std::string& keyPrompt)
+                                    const std::string& passPrompt, const std::string& keyPrompt)
 {
     if (retryCount >= 3)
     {
-        authStatus = AUTH_STATUS_ERROR;
+        authStatus = AuthStatus::Error;
         return false;
     }
 
     switch(authStatus)
     {
-    case AUTH_STATUS_NONE:
+    case AuthStatus::None:
         return AuthenticateUserNone();
-    case AUTH_STATUS_CHALLENGE:
-    case AUTH_STATUS_PARTIAL:
+    case AuthStatus::Challenge:
+    case AuthStatus::NoKey:
+    case AuthStatus::Partial:
         if (authMethods == 0)
         {
-            authStatus = AUTH_STATUS_ERROR;
+            authStatus = AuthStatus::Error;
             return false;
         }
-        if (authMethods & SSH_AUTH_METHOD_PUBLICKEY)
+        if ((authMethods & SSH_AUTH_METHOD_PUBLICKEY) && authStatus != AuthStatus::NoKey)
         {
             ssh_key key = ssh_key_new();
             bool autoAuthed = AuthenticateUserKeyAuto();
-            if (autoAuthed || authStatus == AUTH_STATUS_ERROR)
+            if (autoAuthed || authStatus == AuthStatus::Error)
                 return autoAuthed;
             if(!AuthenticateUserKeyFetch(keyProvider, keyPrompt, &key))
                 return false;
@@ -547,10 +548,10 @@ bool SSHConnector::AuthenticateUser(passProviderType passProvider,
         if (authMethods & SSH_AUTH_METHOD_PASSWORD)
         {
             bool isCanceled = false;
-            std::string password = passProvider(isCanceled, passPrompt);
+            const std::string password = passProvider(isCanceled, passPrompt);
             if (isCanceled)
             {
-                authStatus = AUTH_STATUS_ERROR;
+                authStatus = AuthStatus::Error;
                 return false;
             }
             return AuthenticateUserPass(password);
@@ -560,22 +561,22 @@ bool SSHConnector::AuthenticateUser(passProviderType passProvider,
             std::string name, instruction;
             int nprompts;
             bool fetchResult = AuthenticateUserInteractiveFetch(name, instruction, nprompts);
-            if (!fetchResult || authStatus != AUTH_STATUS_CHALLENGE)
+            if (!fetchResult || authStatus != AuthStatus::Challenge)
                 return fetchResult;
             return AuthenticateUserInteractive(interactiveProvider, name, instruction, nprompts);
         }
         if (authMethods & SSH_AUTH_METHOD_GSSAPI_MIC)
         {
-            authStatus = AUTH_STATUS_UNHANDLED;
+            authStatus = AuthStatus::Unhandled;
             return false;
         }
         if (authMethods & SSH_AUTH_METHOD_HOSTBASED)
         {
-            authStatus = AUTH_STATUS_UNHANDLED;
+            authStatus = AuthStatus::Unhandled;
             return false;
         }
         break;
-    case AUTH_STATUS_OK:
+    case AuthStatus::Ok:
         return true;
     default:
         break;
@@ -589,7 +590,7 @@ bool SSHConnector::AuthenticateResult(int rc)
     switch(rc)
     {
     case SSH_AUTH_ERROR:
-        authStatus = AUTH_STATUS_ERROR;
+        authStatus = AuthStatus::Error;
         return false;
     case SSH_AUTH_DENIED:
         isAuthDenied = true;
@@ -597,12 +598,12 @@ bool SSHConnector::AuthenticateResult(int rc)
         return false;
     case SSH_AUTH_PARTIAL:
         authMethods = ssh_userauth_list(session, nullptr);
-        authStatus = AUTH_STATUS_PARTIAL;
+        authStatus = AuthStatus::Partial;
         isAuthDenied = false;
         retryCount = 0;
         return true;
     case SSH_AUTH_SUCCESS:
-        authStatus = AUTH_STATUS_OK;
+        authStatus = AuthStatus::Ok;
         isAuthDenied = false;
         retryCount = 0;
         return true;
@@ -622,20 +623,20 @@ bool SSHConnector::AuthenticateUserNone()
     case SSH_AUTH_DENIED:
     case SSH_AUTH_PARTIAL:
         authMethods = ssh_userauth_list(session, nullptr);
-        authStatus = AUTH_STATUS_PARTIAL;
+        authStatus = AuthStatus::Partial;
         return true;
     case SSH_AUTH_SUCCESS:
-        authStatus = AUTH_STATUS_OK;
+        authStatus = AuthStatus::Ok;
         return true;
     default:
         break;
     }
 
-    authStatus = AUTH_STATUS_ERROR;
+    authStatus = AuthStatus::Error;
     return false;
 }
 
-bool SSHConnector::AuthenticateUserPass(std::string password)
+bool SSHConnector::AuthenticateUserPass(const std::string password)
 {
     return AuthenticateResult(ssh_userauth_password(session, nullptr, password.c_str()));
 }
@@ -645,18 +646,18 @@ bool SSHConnector::AuthenticateUserKeyAuto()
     switch(ssh_userauth_agent(session, nullptr))
     {
     case SSH_AUTH_ERROR:
-        authStatus = AUTH_STATUS_ERROR;
+        authStatus = AuthStatus::Error;
         return false;
     case SSH_AUTH_DENIED:
         return false;
     case SSH_AUTH_PARTIAL:
         authMethods = ssh_userauth_list(session, nullptr);
-        authStatus = AUTH_STATUS_PARTIAL;
+        authStatus = AuthStatus::Partial;
         isAuthDenied = false;
         retryCount = 0;
         return true;
     case SSH_AUTH_SUCCESS:
-        authStatus = AUTH_STATUS_OK;
+        authStatus = AuthStatus::Ok;
         isAuthDenied = false;
         retryCount = 0;
         return true;
@@ -667,7 +668,7 @@ bool SSHConnector::AuthenticateUserKeyAuto()
     return false;
 }
 
-bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::string keyPrompt, ssh_key* pPrivate)
+bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, const std::string keyPrompt, ssh_key* pPrivate)
 {
     bool isCanceled = false;
     for (auto const& entry: std::filesystem::recursive_directory_iterator(
@@ -675,11 +676,11 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
         std::filesystem::directory_options::follow_directory_symlink
             | std::filesystem::directory_options::skip_permission_denied))
     {
-        std::string path = entry.path().string();
-        size_t pos;
-        if ((pos = path.rfind(".pub")) == std::string::npos)
+        const std::string path = entry.path().string();
+        size_t pos = path.rfind(".pub");
+        if (pos == std::string::npos)
             continue;
-        std::string privPath = path.substr(0, pos);
+        const std::string privPath = path.substr(0, pos);
         ssh_key key = ssh_key_new();
 
         if (ssh_pki_import_pubkey_file(path.c_str(), &key) != SSH_OK)
@@ -704,7 +705,7 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
             if (isCanceled)
             {
                 ssh_key_free(key);
-                authStatus = AUTH_STATUS_ERROR;
+                authStatus = AuthStatus::Error;
                 return false;
             }
             if (ssh_pki_import_privkey_file(privPath.c_str(), passphrase.c_str(), nullptr, nullptr, pPrivate) != SSH_OK)
@@ -727,7 +728,7 @@ bool SSHConnector::AuthenticateUserKeyFetch(keyProviderType provider, std::strin
         return true;
     }
 
-    authStatus = AUTH_STATUS_ERROR;
+    authStatus = AuthStatus::NoKey;
     return false;
 }
 
@@ -744,10 +745,10 @@ bool SSHConnector::AuthenticateUserInteractiveFetch(std::string& name, std::stri
         name = ssh_userauth_kbdint_getname(session);
         instruction = ssh_userauth_kbdint_getinstruction(session);
         nprompts = ssh_userauth_kbdint_getnprompts(session);
-        authStatus = AUTH_STATUS_CHALLENGE;
+        authStatus = AuthStatus::Challenge;
         return true;
     case SSH_AUTH_ERROR:
-        authStatus = AUTH_STATUS_ERROR;
+        authStatus = AuthStatus::Error;
         return false;
     case SSH_AUTH_DENIED:
         isAuthDenied = true;
@@ -755,12 +756,12 @@ bool SSHConnector::AuthenticateUserInteractiveFetch(std::string& name, std::stri
         return false;
     case SSH_AUTH_PARTIAL:
         authMethods = ssh_userauth_list(session, nullptr);
-        authStatus = AUTH_STATUS_PARTIAL;
+        authStatus = AuthStatus::Partial;
         isAuthDenied = false;
         retryCount = 0;
         return true;
     case SSH_AUTH_SUCCESS:
-        authStatus = AUTH_STATUS_OK;
+        authStatus = AuthStatus::Ok;
         isAuthDenied = false;
         retryCount = 0;
         return true;
@@ -770,19 +771,19 @@ bool SSHConnector::AuthenticateUserInteractiveFetch(std::string& name, std::stri
     return false;
 }
 
-bool SSHConnector::AuthenticateUserInteractive(interactiveProviderType provider, std::string& name, std::string& instruction, int nprompts)
+bool SSHConnector::AuthenticateUserInteractive(interactiveProviderType provider, const std::string& name, const std::string& instruction, int nprompts)
 {
     bool isCanceled;
     char shouldNotBeHidden;
-    std::string format = name.size() && instruction.size()? "{}\n{}\n{}": (name.size() || instruction.size()? "{}{}\n{}" : "{}{}{}");
+    const std::string format = name.size() && instruction.size()? "{}\n{}\n{}": (name.size() || instruction.size()? "{}{}\n{}" : "{}{}{}");
     for (int i = 0; i < nprompts; i++)
     {
         const char* prompt = ssh_userauth_kbdint_getprompt(session, i, &shouldNotBeHidden);
-        std::string challenge = fmt::format(format, name, instruction, prompt);
-        std::string res = provider(isCanceled, challenge, !(bool)shouldNotBeHidden);
+        const std::string challenge = fmt::format(format, name, instruction, prompt);
+        const std::string res = provider(isCanceled, challenge, !(bool)shouldNotBeHidden);
         if (isCanceled || ssh_userauth_kbdint_setanswer(session, i, res.c_str()) < 0)
         {
-            authStatus = AUTH_STATUS_ERROR;
+            authStatus = AuthStatus::Error;
             return false;
         }
     }

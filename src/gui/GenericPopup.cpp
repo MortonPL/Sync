@@ -5,7 +5,8 @@
 
 wxBEGIN_EVENT_TABLE(GenericPopup, wxDialog)
     EVT_BUTTON(wxID_OK, GenericPopup::OnOK)
-    EVT_CHAR_HOOK(GenericPopup::CharHook)
+    EVT_TEXT_ENTER(XRCID("txtInputStd"), GenericPopup::OnOK)
+    EVT_TEXT_ENTER(XRCID("txtInputPass"), GenericPopup::OnOK)
 wxEND_EVENT_TABLE()
 
 // ctor
@@ -14,7 +15,7 @@ GenericPopup::GenericPopup()
 }
 
 // ctor
-GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* output, std::string* input, Flags flags)
+GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* output, const std::string* input, Flags flags)
 {
     wxXmlResource::Get()->LoadDialog(this, pParent, "GenericPopup");
 
@@ -29,7 +30,6 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
         (wxButton*)(this->FindWindow("wxID_CANCEL")),
     };
 
-    this->input = input;
     this->output = output;
     this->isPassword = flags & Flags::Password;
     if (!(flags & Flags::Cancel))
@@ -60,20 +60,4 @@ void GenericPopup::OnOK(wxCommandEvent&)
             *output = Misc::wxToString(ctrl.txtInputStd->GetValue());
     }
     EndModal(wxID_OK);
-}
-
-void GenericPopup::CharHook(wxKeyEvent& event)
-{
-    switch (event.GetKeyCode())
-    {
-    case WXK_RETURN:
-    {
-        wxCommandEvent e;
-        OnOK(e);
-        break;
-    }
-    default:
-        event.DoAllowNextEvent();
-        break;
-    }
 }

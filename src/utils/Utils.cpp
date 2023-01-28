@@ -62,24 +62,24 @@ std::string Utils::CorrectDirPath(const std::string& path)
     return path.back() != '/' ? path + '/' : path;
 }
 
-//TODO: Replace or explain
+// A simple extra utility to inplace replace multiple characters in a string
 // See: https://stackoverflow.com/a/29752943
-void Utils::Replace(std::string& original, const std::string& from, const std::string& to)
+void Utils::Replace(std::string& string, const std::string& replaceWhat, const std::string& replaceWith)
 {
     std::string newString;
-    newString.reserve(original.length());
+    newString.reserve(string.length());
     std::string::size_type lastPos = 0;
     std::string::size_type findPos;
 
-    while(std::string::npos != (findPos = original.find(from, lastPos)))
+    while(std::string::npos != (findPos = string.find(replaceWhat, lastPos)))
     {
-        newString.append(original, lastPos, findPos - lastPos);
-        newString += to;
-        lastPos = findPos + from.length();
+        newString.append(string, lastPos, findPos - lastPos);
+        newString += replaceWith;
+        lastPos = findPos + replaceWhat.length();
     }
 
-    newString += original.substr(lastPos);
-    original.swap(newString);
+    newString += string.substr(lastPos);
+    string.swap(newString);
 }
 
 time_t Utils::StringToTimestamp(const std::string& string)

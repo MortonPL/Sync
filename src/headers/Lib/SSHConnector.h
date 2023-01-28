@@ -7,24 +7,17 @@
 
 #include "Domain/FileNode.h"
 
-#define AUTH_STATUS_ERROR       -1
-#define AUTH_STATUS_NONE        0
-#define AUTH_STATUS_UNHANDLED   1
-#define AUTH_STATUS_PARTIAL     2
-#define AUTH_STATUS_CHALLENGE   3
-#define AUTH_STATUS_OK          4
-
 #define CALLCLI_OK 0
 #define CALLCLI_ERROR -1
 #define CALLCLI_404 -2
 #define CALLCLI_NOANSWER -3
 #define CALLCLI_BLOCKED -4
 
-typedef void (*genericMessengerType)(std::string prompt);
-typedef std::string (*passProviderType)(bool& isCanceled, std::string& prompt);
-typedef std::string (*interactiveProviderType)(bool& isCanceled, std::string& challenge, bool shouldBeHidden);
-typedef std::string (*keyProviderType)(bool& isCanceled, std::string& prompt);
-typedef bool (*serverHashCallbackType)(std::string& pubkeyHash);
+typedef void (*genericMessengerType)(const std::string prompt);
+typedef std::string (*passProviderType)(bool& isCanceled, const std::string& prompt);
+typedef std::string (*interactiveProviderType)(bool& isCanceled, const std::string& challenge, bool shouldBeHidden);
+typedef std::string (*keyProviderType)(bool& isCanceled, const std::string& prompt);
+typedef bool (*serverHashCallbackType)(const std::string& pubkeyHash);
 
 /*A class for managing SSH communications.*/
 class SSHConnector
@@ -57,13 +50,24 @@ public:
     std::string GetError();
 
 private:
+    enum class AuthStatus: char
+    {
+        Error = -1,
+        None,
+        Unhandled,
+        Partial,
+        Challenge,
+        Ok,
+        NoKey,
+    };
+
     ssh_channel GetChannel() const;
     void FreeChannel(ssh_channel pChannel) const;
     ssh_channel CallCLI(std::string flag);
     ssh_channel CallCLI(std::string flag, std::string cmd);
     ssh_channel CallCLI(std::string flag, std::string cmd, std::string cmd2) const;
 
-    bool BeginSession(std::string host, std::string user);
+    bool BeginSession(const std::string host, const std::string user);
     bool AuthenticateServer(serverHashCallbackType unknownCallback,
                             serverHashCallbackType otherCallback,
                             serverHashCallbackType changedCallback,
@@ -71,21 +75,21 @@ private:
     bool AuthenticateUser(passProviderType passwordProvider,
                           interactiveProviderType interactiveProvider,
                           keyProviderType keyProvider,
-                          std::string& passPrompt, std::string& keyPrompt);
+                          const std::string& passPrompt, const std::string& keyPrompt);
     bool AuthenticateUserNone();
     bool AuthenticateGSSAPI();
     bool AuthenticateUserKeyAuto();
-    bool AuthenticateUserKeyFetch(keyProviderType provider, std::string keyPrompt, ssh_key* pPrivate);
+    bool AuthenticateUserKeyFetch(keyProviderType provider, const std::string keyPrompt, ssh_key* pPrivate);
     bool AuthenticateUserKey(ssh_key* pPrivate);
     bool AuthenticateUserInteractiveFetch(std::string& name, std::string& instruction, int& nprompts);
-    bool AuthenticateUserInteractive(interactiveProviderType provider, std::string& name, std::string& instruction, int nprompts);
-    bool AuthenticateUserPass(std::string password);
+    bool AuthenticateUserInteractive(interactiveProviderType provider, const std::string& name, const std::string& instruction, int nprompts);
+    bool AuthenticateUserPass(const std::string password);
     bool AuthenticateResult(int rc);
 
     ssh_session session = nullptr;
     ssh_channel channel = nullptr;
 
-    int authStatus = AUTH_STATUS_NONE;
+    AuthStatus authStatus = AuthStatus::None;
     int authMethods = 0;
     bool isAuthDenied = false;
     int retryCount = 0;

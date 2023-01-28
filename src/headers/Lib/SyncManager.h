@@ -8,7 +8,7 @@
 
 namespace SyncManager
 {
-    int Sync(PairedNode* pNode, std::string& remoteRoot, std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, HistoryFileNodeDBConnector& db);
+    int Sync(PairedNode* pNode, const std::string& remoteRoot, const std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, HistoryFileNodeDBConnector& db);
 }
 
 #endif

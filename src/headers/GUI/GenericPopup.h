@@ -12,7 +12,7 @@ public:
     };
 
     GenericPopup();
-    GenericPopup(std::string message, wxWindow* pParent=nullptr, std::string* output=nullptr, std::string* input=nullptr, Flags flags=Flags::None);
+    GenericPopup(std::string message, wxWindow* pParent=nullptr, std::string* output=nullptr, const std::string* input=nullptr, Flags flags=Flags::None);
     ~GenericPopup(){}
 
 private:
@@ -29,12 +29,10 @@ private:
     // properties
     Controls ctrl;
     std::string* output;
-    std::string* input;
     bool isPassword;
 
     // event handlers
     void OnOK(wxCommandEvent &event);
-    void CharHook(wxKeyEvent& event);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();
