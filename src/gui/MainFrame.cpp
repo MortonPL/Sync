@@ -119,6 +119,25 @@ MainFrame::MainFrame(wxWindow* pParent): ssh()
     CreateColumns();
 }
 
+void MainFrame::PreloadConfig()
+{
+    auto toolBar = GetToolBar();
+    ENABLE_MENU_ITEM(MENU_EDIT, MENU_EDIT_SCAN);
+    ENABLE_MENU_ITEM(MENU_ACTION, MENU_ACTION_RESOLVE);
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SCAN, true);
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_RESOLVE, true);
+    isFirstSelectedConfig = false;
+    ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, false);
+
+    SetStatusText(Misc::stringToWx("Current configuration: " + Global::CurrentConfig().name));
+
+    if (!DBConnectorStatic::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::CurrentConfig().uuid)))
+    {
+        GenericPopup("Couldn't read configuration file history.\nThis can happen if the configuration is scanned "
+                     "for the first time\nor if it's corrupted/missing. All files will be marked as new or conflicting.").ShowModal();
+    }
+}
+
 void MainFrame::CreateColumns()
 {
     // default width available is 600
@@ -297,7 +316,7 @@ void MainFrame::ResolveConflict()
     std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
 
     std::string remoteHome;
-    switch (ssh.CallCLIHome(&remoteHome))
+    switch (ssh.CallCLIHome(remoteHome))
     {
     default:
         GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", Announcer::Severity::Error);
@@ -470,7 +489,7 @@ bool MainFrame::DoSync()
         }
 
         std::string remoteHome;
-        switch (ssh.CallCLIHomeAndBlock(cfg.pathB, &remoteHome))
+        switch (ssh.CallCLIHomeAndBlock(cfg.pathB, remoteHome))
         {
         case CALLCLI_BLOCKED:
             GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", Announcer::Severity::Error);
@@ -492,12 +511,16 @@ bool MainFrame::DoSync()
         wxBusyInfo wait("Propagating changes. Please wait...");
         wxYield();
 
+        std::size_t i = 0;
         if (hasSelectedEverything || selectedItems.size() == 0)
         {
             int index = 0;
+            std::size_t total = pairedNodes.size();
             for (auto& pair: pairedNodes)
             {
+                i++;
                 bool wasVisible = !ShouldBeFiltered(pair);
+                SetStatusText(Misc::stringToWx(fmt::format("Synchronizing: {} ({}/{})", pair.path, i, total)));
                 SyncManager::Sync(&pair, cfg.pathB, tempPath, ssh, sftp, db);
                 if (wasVisible)
                 {
@@ -505,7 +528,7 @@ bool MainFrame::DoSync()
                         && (PairedNode*)(ctrl.listMain->GetItemData(index)) == &pair)
                     {
                         UpdateItem(&pair, index);
-                        ctrl.listMain->EnsureVisible(index);
+                        //ctrl.listMain->EnsureVisible(index);
                     }
                     index++;
                 }
@@ -513,12 +536,15 @@ bool MainFrame::DoSync()
         }
         else
         {
+            std::size_t total = selectedItems.size();
             for (auto index: selectedItems)
             {
+                i++;
                 auto pNode = (PairedNode*)(ctrl.listMain->GetItemData(index));
+                SetStatusText(Misc::stringToWx(fmt::format("Synchronizing: {} ({}/{})", pNode->path, i, total)));
                 SyncManager::Sync(pNode, cfg.pathB, tempPath, ssh, sftp, db);
                 UpdateItem(pNode, index);
-                ctrl.listMain->EnsureVisible(index);
+                //ctrl.listMain->EnsureVisible(index);
             }
         }
     }
@@ -664,6 +690,9 @@ void MainFrame::OnSync(wxCommandEvent&)
 
     // sync proper
     DoSync();
+
+    // reset status bar
+    SetStatusText(Misc::stringToWx("Current configuration: " + Global::CurrentConfig().name));
 
     selectedItems.clear();
     viewedItemIndex = -1;

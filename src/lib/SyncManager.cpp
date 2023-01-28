@@ -18,24 +18,6 @@ static inline std::string MakeTempPathForRemote(PairedNode* pNode)
     return pNode->pathHash + '-' + pNode->remoteNode.HashToString() + ".SyncTEMP";
 }
 
-int UpdateHistory(PairedNode* pNode, bool& wasDeleted)
-{
-    if (pNode->localNode.status == FileNode::Status::Absent)
-    {
-        pNode->deleted = wasDeleted = true;
-        return 0;
-    }
-
-    pNode->localNode.status = FileNode::Status::Clean;
-    pNode->remoteNode.status = FileNode::Status::Clean;
-    pNode->historyNode = HistoryFileNode(pNode->path, pNode->localNode.dev, pNode->localNode.inode,
-                                         pNode->remoteNode.dev, pNode->remoteNode.inode, pNode->localNode.mtime,
-                                         pNode->remoteNode.mtime, pNode->localNode.size, pNode->localNode.hashHigh,
-                                         pNode->localNode.hashLow);
-    pNode->SetDefaultAction(PairedNode::Action::DoNothing);
-    return 0;
-}
-
 void Finalize(PairedNode* pNode)
 {
     pNode->localNode.status = FileNode::Status::Clean;
@@ -45,6 +27,19 @@ void Finalize(PairedNode* pNode)
                                             pNode->remoteNode.mtime, pNode->localNode.size, pNode->localNode.hashHigh,
                                             pNode->localNode.hashLow);
     pNode->SetDefaultAction(PairedNode::Action::DoNothing);
+}
+
+int UpdateHistory(PairedNode* pNode, bool& wasDeleted, bool& wasNew)
+{
+    if (pNode->localNode.status == FileNode::Status::Absent)
+    {
+        pNode->deleted = wasDeleted = true;
+        return 0;
+    }
+    wasNew = pNode->localNode.status == FileNode::Status::New;
+
+    Finalize(pNode);
+    return 0;
 }
 
 int SyncFileLocalToRemote(PairedNode* pNode, const std::string& remotePath, const std::string& tempPath, SSHConnector& ssh, SFTPConnector& sftp, bool& wasDeleted)
@@ -310,10 +305,12 @@ int SyncManager::Sync(PairedNode* pNode, const std::string& remoteRoot, const st
     const std::string remotePath = remoteRoot + pNode->path;
 
     // check for cancel here
-    if (!LastMinuteCheck(pNode, remotePath, sftp))
-        return 3;
+    if (pNode->action != PairedNode::Action::FastForward)
+        if (!LastMinuteCheck(pNode, remotePath, sftp))
+            return 3;
 
     bool wasDeleted = false;
+    bool wasNew = false;
     switch (pNode->action)
     {
     case PairedNode::Action::LocalToRemote:
@@ -333,7 +330,7 @@ int SyncManager::Sync(PairedNode* pNode, const std::string& remoteRoot, const st
     case PairedNode::Action::DoNothing:
         return 0;
     case PairedNode::Action::FastForward:
-        UpdateHistory(pNode, wasDeleted);
+        UpdateHistory(pNode, wasDeleted, wasNew);
         break;
     case PairedNode::Action::Resolve:
         if (SyncResolve(pNode, remotePath, tempPath, ssh, sftp) != 0)
@@ -350,6 +347,8 @@ int SyncManager::Sync(PairedNode* pNode, const std::string& remoteRoot, const st
     {
         if (wasDeleted)
             db.Delete(pNode->path);
+        else if (wasNew)
+            db.Insert(pNode->historyNode);
         else
             db.Update(pNode->historyNode);
     }

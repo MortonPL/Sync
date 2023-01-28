@@ -32,6 +32,11 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
 
     this->output = output;
     this->isPassword = flags & Flags::Password;
+    if (flags & Flags::NoButtons)
+    {
+        ctrl.btnOK->Hide();
+        ctrl.btnCancel->Hide();
+    }
     if (!(flags & Flags::Cancel))
         ctrl.btnCancel->Hide();
     if (input)

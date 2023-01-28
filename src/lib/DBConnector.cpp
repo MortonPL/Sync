@@ -146,6 +146,27 @@ void ConfigurationDBConnector::SelectAll(std::vector<Configuration>& configs)
     }
 }
 
+bool ConfigurationDBConnector::SelectByUUID(const uuid_t& uuid, Configuration& config)
+{
+    const int uuidStringSize = 36;
+    char uuidstr[uuidStringSize+1];
+    uuid_unparse(uuid, uuidstr);
+    try
+    {
+        SQLite::Statement query(this->db, fmt::format("SELECT * from configs WHERE uuid=\"{}\"", uuidstr));
+        if (query.executeStep())
+            config = query.getColumns<Configuration, 8>();
+        else
+            return false;
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Failed to select config. Reason: " << e.what();
+        throw DBConnectorStatic::DBException();
+    }
+    return true;
+}
+
 void HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
 {
     try

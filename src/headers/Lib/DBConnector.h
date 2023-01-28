@@ -25,7 +25,10 @@ template <typename TObject, typename TId, template<class, class> class TContaint
 class DBConnector
 {
 public:
-    DBConnector(std::string path, int mode=SQLite::OPEN_READONLY): db(Utils::GetDatabasePath() + path, mode) {};
+    DBConnector(std::string path, int mode=SQLite::OPEN_READONLY): db(Utils::GetDatabasePath() + path, mode)
+    {
+        db.exec("PRAGMA journal_mode=TRUNCATE");
+    };
     virtual ~DBConnector() {};
 
     virtual void Insert(const TObject& object) = 0;
@@ -45,6 +48,7 @@ public:
     void Update(const Configuration& config);
     void Delete(const int id);
     void SelectAll(std::vector<Configuration>& configs);
+    bool SelectByUUID(const uuid_t& uuid, Configuration& config);
 };
 
 class HistoryFileNodeDBConnector: DBConnector<HistoryFileNode, std::string, std::forward_list>

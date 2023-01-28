@@ -12,6 +12,8 @@ class MainFrame : public wxFrame {
 public:
     MainFrame(wxWindow* pParent=nullptr);
 
+    void PreloadConfig();
+
 private:
     // control struct
     struct Controls

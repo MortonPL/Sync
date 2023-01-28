@@ -19,6 +19,14 @@ typedef std::string (*interactiveProviderType)(bool& isCanceled, const std::stri
 typedef std::string (*keyProviderType)(bool& isCanceled, const std::string& prompt);
 typedef bool (*serverHashCallbackType)(const std::string& pubkeyHash);
 
+enum class Messages: char
+{
+    None = '\0',
+    Ok = '0',
+    Error = '1',
+    Stat = 's',
+};
+
 /*A class for managing SSH communications.*/
 class SSHConnector
 {
@@ -36,8 +44,8 @@ public:
 
     int CallCLICreep(std::string dirToCreep);
     int CallCLICreepReturn(std::forward_list<FileNode>& nodes);
-    int CallCLIHomeAndBlock(std::string pathToCheck, std::string* result);
-    int CallCLIHome(std::string* result);
+    int CallCLIHomeAndBlock(std::string pathToCheck, std::string& result);
+    int CallCLIHome(std::string& result);
     int CallCLIUnblock(std::string path);
     int CallCLICompress(std::string pathFrom, std::string pathTo, off_t* compressedSize) const;
     int CallCLIDecompress(std::string pathFrom, std::string pathTo);

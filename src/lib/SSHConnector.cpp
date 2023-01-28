@@ -79,7 +79,7 @@ bool SSHConnector::BeginSession(const std::string host, const std::string user)
     session = ssh_new();
     if (session == nullptr)
         return false;
-    long timeout = 300;
+    long timeout = 10*60;
     ssh_options_set(session, SSH_OPTIONS_HOST, host.c_str());
     ssh_options_set(session, SSH_OPTIONS_USER, user.c_str());
     ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &timeout);
@@ -134,7 +134,7 @@ int SSHConnector::CallCLICreep(std::string dirToCreep)
         FreeChannel(channel);
         return CALLCLI_404;
     }
-    if (rc != '0')
+    if (rc != (char)Messages::Ok)
     {
         FreeChannel(channel);
         return CALLCLI_ERROR;
@@ -157,7 +157,7 @@ int SSHConnector::CallCLICreepReturn(std::forward_list<FileNode>& nodes)
         FreeChannel(channel);
         return CALLCLI_404;
     }
-    if (rc != '0')
+    if (rc != (char)Messages::Ok)
     {
         FreeChannel(channel);
         return CALLCLI_ERROR;
@@ -176,8 +176,12 @@ int SSHConnector::CallCLICreepReturn(std::forward_list<FileNode>& nodes)
     }
     // read nodes
     LOG(INFO) << "Receiving " << nnodes << " nodes...";
+    std::size_t i = 0;
     while (nnodes > 0)
     {
+        if (i >= 15000)
+            ssh_channel_write(channel, &rc, sizeof(rc));
+
         ssh_channel_read(channel, &len, sizeof(len), 0);
         if (buf.size() < len)
             buf.resize(len);
@@ -185,13 +189,14 @@ int SSHConnector::CallCLICreepReturn(std::forward_list<FileNode>& nodes)
         auto node = FileNode::Deserialize(buf);
         nodes.push_front(node);
         nnodes--;
+        i++;
     }
 
     FreeChannel(channel);
     return CALLCLI_OK;
 }
 
-int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* result)
+int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string& result)
 {
     ssh_channel pChannel;
     if ((pChannel = CallCLI("h", pathToCheck)) == nullptr)
@@ -205,9 +210,9 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* resu
         return CALLCLI_404;
     }
 
-    std::string buf(len, '\0');
+    std::string buf(len, 0);
     ssh_channel_read(pChannel, buf.data(), len, 0);
-    *result = buf;
+    result = buf;
 
     bool blocked;
     ssh_channel_read(pChannel, &blocked, sizeof(blocked), 0);
@@ -216,7 +221,7 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string* resu
     return blocked? CALLCLI_OK: CALLCLI_BLOCKED;
 }
 
-int SSHConnector::CallCLIHome(std::string* result)
+int SSHConnector::CallCLIHome(std::string& result)
 {
     ssh_channel pChannel;
     if ((pChannel = CallCLI("h")) == nullptr)
@@ -230,9 +235,9 @@ int SSHConnector::CallCLIHome(std::string* result)
         return CALLCLI_404;
     }
 
-    std::string buf(len, '\0');
+    std::string buf(len, 0);
     ssh_channel_read(pChannel, buf.data(), len, 0);
-    *result = buf;
+    result = buf;
 
     FreeChannel(pChannel);
     return CALLCLI_OK;
@@ -269,7 +274,7 @@ int SSHConnector::CallCLICompress(std::string pathFrom, std::string pathTo, off_
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    if (compressed != '0')
+    if (compressed != (char)Messages::Ok)
     {
         FreeChannel(pChannel);
         return CALLCLI_ERROR;
@@ -298,7 +303,7 @@ int SSHConnector::CallCLIDecompress(std::string pathFrom, std::string pathTo)
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    if (decompressed != '0')
+    if (decompressed != (char)Messages::Ok)
     {
         FreeChannel(pChannel);
         return CALLCLI_ERROR;
@@ -311,7 +316,7 @@ int SSHConnector::CallCLIDecompress(std::string pathFrom, std::string pathTo)
     }
 
     FreeChannel(pChannel);
-    return (decompressed == '0'? CALLCLI_OK: CALLCLI_ERROR);
+    return (decompressed == (char)Messages::Ok? CALLCLI_OK: CALLCLI_ERROR);
 }
 
 // NOTE - unused and unfinished
@@ -395,7 +400,7 @@ int SSHConnector::StatRemote(std::string pathToStat, struct stat* pStatBuf)
         FreeChannel(pChannel);
         return CALLCLI_404;
     }
-    if (rc != 's')
+    if (rc != (char)Messages::Stat)
     {
         FreeChannel(pChannel);
         return CALLCLI_ERROR;

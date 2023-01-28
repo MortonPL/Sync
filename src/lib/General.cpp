@@ -1,6 +1,9 @@
 #include "Lib/General.h"
 
 #include <filesystem>
+#include <fstream>
+
+#include "Lib/Global.h"
 #include "Lib/DBConnector.h"
 #include "Utils.h"
 
@@ -50,6 +53,52 @@ bool General::InitEverything(const std::string logName)
 
     if (!ensureDirectory(Utils::GetTempPath(), "Failed to make sure that the temporary directory exists! Exiting."))
         return false;
+
+    return true;
+}
+
+const std::string filename = ".LastConfig";
+
+bool General::PreloadConfig()
+{
+    uuid_t uuid;
+    std::string line;
+    try
+    {
+        std::ifstream(Utils::GetRootPath() + filename) >> line;
+        if (uuid_parse(line.c_str(), uuid) != 0)
+            return false;
+
+        Configuration cfg;
+        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName());
+        if (db.SelectByUUID(uuid, cfg))
+            Global::CurrentConfig(cfg);
+        else
+            return false;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool General::SaveConfig()
+{
+    if (!Global::IsLoadedConfig())
+        return false;
+
+    try
+    {
+        const int uuidStringSize = 36;
+        char uuidstr[uuidStringSize+1];
+        uuid_unparse(Global::CurrentConfig().uuid, uuidstr);
+        std::ofstream(Utils::GetRootPath() + filename, std::ios::trunc) << uuidstr;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
 
     return true;
 }

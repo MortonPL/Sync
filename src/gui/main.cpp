@@ -42,12 +42,15 @@ bool MyApp::OnInit()
     }
 
     pMainFrame = new MainFrame();
+    if (General::PreloadConfig())
+        pMainFrame->PreloadConfig();
     pMainFrame->Show(true);
     return true;
 }
 
 int MyApp::OnExit()
 {
+    General::SaveConfig();
     //pMainFrame->Destroy();
     LOG(INFO) << "Exiting.";
     return 0;

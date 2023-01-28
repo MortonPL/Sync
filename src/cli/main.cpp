@@ -104,11 +104,11 @@ void StatPath(std::string path)
     struct stat buf;
     if (stat(path.c_str(), &buf) != 0)
     {
-        std::cout << 1;
+        std::cout << (char)Messages::Error;
         std::cout.flush();
         return;
     }
-    std::cout << 's';
+    std::cout << (char)Messages::Stat;
     std::cout.flush();
     FileNode::MarshallingContainer buf2(FileNode::MiniStatBinarySize, FileNode::MarshallingUnit(0));
     FileNode::SerializeStat(&buf, buf2);
@@ -117,7 +117,7 @@ void StatPath(std::string path)
 
 void CreepDir(std::string path)
 {
-    std::cout << '0';
+    std::cout << (char)Messages::Ok;
     std::cout.flush();
 
     std::forward_list<FileNode> nodes;
@@ -125,14 +125,14 @@ void CreepDir(std::string path)
     auto result = creeper.CreepPath(path, nodes);
     if (!Announcer::CreeperResult(result, CLIAnnouncer::Log))
     {
-        std::cout << '1'; // alternative to writeall --- in text mode
+        std::cout << (char)Messages::Error;
         std::cout.flush();
         return;
     }
-    std::cout << '0';
+    std::cout << (char)Messages::Ok;
     std::cout.flush();
 
-    const int timeout = 300;
+    const int timeout = 100 * 60; // TODO reduce back to 10 * 60
     fd_set rfds;
     struct timeval tv;
     FD_ZERO(&rfds);
@@ -141,11 +141,14 @@ void CreepDir(std::string path)
         tv = {timeout, 0};
         int retval = select(1, &rfds, nullptr, nullptr, &tv);
         if (retval == -1 || !retval)
+        {
+            LOG(ERROR) << "Client didn't respond in time.";
             return;
+        }
 
         char ack;
         std::cin >> ack;
-        if (ack != '0')
+        if (ack != (char)Messages::Ok)
             return;
     }
 
@@ -156,10 +159,27 @@ void CreepDir(std::string path)
     std::size_t nnodes = creeper.GetResultsCount();
     LOG(INFO) << "Writing " << nnodes << " nodes.";
     writeall(1, (char*)&nnodes, sizeof(nnodes));
+    std::size_t i = 0;
     for (auto& node: nodes)
     {
-        std::size_t size = node.Serialize(buf);
-        writeall(1, (char*)buf.data(), size);
+        if (i < 15000)
+        {
+            std::size_t size = node.Serialize(buf);
+            writeall(1, (char*)buf.data(), size);
+            i++;
+        }
+        else
+        {
+            int retval = select(1, &rfds, nullptr, nullptr, &tv);
+            if (retval == -1 || !retval)
+                return;
+
+            char ack;
+            std::cin >> ack;
+            if (ack != (char)Messages::Ok)
+                return;
+            i = 0;
+        }
     }
     LOG(INFO) << "Done.";
 }
@@ -210,7 +230,7 @@ void UnblockDir(std::string path)
 void Compress()
 {
     off_t compressedSize = 0;
-    std::cout << 0;
+    std::cout << (char)Messages::Ok;
     std::cout.flush();
     if (Compressor::Compress(GlobalCLI::pathCompressIn, GlobalCLI::pathCompressOut, compressedSize))
     {
@@ -225,8 +245,8 @@ void Compress()
 
 void Decompress()
 {
-    std::cout << 0;
-    std::cout << (Compressor::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? 0: 1);
+    std::cout << (char)Messages::Ok;
+    std::cout << (Compressor::Decompress(GlobalCLI::pathDecompressIn, GlobalCLI::pathDecompressOut)? (char)Messages::Ok: (char)Messages::Error);
     std::cout.flush();
 }
 

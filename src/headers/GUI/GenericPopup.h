@@ -9,6 +9,7 @@ public:
         Password = 0x1,
         Cancel = 0x2,
         PasswordCancel = 0x3,
+        NoButtons = 0x4,
     };
 
     GenericPopup();

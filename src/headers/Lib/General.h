@@ -6,6 +6,8 @@
 namespace General
 {
     bool InitEverything(const std::string logName);
+    bool PreloadConfig();
+    bool SaveConfig();
 }
 
 #endif
