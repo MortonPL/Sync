@@ -167,10 +167,20 @@ bool ConfigurationDBConnector::SelectByUUID(const uuid_t& uuid, Configuration& c
     return true;
 }
 
+void HistoryFileNodeDBConnector::AdviseOnSize(const std::size_t nodeNumber)
+{
+    queriesPerTransaction = std::min(nodeNumber / 10, std::size_t(maxQueriesPerTransaction));
+}
+
 void HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
 {
     try
     {
+        if (queryCounter >= queriesPerTransaction)
+        {
+            pTransaction->commit();
+            queryCounter = 0;
+        }
         SQLite::Statement query(db, fmt::format(
             "INSERT INTO nodes "
             "(path, dev, inode, r_dev, r_inode, mtime, r_mtime, size, hash_high, hash_low) "
@@ -179,6 +189,7 @@ void HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
         query.bind(1, &file.hashHigh, 8);
         query.bind(2, &file.hashLow, 8);
         query.exec();
+        queryCounter++;
     }
     catch(const std::exception& e)
     {

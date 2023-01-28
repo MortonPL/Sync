@@ -27,7 +27,8 @@ class DBConnector
 public:
     DBConnector(std::string path, int mode=SQLite::OPEN_READONLY): db(Utils::GetDatabasePath() + path, mode)
     {
-        db.exec("PRAGMA journal_mode=TRUNCATE");
+        if (mode == SQLite::OPEN_READWRITE)
+            db.exec("PRAGMA synchronous = NORMAL; PRAGMA journal_mode = WAL;");
     };
     virtual ~DBConnector() {};
 
@@ -54,12 +55,28 @@ public:
 class HistoryFileNodeDBConnector: DBConnector<HistoryFileNode, std::string, std::forward_list>
 {
 public:
-    HistoryFileNodeDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
+    HistoryFileNodeDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode)
+    {
+        pTransaction = new SQLite::Transaction(db);
+    };
+    ~HistoryFileNodeDBConnector()
+    {
+        if (queryCounter > 0)
+            pTransaction->commit();
+        delete pTransaction;
+    }
+
+    void AdviseOnSize(const std::size_t nodeNumber);
 
     void Insert(const HistoryFileNode& fileNode);
     void Update(const HistoryFileNode& fileNode);
     void Delete(const std::string path);
     void SelectAll(std::forward_list<HistoryFileNode>& fileNodes);
+private:
+    std::size_t queriesPerTransaction = 100;
+    static const std::size_t maxQueriesPerTransaction = 10000;
+    std::size_t queryCounter = 0;
+    SQLite::Transaction* pTransaction;
 };
 
 class ConflictRuleDBConnector: DBConnector<ConflictRule, int, std::vector>
