@@ -13,7 +13,7 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
     {
         canonicalPath = std::filesystem::canonical(pathToBlock).string();
     }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         return false;
     }
@@ -55,7 +55,7 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
     {
         canonicalPath = std::filesystem::canonical(pathToUnblock).string();
     }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         return false;
     }

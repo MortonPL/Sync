@@ -45,9 +45,8 @@ void NewConfigurationDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void NewConfigurationDialog::OnOK(wxCommandEvent &event)
+void NewConfigurationDialog::OnOK(wxCommandEvent&)
 {
-    (void)event; //unused
     std::string pathA = Misc::wxToString(ctrl.dirRootA->GetPath());
     std::string pathB = Misc::wxToString(ctrl.txtRootB->GetValue());
     if (pathA.empty() || pathB.empty())
@@ -85,14 +84,12 @@ void NewConfigurationDialog::OnOK(wxCommandEvent &event)
     EndModal(wxID_OK);
 }
 
-void NewConfigurationDialog::OnAnyChange(wxCommandEvent &event)
+void NewConfigurationDialog::OnAnyChange(wxCommandEvent&)
 {
-    (void)event; //unused
     this->CheckIfOK();
 }
 
-void NewConfigurationDialog::OnAnyChange(wxFileDirPickerEvent &event)
+void NewConfigurationDialog::OnAnyChange(wxFileDirPickerEvent&)
 {
-    (void)event; //unused
     this->CheckIfOK();
 }

@@ -140,8 +140,8 @@ bool Creeper::MakeNode(const std::filesystem::directory_entry& entry,
     if (!entry.is_regular_file())
         return false;
 
-    std::string path = entry.path().string();
-    std::string filePath = path.substr(rootPath.length());
+    const std::string path = entry.path().string();
+    const std::string filePath = path.substr(rootPath.length());
 
     if (CheckIfFileIsIgnored(filePath))
         return false;
@@ -190,7 +190,7 @@ Creeper::Result Creeper::MakeSingleNodeLight(const std::string& path, FileNode& 
     return Result::Ok;
 }
 
-Creeper::Result Creeper::CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes)
+Creeper::Result Creeper::CreepPath(const std::string rootPath, std::forward_list<FileNode>& fileNodes)
 {
     Result result;
     struct stat buf;

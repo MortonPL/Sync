@@ -24,7 +24,7 @@ public:
 
     Creeper();
     ~Creeper();
-    Creeper::Result CreepPath(std::string rootPath, std::forward_list<FileNode>& fileNodes);
+    Creeper::Result CreepPath(const std::string rootPath, std::forward_list<FileNode>& fileNodes);
     static Creeper::Result MakeSingleNode(const std::string& path, FileNode& node);
     static Creeper::Result MakeSingleNodeLight(const std::string& path, FileNode& node);
     size_t GetResultsCount() const;
@@ -47,7 +47,7 @@ private:
 
         std::unique_ptr<XXH3_state_t, hasherFree> pState;
         std::vector<char> buffer;
-        static const int bufferSize = 1024 * 32;
+        static const std::size_t bufferSize = 1024 * 32;
     };
 
     void SearchForLists(const std::string& path);

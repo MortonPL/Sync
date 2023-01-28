@@ -31,17 +31,17 @@ bool Compressor::Compress(const std::string pathIn, const std::string pathOut, o
 
         // NOTE: reading less than inSize bytes sets failbit, so we can't put read() as the condiiton!
         inputStream.read(buffIn.data(), inSize);
-        size_t len;
+        std::size_t len;
         while((len = !inputStream.eof()? inSize: inputStream.gcount()) > 0)
         {
             bool isLastChunk = len < inSize;
-            ZSTD_EndDirective mode = isLastChunk? ZSTD_e_end : ZSTD_e_continue;
+            const ZSTD_EndDirective mode = isLastChunk? ZSTD_e_end : ZSTD_e_continue;
             ZSTD_inBuffer input = {buffIn.data(), len, 0};
             bool finished = false;
             while (!finished)
             {
                 ZSTD_outBuffer output = {buffOut.data(), outSize, 0};
-                size_t result = ZSTD_compressStream2(context.get(), &output, &input, mode);
+                std::size_t result = ZSTD_compressStream2(context.get(), &output, &input, mode);
                 if (ZSTD_isError(result))
                     throw std::runtime_error("Compression error.");
                 outputStream.write(buffOut.data(), output.pos);
@@ -76,8 +76,8 @@ bool Compressor::Decompress(const std::string pathIn, const std::string pathOut)
 
         auto context = std::unique_ptr<ZSTD_DCtx, freeContext>(ZSTD_createDCtx(), freeContext());
 
-        // same NOTE as in Compress()
-        size_t len;
+        // same note as in Compress()
+        std::size_t len;
         inputStream.read(buffIn.data(), inSize);
         while ((len = !inputStream.eof()? inSize: inputStream.gcount()) > 0)
         {

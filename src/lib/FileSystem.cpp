@@ -2,7 +2,7 @@
 
 #include "Utils.h"
 
-bool FileSystem::CopyLocalFile(const std::string& sourcePath, const std::string& destinationPath, std::filesystem::copy_options options)
+bool FileSystem::CopyLocalFile(const std::string& sourcePath, const std::string& destinationPath, const std::filesystem::copy_options options)
 {
     try
     {

@@ -120,7 +120,7 @@ bool ConfigurationDBConnector::Update(const Configuration& config)
     return true;
 }
 
-bool ConfigurationDBConnector::Delete(int id)
+bool ConfigurationDBConnector::Delete(const int id)
 {
     try
     {
@@ -278,7 +278,7 @@ bool ConflictRuleDBConnector::Update(const ConflictRule& rule)
     return true;
 }
 
-bool ConflictRuleDBConnector::Delete(int id)
+bool ConflictRuleDBConnector::Delete(const int id)
 {
     try
     {

@@ -4,7 +4,7 @@
 #include "Lib/DBConnector.h"
 #include "Utils.h"
 
-bool ensureDirectory(std::string dir, std::string errMsg, bool isLogger=false)
+bool ensureDirectory(const std::string dir, const std::string errMsg, const bool isLogger=false)
 {
     try
     {
@@ -13,14 +13,15 @@ bool ensureDirectory(std::string dir, std::string errMsg, bool isLogger=false)
     }
     catch(const std::exception& e)
     {
-        std::cerr << errMsg << " Reason: " << e.what() << '\n';
+        const std::string reason = errMsg + " Reason: " + e.what();
+        std::cerr << reason << '\n';
         if (!isLogger)
-            LOG(ERROR) << errMsg << " Reason: " << e.what();
+            LOG(ERROR) << reason;
         return false;
     }
 }
 
-void SetUpLogger(std::string logPath)
+void SetUpLogger(const std::string logPath)
 {
     el::Configurations defaultConf;
     defaultConf.setToDefault();
@@ -30,7 +31,7 @@ void SetUpLogger(std::string logPath)
     el::Loggers::reconfigureLogger("default", defaultConf);
 }
 
-bool General::InitEverything(std::string logName)
+bool General::InitEverything(const std::string logName)
 {
     Utils::FindHomePath();
 

@@ -11,12 +11,12 @@ class FileNode
 {
 public:
     FileNode();
-    FileNode(std::string path);
-    FileNode(std::string path, dev_t dev, ino_t inode, time_t mtime, off_t size,
-             XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
+    FileNode(const std::string path);
+    FileNode(const std::string path, const dev_t dev, const ino_t inode, const time_t mtime, const off_t size,
+             const XXH64_hash_t hashHigh, const XXH64_hash_t hashLow);
     ~FileNode();
 
-    enum Status: char
+    enum class Status: char
     {
         None = 0,
         New,
@@ -74,6 +74,7 @@ public:
     bool IsEmpty() const;
 
     std::size_t Serialize(MarshallingContainer& buf) const;
+    static std::size_t Serialize(MarshallingContainer& buf, const FileNode& node);
     static FileNode Deserialize(MarshallingContainer& buf);
     static void SerializeStat(struct stat* in, MarshallingContainer& out);
     static void DeserializeStat(MarshallingContainer& in, struct stat* out);

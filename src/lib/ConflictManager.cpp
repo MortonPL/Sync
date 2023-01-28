@@ -66,14 +66,14 @@ bool ConflictManager::Resolve(const PairedNode& node, const ConflictRule& rule, 
     const std::string tempFileRemote = hashedPath + tempSuffixRemote;
 
     // substitute command
-    std::string result = rule.command;
-    Utils::Replace(result, "$LOCAL", tempFileLocal);
-    Utils::Replace(result, "$REMOTE", tempFileRemote);
+    std::string command = rule.command;
+    Utils::Replace(command, "$LOCAL", tempFileLocal);
+    Utils::Replace(command, "$REMOTE", tempFileRemote);
 
     // launch it
-    if (system(result.c_str()) != 0)
+    if (system(command.c_str()) != 0)
     {
-        announcer("Conflict rule " + rule.name + " failed while executing the following command:\n" + result, Announcer::Severity::Error);
+        announcer("Conflict rule " + rule.name + " failed while executing the following command:\n" + command, Announcer::Severity::Error);
         return false;
     }
 

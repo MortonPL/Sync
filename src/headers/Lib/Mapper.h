@@ -15,9 +15,9 @@ public:
     ~Mapper();
 
     void Clear();
-    PairedNode* FindMapPath(std::string& path) const;
-    PairedNode* FindMapLocalInode(FileNode::devinode inode) const;
-    PairedNode* FindMapRemoteInode(FileNode::devinode inode) const;
+    PairedNode* FindMapPath(const std::string& path) const;
+    PairedNode* FindMapLocalInode(const FileNode::devinode inode) const;
+    PairedNode* FindMapRemoteInode(const FileNode::devinode inode) const;
     void EmplaceMapPath(const std::string& path, PairedNode& node);
     void EmplaceMapLocalInode(const FileNode::devinode inode, PairedNode& node);
     void EmplaceMapRemoteInode(const FileNode::devinode inode, PairedNode& node);

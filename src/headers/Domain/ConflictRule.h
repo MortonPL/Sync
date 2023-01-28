@@ -9,19 +9,19 @@ public:
     ConflictRule();
     ~ConflictRule();
 
-    ConflictRule(std::string name, std::string rule, std::string command);
-    ConflictRule(int id, int order, std::string name, std::string rule, std::string command);
+    ConflictRule(const std::string name, const std::string rule, const std::string command);
+    ConflictRule(const int id, const int order, const std::string name, const std::string rule, const std::string command);
 
     bool operator==(const ConflictRule& other) const
     {
-        return this->name == other.name
-            && this->id == other.id
-            && this->order == other.order
-            && this->rule == other.rule
-            && this->command == other.command;
+        return name == other.name
+            && id == other.id
+            && order == other.order
+            && rule == other.rule
+            && command == other.command;
     }
 
-    static ConflictRule& Match(std::string path, std::vector<ConflictRule>& rules);
+    static const ConflictRule& Match(const std::string& path, const std::vector<ConflictRule>& rules);
 
     int id;
     int order;

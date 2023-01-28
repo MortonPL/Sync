@@ -2,7 +2,7 @@
 
 #include "Lib/Creeper.h"
 
-void Announcer::NoAnnouncer(const std::string, Severity)
+void Announcer::NoAnnouncer(const std::string, const Severity)
 {
     return;
 }

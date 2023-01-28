@@ -13,9 +13,9 @@ namespace Announcer
         Error,
     };
 
-    typedef void (*announcerType)(std::string prompt, Severity severity);
+    typedef void (*announcerType)(std::string prompt, const Severity severity);
 
-    void NoAnnouncer(const std::string prompt, Severity severity);
+    void NoAnnouncer(const std::string prompt, const Severity severity);
 
     bool CreeperResult(const Creeper::Result result, announcerType announcer);
 }

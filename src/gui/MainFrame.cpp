@@ -545,18 +545,16 @@ bool MainFrame::DoSync()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void MainFrame::OnNewConfig(wxCommandEvent& event)
+void MainFrame::OnNewConfig(wxCommandEvent&)
 {
-    (void)event; //unused
     NewConfigurationDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
     {
     }
 }
 
-void MainFrame::OnChangeConfig(wxCommandEvent& event)
+void MainFrame::OnChangeConfig(wxCommandEvent&)
 {
-    (void)event; //unused
     ChangeConfigurationDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
     {
@@ -587,9 +585,8 @@ void MainFrame::OnChangeConfig(wxCommandEvent& event)
     }
 }
 
-void MainFrame::OnScan(wxCommandEvent& event)
+void MainFrame::OnScan(wxCommandEvent&)
 {
-    (void)event; //unused
     if (!Global::IsLoadedConfig())
         return;
 
@@ -611,9 +608,8 @@ void MainFrame::OnScan(wxCommandEvent& event)
     ENABLE_TOOLBAR_ITEM(TOOLBAR_SYNC, true);
 }
 
-void MainFrame::OnSync(wxCommandEvent& event)
+void MainFrame::OnSync(wxCommandEvent&)
 {
-    (void)event; //unused
     // if there's nothing to sync, don't bother
     bool anythingToSync = false;
     if (hasSelectedEverything || selectedItems.size() == 0)
@@ -693,33 +689,28 @@ void MainFrame::OnSync(wxCommandEvent& event)
     }
 }
 
-void MainFrame::OnActionDefault(wxCommandEvent& event)
+void MainFrame::OnActionDefault(wxCommandEvent&)
 {
-    (void)event; //unused
     OnAction(PairedNode::Action::None);
 }
 
-void MainFrame::OnActionLtoR(wxCommandEvent& event)
+void MainFrame::OnActionLtoR(wxCommandEvent&)
 {
-    (void)event; //unused
     OnAction(PairedNode::Action::LocalToRemote);
 }
 
-void MainFrame::OnActionIgnore(wxCommandEvent& event)
+void MainFrame::OnActionIgnore(wxCommandEvent&)
 {
-    (void)event; //unused
     OnAction(PairedNode::Action::Ignore);
 }
 
-void MainFrame::OnActionRtoL(wxCommandEvent& event)
+void MainFrame::OnActionRtoL(wxCommandEvent&)
 {
-    (void)event; //unused
     OnAction(PairedNode::Action::RemoteToLocal);
 }
 
-void MainFrame::OnActionResolve(wxCommandEvent& event)
+void MainFrame::OnActionResolve(wxCommandEvent&)
 {
-    (void)event; //unused
     OnAction(PairedNode::Action::Conflict);
 }
 
@@ -742,9 +733,8 @@ void MainFrame::OnDeselectNode(wxListEvent& event)
     ctrl.txtDetails->Clear();
 }
 
-void MainFrame::OnActionSelectAll(wxCommandEvent& event)
+void MainFrame::OnActionSelectAll(wxCommandEvent&)
 {
-    (void)event; //unused
     for (long i = 0; i < ctrl.listMain->GetItemCount(); i++)
     {
         ctrl.listMain->SetItemState(i, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
@@ -753,9 +743,8 @@ void MainFrame::OnActionSelectAll(wxCommandEvent& event)
     hasSelectedEverything = true;
 }
 
-void MainFrame::OnActionDeselectAll(wxCommandEvent& event)
+void MainFrame::OnActionDeselectAll(wxCommandEvent&)
 {
-    (void)event; //unused
     for (long i = 0; i < ctrl.listMain->GetItemCount(); i++)
     {
         ctrl.listMain->SetItemState(i, 0, wxLIST_STATE_SELECTED);
@@ -776,9 +765,8 @@ void MainFrame::OnToggleShowFastFwd(wxCommandEvent& event)
     PopulateList();
 }
 
-void MainFrame::OnAbout(wxCommandEvent& event)
+void MainFrame::OnAbout(wxCommandEvent&)
 {
-    (void)event; //unused
     std::string msg =
         "Sync File Synchronizer, version 1.0.0\n"
         "Author: Bartłomiej Moroz\n"
@@ -789,9 +777,8 @@ void MainFrame::OnAbout(wxCommandEvent& event)
                  wxOK | wxICON_INFORMATION);
 }
 
-void MainFrame::OnExit(wxCommandEvent& event)
+void MainFrame::OnExit(wxCommandEvent&)
 {
-    (void)event; //unused
     Close(true);
 }
 

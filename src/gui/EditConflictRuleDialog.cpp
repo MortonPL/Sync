@@ -48,9 +48,8 @@ void EditConflictRuleDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void EditConflictRuleDialog::OnOK(wxCommandEvent &event)
+void EditConflictRuleDialog::OnOK(wxCommandEvent&)
 {
-    (void)event; //unused
     auto rule = ConflictRule(
         oldRule.id,
         oldRule.order,
@@ -92,8 +91,7 @@ void EditConflictRuleDialog::OnOK(wxCommandEvent &event)
     EndModal(wxID_OK);
 }
 
-void EditConflictRuleDialog::OnAnyChange(wxCommandEvent &event)
+void EditConflictRuleDialog::OnAnyChange(wxCommandEvent&)
 {
-    (void)event; //unused
     this->CheckIfOK();
 }

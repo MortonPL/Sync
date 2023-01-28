@@ -18,6 +18,7 @@ public:
     static bool EnsureCreatedHistory(const std::string path);
     static const int NoID = -1;
 };
+
 template <typename TObject, typename TId, template<class, class> class TContainter>
 class DBConnector
 {
@@ -27,7 +28,7 @@ public:
 
     virtual bool Insert(const TObject& object) = 0;
     virtual bool Update(const TObject& object) = 0;
-    virtual bool Delete(TId id) = 0;
+    virtual bool Delete(const TId id) = 0;
     virtual void SelectAll(TContainter<TObject, std::allocator<TObject>>& objects) = 0;
 protected:
     SQLite::Database db;
@@ -40,7 +41,7 @@ public:
 
     bool Insert(const Configuration& config);
     bool Update(const Configuration& config);
-    bool Delete(int id);
+    bool Delete(const int id);
     void SelectAll(std::vector<Configuration>& configs);
 };
 
@@ -51,7 +52,7 @@ public:
 
     bool Insert(const HistoryFileNode& fileNode);
     bool Update(const HistoryFileNode& fileNode);
-    bool Delete(std::string path);
+    bool Delete(const std::string path);
     void SelectAll(std::forward_list<HistoryFileNode>& fileNodes);
 };
 
@@ -62,7 +63,7 @@ public:
 
     bool Insert(const ConflictRule& rule);
     bool Update(const ConflictRule& rule);
-    bool Delete(int id);
+    bool Delete(const int id);
     void SelectAll(std::vector<ConflictRule>& rules);
 
     bool SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2);

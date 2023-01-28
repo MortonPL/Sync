@@ -6,8 +6,8 @@ class HistoryFileNode: public FileNode
 {
 public:
     HistoryFileNode();
-    HistoryFileNode(std::string path, dev_t dev, ino_t inode, dev_t remoteDev, ino_t remoteInode,
-                    time_t mtime, time_t remoteMtime, off_t size, XXH64_hash_t hashHigh, XXH64_hash_t hashLow);
+    HistoryFileNode(const std::string path, const dev_t dev, const ino_t inode, const dev_t remoteDev, const ino_t remoteInode,
+                    const time_t mtime, const time_t remoteMtime, const off_t size, const XXH64_hash_t hashHigh, const XXH64_hash_t hashLow);
 
     dev_t remoteDev;
     ino_t remoteInode;

@@ -20,7 +20,7 @@ void PairingManager::PairAllHistory(std::forward_list<HistoryFileNode>& historyN
         auto pPair = mapper.FindMapPath(historyNode.path);
         if (pPair)
         {
-            if (historyNode.IsEqualHash((*pPair).localNode))
+            if (historyNode.IsEqualHash(pPair->localNode))
             {
                 pPair->localNode.status = FileNode::Status::Clean;
             }
@@ -43,12 +43,12 @@ void PairRemoteCompare(FileNode& remoteNode, PairedNode* pPair)
 {
     switch (pPair->CompareNodeHashes(remoteNode, pPair->historyNode))
     {
-    case HASHCMP_EQ:
+    case PairedNode::HashComparisonResult::Equal:
         remoteNode.status = FileNode::Status::Clean;
         break;
-    case HASHCMP_OTHERNULL:
+    case PairedNode::HashComparisonResult::OtherNull:
         remoteNode.status = FileNode::Status::New;
-        if (pPair->CompareNodeHashes(remoteNode, pPair->localNode) == HASHCMP_EQ)
+        if (pPair->CompareNodeHashes(remoteNode, pPair->localNode) == PairedNode::HashComparisonResult::Equal)
         {
             pPair->SetDefaultAction(PairedNode::Action::FastForward);
         }
@@ -57,9 +57,9 @@ void PairRemoteCompare(FileNode& remoteNode, PairedNode* pPair)
             pPair->SetDefaultAction(PairedNode::Action::Conflict);
         }
         break;
-    case HASHCMP_NE:
+    case PairedNode::HashComparisonResult::NotEqual:
         remoteNode.status = FileNode::Status::Dirty;
-        if (pPair->CompareNodeHashes(remoteNode, pPair->localNode) == HASHCMP_EQ)
+        if (pPair->CompareNodeHashes(remoteNode, pPair->localNode) == PairedNode::HashComparisonResult::Equal)
         {
             if (remoteNode.path == pPair->localNode.path)
             {
@@ -168,16 +168,9 @@ void PairingManager::SolveFinalAction(std::list<PairedNode>& pairedNodes)
 void PairingManager::PairAll(std::forward_list<FileNode>& scanNodes, std::forward_list<HistoryFileNode>& historyNodes,
                              std::forward_list<FileNode>& remoteNodes, std::list<PairedNode>& pairedNodes, Creeper& creeper, Mapper& mapper)
 {
-    //pair local
     PairingManager::PairAllLocal(scanNodes, pairedNodes, mapper);
-
-    //pair history
     PairingManager::PairAllHistory(historyNodes, pairedNodes, mapper);
-
-    //pair remote
     PairingManager::PairAllRemote(remoteNodes, pairedNodes, creeper, mapper);
-
-    //final reconciliation
     PairingManager::SolveFinalAction(pairedNodes);
 }
 

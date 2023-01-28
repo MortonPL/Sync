@@ -6,8 +6,8 @@ Configuration::Configuration()
 {
 }
 
-Configuration::Configuration(int id, std::string name, uuid_t uuid, std::string pathA,
-                             std::string pathB, std::string pathBaddress, std::string pathBuser)
+Configuration::Configuration(const int id, const std::string name, const uuid_t uuid, const std::string pathA,
+                             const std::string pathB, const std::string pathBaddress, const std::string pathBuser)
 {
     this->id = id;
     this->name = name;
@@ -18,8 +18,8 @@ Configuration::Configuration(int id, std::string name, uuid_t uuid, std::string 
     this->pathBuser = pathBuser;
 }
 
-Configuration::Configuration(int id, std::string name, std::string uuid, std::string timestamp, std::string pathA,
-                             std::string pathB, std::string pathBaddress, std::string pathBuser)
+Configuration::Configuration(const int id, const std::string name, const std::string uuid, const std::string timestamp, const std::string pathA,
+                             const std::string pathB, const std::string pathBaddress, const std::string pathBuser)
 {
     this->id = id;
     this->name = name;
@@ -31,10 +31,9 @@ Configuration::Configuration(int id, std::string name, std::string uuid, std::st
     this->timestamp = Utils::StringToTimestamp(timestamp);
 }
 
-Configuration::Configuration(int id, std::string name, uuid_t uuid, time_t timestamp, std::string pathA,
-                             std::string pathB, std::string pathBaddress, std::string pathBuser, int __unused)
+Configuration::Configuration(const int id, const std::string name, const uuid_t uuid, const time_t timestamp, const std::string pathA,
+                             const std::string pathB, const std::string pathBaddress, const std::string pathBuser, int)
 {
-    this->id = __unused;
     this->id = id;
     this->name = name;
     uuid_copy(this->uuid, uuid);

@@ -50,10 +50,8 @@ GenericPopup::GenericPopup(std::string message, wxWindow* pParent, std::string* 
 
 /******************************* EVENT HANDLERS ******************************/
 
-void GenericPopup::OnOK(wxCommandEvent &event)
+void GenericPopup::OnOK(wxCommandEvent&)
 {
-    (void)event; // unused
-
     if (output)
     {
         if (isPassword)

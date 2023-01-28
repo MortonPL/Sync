@@ -15,7 +15,7 @@ void Mapper::Clear()
     mapRemoteInode.clear();
 }
 
-PairedNode* Mapper::FindMapPath(std::string& path) const
+PairedNode* Mapper::FindMapPath(const std::string& path) const
 {
     auto it = mapPath.find(path);
     if (it == mapPath.end())
@@ -23,7 +23,7 @@ PairedNode* Mapper::FindMapPath(std::string& path) const
     return it->second;
 }
 
-PairedNode* Mapper::FindMapLocalInode(FileNode::devinode inode) const
+PairedNode* Mapper::FindMapLocalInode(const FileNode::devinode inode) const
 {
     auto it = mapLocalInode.find(inode);
     if (it == mapLocalInode.end())
@@ -31,7 +31,7 @@ PairedNode* Mapper::FindMapLocalInode(FileNode::devinode inode) const
     return it->second;
 }
 
-PairedNode* Mapper::FindMapRemoteInode(FileNode::devinode inode) const
+PairedNode* Mapper::FindMapRemoteInode(const FileNode::devinode inode) const
 {
     auto it = mapRemoteInode.find(inode);
     if (it == mapRemoteInode.end())

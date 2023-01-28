@@ -213,9 +213,8 @@ void Decompress()
 }
 
 // NOTE: Unused
-int ServeOnce(char mode)
+int ServeOnce(char)
 {
-    (void)mode;
     /*
     unsigned short pathSize;
 

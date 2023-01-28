@@ -4,7 +4,7 @@ PairedNode::PairedNode()
 {
 }
 
-PairedNode::PairedNode(const std::string path, FileNode localNode, HistoryFileNode historyNode, FileNode remoteNode)
+PairedNode::PairedNode(const std::string path, const FileNode localNode, const HistoryFileNode historyNode, const FileNode remoteNode)
 : path(path)
 {
     this->localNode = localNode;
@@ -36,7 +36,7 @@ const std::map<PairedNode::Progress, std::string> PairedNode::ProgressAsString =
     {PairedNode::Progress::Success, "Success"},
 };
 
-void PairedNode::SetDefaultAction(Action action)
+void PairedNode::SetDefaultAction(const Action action)
 {
     this->action = action;
     this->defaultAction = action;
@@ -63,11 +63,11 @@ std::string PairedNode::GetDefaultActionString() const
     return ActionAsString.at(defaultAction);
 }
 
-int PairedNode::CompareNodeHashes(const FileNode& one, const FileNode& other)
+PairedNode::HashComparisonResult PairedNode::CompareNodeHashes(const FileNode& one, const FileNode& other)
 {
     if (one.IsEmpty() && !other.IsEmpty())
-        return HASHCMP_ONENULL;
+        return HashComparisonResult::OneNull;
     if (!one.IsEmpty() && other.IsEmpty())
-        return HASHCMP_OTHERNULL;
-    return one.IsEqualHash(other)? HASHCMP_EQ: HASHCMP_NE;
+        return HashComparisonResult::OtherNull;
+    return one.IsEqualHash(other)? HashComparisonResult::Equal: HashComparisonResult::NotEqual;
 }

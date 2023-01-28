@@ -126,10 +126,10 @@ TEST_F(PairingBasicTest, NoHistory)
     // OUT
     std::list<PairedNode> expectedResult = 
     {
-        MakePairedNode("noh/eq", FileNode::New, FileNode::Absent, FileNode::New, PairedNode::FastForward),
-        MakePairedNode("noh/neq", FileNode::New, FileNode::Absent, FileNode::New, PairedNode::Conflict),
-        MakePairedNode("noh/loc", FileNode::New, FileNode::Absent, FileNode::Absent, PairedNode::LocalToRemote),
-        MakePairedNode("noh/rem", FileNode::Absent, FileNode::Absent, FileNode::New, PairedNode::RemoteToLocal),
+        MakePairedNode("noh/eq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::FastForward),
+        MakePairedNode("noh/neq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::Conflict),
+        MakePairedNode("noh/loc", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::Absent, PairedNode::Action::LocalToRemote),
+        MakePairedNode("noh/rem", FileNode::Status::Absent, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::RemoteToLocal),
     };
 
     // run
@@ -175,12 +175,12 @@ TEST_F(PairingBasicTest, LocalToRemote)
     // OUT
     std::list<PairedNode> expectedResult = 
     {
-        MakePairedNode("ltor/neq", FileNode::Dirty, FileNode::HistoryPresent, FileNode::Clean, PairedNode::LocalToRemote),
-        MakePairedNode("ltor/meq", FileNode::New, FileNode::Absent, FileNode::Absent, PairedNode::LocalToRemote),
-        MakePairedNode("ltor/mneq", FileNode::New, FileNode::Absent, FileNode::Absent, PairedNode::LocalToRemote),
-        MakePairedNode("ltor/old1", FileNode::Absent, FileNode::HistoryPresent, FileNode::Clean, PairedNode::LocalToRemote),
-        MakePairedNode("ltor/old2", FileNode::Absent, FileNode::HistoryPresent, FileNode::Clean, PairedNode::LocalToRemote),
-        MakePairedNode("ltor/old3", FileNode::Absent, FileNode::HistoryPresent, FileNode::Clean, PairedNode::LocalToRemote),
+        MakePairedNode("ltor/neq", FileNode::Status::Dirty, FileNode::Status::HistoryPresent, FileNode::Status::Clean, PairedNode::Action::LocalToRemote),
+        MakePairedNode("ltor/meq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::Absent, PairedNode::Action::LocalToRemote),
+        MakePairedNode("ltor/mneq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::Absent, PairedNode::Action::LocalToRemote),
+        MakePairedNode("ltor/old1", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Clean, PairedNode::Action::LocalToRemote),
+        MakePairedNode("ltor/old2", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Clean, PairedNode::Action::LocalToRemote),
+        MakePairedNode("ltor/old3", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Clean, PairedNode::Action::LocalToRemote),
     };
     
     // run
@@ -224,12 +224,12 @@ TEST_F(PairingBasicTest, RemoteToLocal)
     // OUT
     std::list<PairedNode> expectedResult = 
     {
-        MakePairedNode("rtol/neq", FileNode::Clean, FileNode::HistoryPresent, FileNode::Dirty, PairedNode::RemoteToLocal),
-        MakePairedNode("rtol/old1", FileNode::Clean, FileNode::HistoryPresent, FileNode::Absent, PairedNode::RemoteToLocal),
-        MakePairedNode("rtol/old2", FileNode::Clean, FileNode::HistoryPresent, FileNode::Absent, PairedNode::RemoteToLocal),
-        MakePairedNode("rtol/old3", FileNode::Clean, FileNode::HistoryPresent, FileNode::Absent, PairedNode::RemoteToLocal),
-        MakePairedNode("rtol/meq", FileNode::Absent, FileNode::Absent, FileNode::New, PairedNode::RemoteToLocal),
-        MakePairedNode("rtol/mneq", FileNode::Absent, FileNode::Absent, FileNode::New, PairedNode::RemoteToLocal),
+        MakePairedNode("rtol/neq", FileNode::Status::Clean, FileNode::Status::HistoryPresent, FileNode::Status::Dirty, PairedNode::Action::RemoteToLocal),
+        MakePairedNode("rtol/old1", FileNode::Status::Clean, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::RemoteToLocal),
+        MakePairedNode("rtol/old2", FileNode::Status::Clean, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::RemoteToLocal),
+        MakePairedNode("rtol/old3", FileNode::Status::Clean, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::RemoteToLocal),
+        MakePairedNode("rtol/meq", FileNode::Status::Absent, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::RemoteToLocal),
+        MakePairedNode("rtol/mneq", FileNode::Status::Absent, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::RemoteToLocal),
     };
     
     // run
@@ -277,13 +277,13 @@ TEST_F(PairingBasicTest, FastForwards)
     // OUT
     std::list<PairedNode> expectedResult = 
     {
-        MakePairedNode("ffwd/eq", FileNode::Clean, FileNode::HistoryPresent, FileNode::Clean, PairedNode::DoNothing),
-        MakePairedNode("ffwd/neq", FileNode::Dirty, FileNode::HistoryPresent, FileNode::Dirty, PairedNode::FastForward),
-        MakePairedNode("ffwd/meq", FileNode::New, FileNode::Absent, FileNode::New, PairedNode::FastForward),
-        MakePairedNode("ffwd/mneq", FileNode::New, FileNode::Absent, FileNode::New, PairedNode::FastForward),
-        MakePairedNode("ffwd/old1", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
-        MakePairedNode("ffwd/old2", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
-        MakePairedNode("ffwd/old3", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
+        MakePairedNode("ffwd/eq", FileNode::Status::Clean, FileNode::Status::HistoryPresent, FileNode::Status::Clean, PairedNode::Action::DoNothing),
+        MakePairedNode("ffwd/neq", FileNode::Status::Dirty, FileNode::Status::HistoryPresent, FileNode::Status::Dirty, PairedNode::Action::FastForward),
+        MakePairedNode("ffwd/meq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::FastForward),
+        MakePairedNode("ffwd/mneq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::FastForward),
+        MakePairedNode("ffwd/old1", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
+        MakePairedNode("ffwd/old2", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
+        MakePairedNode("ffwd/old3", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
     };
     
     // run
@@ -336,16 +336,16 @@ TEST_F(PairingBasicTest, Deletions)
     // OUT
     std::list<PairedNode> expectedResult = 
     {
-        MakePairedNode("del2/neq", FileNode::Dirty, FileNode::HistoryPresent, FileNode::Absent, PairedNode::Conflict),
-        MakePairedNode("del2/meq", FileNode::New, FileNode::Absent, FileNode::Absent, PairedNode::LocalToRemote),
-        MakePairedNode("del2/mneq", FileNode::New, FileNode::Absent, FileNode::Absent, PairedNode::LocalToRemote),
-        MakePairedNode("del1/neq", FileNode::Absent, FileNode::HistoryPresent, FileNode::Dirty, PairedNode::Conflict),
-        MakePairedNode("del1/old1", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
-        MakePairedNode("del1/old2", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
-        MakePairedNode("del2/old1", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
-        MakePairedNode("del2/old2", FileNode::Absent, FileNode::HistoryPresent, FileNode::Absent, PairedNode::FastForward),
-        MakePairedNode("del1/meq", FileNode::Absent, FileNode::Absent, FileNode::New, PairedNode::RemoteToLocal),
-        MakePairedNode("del1/mneq", FileNode::Absent, FileNode::Absent, FileNode::New, PairedNode::RemoteToLocal),
+        MakePairedNode("del2/neq", FileNode::Status::Dirty, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::Conflict),
+        MakePairedNode("del2/meq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::Absent, PairedNode::Action::LocalToRemote),
+        MakePairedNode("del2/mneq", FileNode::Status::New, FileNode::Status::Absent, FileNode::Status::Absent, PairedNode::Action::LocalToRemote),
+        MakePairedNode("del1/neq", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Dirty, PairedNode::Action::Conflict),
+        MakePairedNode("del1/old1", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
+        MakePairedNode("del1/old2", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
+        MakePairedNode("del2/old1", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
+        MakePairedNode("del2/old2", FileNode::Status::Absent, FileNode::Status::HistoryPresent, FileNode::Status::Absent, PairedNode::Action::FastForward),
+        MakePairedNode("del1/meq", FileNode::Status::Absent, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::RemoteToLocal),
+        MakePairedNode("del1/mneq", FileNode::Status::Absent, FileNode::Status::Absent, FileNode::Status::New, PairedNode::Action::RemoteToLocal),
     };
     
     // run

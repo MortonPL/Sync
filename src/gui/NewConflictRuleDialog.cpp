@@ -39,9 +39,8 @@ void NewConflictRuleDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
+void NewConflictRuleDialog::OnOK(wxCommandEvent&)
 {
-    (void)event; //unused
     auto rule = ConflictRule(
         std::string(Misc::wxToString(ctrl.txtName->GetValue())),
         std::string(Misc::wxToString(ctrl.txtRule->GetValue())),
@@ -75,8 +74,7 @@ void NewConflictRuleDialog::OnOK(wxCommandEvent &event)
     EndModal(wxID_OK);
 }
 
-void NewConflictRuleDialog::OnAnyChange(wxCommandEvent &event)
+void NewConflictRuleDialog::OnAnyChange(wxCommandEvent&)
 {
-    (void)event; //unused
     this->CheckIfOK();
 }

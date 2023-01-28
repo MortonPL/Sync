@@ -42,9 +42,8 @@ bool changedCallback(std::string& pubkeyHash)
     return GenericPopup(msg, nullptr, nullptr, &pubkeyHash, GenericPopup::Flags::Cancel).ShowModal() == wxID_OK;
 }
 
-bool errorCallback(std::string& pubkeyHash)
+bool errorCallback(std::string&)
 {
-    (void)pubkeyHash; // unused
     return GenericPopup("An error has occured while attempting to authenticate the server.").ShowModal() == wxID_OK;
 }
 

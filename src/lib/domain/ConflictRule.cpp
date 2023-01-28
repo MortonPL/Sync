@@ -12,24 +12,24 @@ ConflictRule::~ConflictRule()
 {
 }
 
-ConflictRule::ConflictRule(std::string name, std::string rule, std::string command)
+ConflictRule::ConflictRule(const std::string name, const std::string rule, const std::string command)
 {
     this->name = name;
     this->rule = rule;
     this->command = command;
     try
     {
-        Utils::Replace(rule, ".", "\\.");
-        Utils::Replace(rule, "*", ".*");
-        this->regex = std::regex(rule);
+        Utils::Replace(this->rule, ".", "\\.");
+        Utils::Replace(this->rule, "*", ".*");
+        regex = std::regex(this->rule);
     }
     catch(const std::exception& e)
     {
-        this->badRule = true;
+        badRule = true;
     }
 }
 
-ConflictRule::ConflictRule(int id, int order, std::string name, std::string rule, std::string command)
+ConflictRule::ConflictRule(const int id, const int order, const std::string name, const std::string rule, const std::string command)
 {
     this->id = id;
     this->order = order;
@@ -38,17 +38,17 @@ ConflictRule::ConflictRule(int id, int order, std::string name, std::string rule
     this->command = command;
     try
     {
-        Utils::Replace(rule, ".", "\\.");
-        Utils::Replace(rule, "*", ".*");
-        this->regex = std::regex(rule);
+        Utils::Replace(this->rule, ".", "\\.");
+        Utils::Replace(this->rule, "*", ".*");
+        regex = std::regex(this->rule);
     }
     catch(const std::exception& e)
     {
-        this->badRule = true;
+        badRule = true;
     }
 }
 
-ConflictRule& ConflictRule::Match(std::string path, std::vector<ConflictRule>& rules)
+const ConflictRule& ConflictRule::Match(const std::string& path, const std::vector<ConflictRule>& rules)
 {
     for (auto& rule: rules)
     {

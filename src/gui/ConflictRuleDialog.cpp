@@ -106,22 +106,19 @@ void ConflictRuleDialog::CheckIfRuleSelected()
 
 /******************************* EVENT HANDLERS ******************************/
 
-void ConflictRuleDialog::OnListBoxChange(wxCommandEvent &event)
+void ConflictRuleDialog::OnListBoxChange(wxCommandEvent&)
 {
-    (void)event; //unused
     CheckIfRuleSelected();
 }
 
-void ConflictRuleDialog::OnNewRule(wxCommandEvent &event)
+void ConflictRuleDialog::OnNewRule(wxCommandEvent&)
 {
-    (void)event; //unused
     if (NewConflictRuleDialog().ShowModal() == wxID_OK)
         PopulateRuleList();
 }
 
-void ConflictRuleDialog::OnEditRule(wxCommandEvent &event)
+void ConflictRuleDialog::OnEditRule(wxCommandEvent&)
 {
-    (void)event; //unused
     if (EditConflictRuleDialog((*pRules)[selectedRuleIdx]).ShowModal() == wxID_OK)
     {
         PopulateRuleList();
@@ -129,9 +126,8 @@ void ConflictRuleDialog::OnEditRule(wxCommandEvent &event)
     }
 }
 
-void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
+void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent&)
 {
-    (void)event; //unused
     if (selectedRuleIdx > 0)
     {
         try
@@ -160,9 +156,8 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent &event)
     }
 }
 
-void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
+void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent&)
 {
-    (void)event; //unused
     if (selectedRuleIdx < (long)pRules->size() - 1)
     {
         try
@@ -191,9 +186,8 @@ void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent &event)
     }
 }
 
-void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
+void ConflictRuleDialog::OnDeleteRule(wxCommandEvent&)
 {
-    (void)event; //unused
     try
     {
         ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
@@ -218,20 +212,17 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent &event)
     CheckIfRuleSelected();
 }
 
-void ConflictRuleDialog::OnAuto(wxCommandEvent &event)
+void ConflictRuleDialog::OnAuto(wxCommandEvent&)
 {
-    (void)event; //unused
     EndModal(CONFLICT_AUTO);
 }
 
-void ConflictRuleDialog::OnOK(wxCommandEvent &event)
+void ConflictRuleDialog::OnOK(wxCommandEvent&)
 {
-    (void)event; //unused
     EndModal(selectedRuleIdx);
 }
 
-void ConflictRuleDialog::OnCancel(wxCommandEvent &event)
+void ConflictRuleDialog::OnCancel(wxCommandEvent&)
 {
-    (void)event; //unused
     EndModal(CONFLICT_CANCEL);
 }
