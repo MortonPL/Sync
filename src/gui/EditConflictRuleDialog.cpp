@@ -48,6 +48,8 @@ void EditConflictRuleDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
+class BadRuleException: std::exception{};
+
 void EditConflictRuleDialog::OnOK(wxCommandEvent&)
 {
     auto rule = ConflictRule(
@@ -59,10 +61,7 @@ void EditConflictRuleDialog::OnOK(wxCommandEvent&)
     );
 
     if (rule.badRule)
-    {
-        GenericPopup("Entered rule is not a valid pseudo-regex rule!").ShowModal();
-        return;
-    }
+        throw BadRuleException();
 
     if (rule == oldRule)
     {
@@ -73,14 +72,18 @@ void EditConflictRuleDialog::OnOK(wxCommandEvent&)
     try
     {
         ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.Update(rule))
-        {
-            GenericPopup("Successfully updated the conflict rule.").ShowModal();
-        }
-        else
-        {
-            GenericPopup("Failed to update the conflict rule.").ShowModal();
-        }
+        db.Update(rule);
+        GenericPopup("Successfully updated the conflict rule.").ShowModal();
+    }
+    catch(const BadRuleException&)
+    {
+        GenericPopup("Entered rule is not a valid pseudo-regex rule!").ShowModal();
+        return;
+    }
+    catch(const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to update the conflict rule.").ShowModal();
+        return;
     }
     catch(const std::exception& e)
     {

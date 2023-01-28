@@ -158,7 +158,7 @@ void CreepDir(std::string path)
     writeall(1, (char*)&nnodes, sizeof(nnodes));
     for (auto& node: nodes)
     {
-        unsigned short size = node.Serialize(buf);
+        std::size_t size = node.Serialize(buf);
         writeall(1, (char*)buf.data(), size);
     }
     LOG(INFO) << "Done.";
@@ -177,16 +177,34 @@ void GetHomePath()
 
 void BlockDir(std::string path)
 {
-    LOG(INFO) << "Blocking directory " << path;
-    bool blocked = Blocker::Block(path);
-    writeall(1, (char*)&blocked, sizeof(blocked));
+    try
+    {
+        LOG(INFO) << "Blocking directory " << path;
+        Blocker::Block(path);
+        bool blocked = true;
+        writeall(1, (char*)&blocked, sizeof(blocked));
+    }
+    catch (const Blocker::BlockerException&)
+    {
+        bool blocked = false;
+        writeall(1, (char*)&blocked, sizeof(blocked));
+    }
 }
 
 void UnblockDir(std::string path)
 {
-    LOG(INFO) << "Unblocking directory " << path;
-    bool unblocked = Blocker::Unblock(path);
-    writeall(1, (char*)&unblocked, sizeof(unblocked));
+    try
+    {
+        LOG(INFO) << "Unblocking directory " << path;
+        Blocker::Unblock(path);
+        bool unblocked = true;
+        writeall(1, (char*)&unblocked, sizeof(unblocked));
+    }
+    catch (const Blocker::BlockerException&)
+    {
+        bool unblocked = false;
+        writeall(1, (char*)&unblocked, sizeof(unblocked));
+    }
 }
 
 void Compress()

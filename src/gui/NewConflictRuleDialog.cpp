@@ -39,31 +39,34 @@ void NewConflictRuleDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
+class BadRuleException: std::exception {};
+
 void NewConflictRuleDialog::OnOK(wxCommandEvent&)
 {
-    auto rule = ConflictRule(
-        std::string(Misc::wxToString(ctrl.txtName->GetValue())),
-        std::string(Misc::wxToString(ctrl.txtRule->GetValue())),
-        std::string(Misc::wxToString(ctrl.txtCommand->GetValue()))
-    );
+    try
+    {
+        auto rule = ConflictRule(
+            std::string(Misc::wxToString(ctrl.txtName->GetValue())),
+            std::string(Misc::wxToString(ctrl.txtRule->GetValue())),
+            std::string(Misc::wxToString(ctrl.txtCommand->GetValue()))
+        );
 
-    if (rule.badRule)
+        if (rule.badRule)
+            throw BadRuleException();
+
+        ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
+        db.Insert(rule);
+        GenericPopup("Successfully created a new conflict rule.").ShowModal();
+    }
+    catch(const BadRuleException&)
     {
         GenericPopup("Entered rule is not a valid pseudo-regex rule!").ShowModal();
         return;
     }
-
-    try
+    catch(const DBConnectorStatic::DBException&)
     {
-        ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.Insert(rule))
-        {
-            GenericPopup("Successfully created a new conflict rule.").ShowModal();
-        }
-        else
-        {
-            GenericPopup("Failed to create a new conflict rule.").ShowModal();
-        }
+        GenericPopup("Failed to create a new conflict rule.").ShowModal();
+        return;
     }
     catch(const std::exception& e)
     {

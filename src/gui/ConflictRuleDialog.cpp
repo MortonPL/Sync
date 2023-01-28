@@ -61,7 +61,12 @@ void ConflictRuleDialog::PopulateRuleList()
         if (!arrs.IsEmpty())
             ctrl.listConflictRules->InsertItems(arrs, 0);
     }
-    catch(const std::exception& e)
+    catch (const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to refresh conflict rule list.").ShowModal();
+        return;
+    }
+    catch (const std::exception& e)
     {
         LOG(ERROR) << e.what();
         GenericPopup("Failed to open/refresh conflict rule database.").ShowModal();
@@ -133,21 +138,20 @@ void ConflictRuleDialog::OnMoveUpRule(wxCommandEvent&)
         try
         {
             ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-            if (db.SwapConflictRule((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]))
-            {
-                ctrl.listConflictRules->SetString(selectedRuleIdx - 1, (*pRules)[selectedRuleIdx].name);
-                ctrl.listConflictRules->SetString(selectedRuleIdx, (*pRules)[selectedRuleIdx - 1].name);
-                std::swap((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]);
-                ctrl.listConflictRules->Select(selectedRuleIdx - 1);
-                selectedRuleIdx--;
-            }
-            else
-            {
-                GenericPopup("Failed to move conflict rule.").ShowModal();
-                return;
-            }
+            db.SwapConflictRule((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]);
+
+            ctrl.listConflictRules->SetString(selectedRuleIdx - 1, (*pRules)[selectedRuleIdx].name);
+            ctrl.listConflictRules->SetString(selectedRuleIdx, (*pRules)[selectedRuleIdx - 1].name);
+            std::swap((*pRules)[selectedRuleIdx - 1], (*pRules)[selectedRuleIdx]);
+            ctrl.listConflictRules->Select(selectedRuleIdx - 1);
+            selectedRuleIdx--;
         }
-        catch(const std::exception& e)
+        catch (const DBConnectorStatic::DBException&)
+        {
+            GenericPopup("Failed to move conflict rule.").ShowModal();
+            return;
+        }
+        catch (const std::exception& e)
         {
             LOG(ERROR) << e.what();
             GenericPopup("Failed to open conflict rule database.").ShowModal();
@@ -163,19 +167,18 @@ void ConflictRuleDialog::OnMoveDownRule(wxCommandEvent&)
         try
         {
             ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-            if (db.SwapConflictRule((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]))
-            {
-                ctrl.listConflictRules->SetString(selectedRuleIdx + 1, (*pRules)[selectedRuleIdx].name);
-                ctrl.listConflictRules->SetString(selectedRuleIdx, (*pRules)[selectedRuleIdx + 1].name);
-                std::swap((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]);
-                ctrl.listConflictRules->Select(selectedRuleIdx + 1);
-                selectedRuleIdx++;
-            }
-            else
-            {
-                GenericPopup("Failed to move conflict rule.").ShowModal();
-                return;
-            }
+            db.SwapConflictRule((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]);
+            
+            ctrl.listConflictRules->SetString(selectedRuleIdx + 1, (*pRules)[selectedRuleIdx].name);
+            ctrl.listConflictRules->SetString(selectedRuleIdx, (*pRules)[selectedRuleIdx + 1].name);
+            std::swap((*pRules)[selectedRuleIdx + 1], (*pRules)[selectedRuleIdx]);
+            ctrl.listConflictRules->Select(selectedRuleIdx + 1);
+            selectedRuleIdx++;
+        }
+        catch (const DBConnectorStatic::DBException&)
+        {
+            GenericPopup("Failed to move conflict rule.").ShowModal();
+            return;
         }
         catch(const std::exception& e)
         {
@@ -191,15 +194,13 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent&)
     try
     {
         ConflictRuleDBConnector db(Utils::UUIDToDBPath(Global::CurrentConfig().uuid), SQLite::OPEN_READWRITE);
-        if (db.Delete((*pRules)[selectedRuleIdx].id))
-        {
-            GenericPopup("Conflict rules removed successfully.").ShowModal();
-        }
-        else
-        {
-            GenericPopup("Failed to remove conflict rule.").ShowModal();
-            return;
-        }
+        db.Delete((*pRules)[selectedRuleIdx].id);
+        GenericPopup("Conflict rules removed successfully.").ShowModal();
+    }
+    catch (const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to remove conflict rule.").ShowModal();
+        return;
     }
     catch (const std::exception& e)
     {

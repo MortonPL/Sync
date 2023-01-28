@@ -55,10 +55,15 @@ void ChangeConfigurationDialog::PopulateConfigList()
         if (!arrs.IsEmpty())
             ctrl.listConfigs->InsertItems(arrs, 0);
     }
-    catch(const std::exception& e)
+    catch (const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to refresh configuration list.").ShowModal();
+        return;
+    }
+    catch (const std::exception& e)
     {
         LOG(ERROR) << e.what();
-        GenericPopup("Failed to open/refresh configuration database.").ShowModal();
+        GenericPopup("Failed to open configuration database.").ShowModal();
         return;
     }
 }
@@ -125,17 +130,14 @@ void ChangeConfigurationDialog::OnDeleteConfig(wxCommandEvent&)
     try
     {
         ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
-        if (db.Delete(configs[selectedConfigIdx].id))
-        {
-            remove(Utils::UUIDToDBPath(configs[selectedConfigIdx].uuid).c_str());
-            GenericPopup("Configuration removed successfully.").ShowModal();
-        }
-        else
-        {
-            LOG(ERROR) << "ChangeConfigurationDialog -> Failed to remove configuration.";
-            GenericPopup("Failed to remove configuration.").ShowModal();
-            return;
-        }
+        db.Delete(configs[selectedConfigIdx].id);
+        remove(Utils::UUIDToDBPath(configs[selectedConfigIdx].uuid).c_str());
+        GenericPopup("Configuration removed successfully.").ShowModal();
+    }
+    catch (const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to remove configuration.").ShowModal();
+        return;
     }
     catch (const std::exception& e)
     {

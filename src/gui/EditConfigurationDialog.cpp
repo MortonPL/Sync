@@ -55,15 +55,14 @@ void EditConfigurationDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
+class EmptyPathException: std::exception{};
+
 void EditConfigurationDialog::OnOK(wxCommandEvent&)
 {
     std::string pathA = Misc::wxToString(ctrl.dirRootA->GetPath());
     std::string pathB = Misc::wxToString(ctrl.txtRootB->GetValue());
     if (pathA.empty() || pathB.empty())
-    {
-        GenericPopup("Root paths cannot be empty!").ShowModal();
-        return;
-    }
+        throw EmptyPathException();
 
     Configuration config;
     config = Configuration(
@@ -88,6 +87,16 @@ void EditConfigurationDialog::OnOK(wxCommandEvent&)
     {
         ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
         db.Update(config);
+    }
+    catch(const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to update the configuration.").ShowModal();
+        return;
+    }
+    catch(const EmptyPathException&)
+    {
+        GenericPopup("Root paths cannot be empty!").ShowModal();
+        return;
     }
     catch(const std::exception& e)
     {

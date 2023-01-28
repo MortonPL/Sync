@@ -96,10 +96,11 @@ static inline void deserializeString(FileNode::MarshallingUnit* pBuf, std::size_
 std::size_t FileNode::Serialize(MarshallingContainer& buf) const
 {
     std::size_t i = 0;
-    std::size_t pathSize = path.size();
-    std::size_t dataSize = sizeof(pathSize) + pathSize + minimumNodeBinarySize;
-    if (buf.size() < dataSize)
-        buf.resize(dataSize);
+    const std::size_t pathSize = path.size();
+    const std::size_t dataSize = sizeof(pathSize) + pathSize + minimumNodeBinarySize;
+    const std::size_t totalSize = sizeof(dataSize) + dataSize;
+    if (buf.size() < totalSize)
+        buf.resize(totalSize);
     auto pBuffer = buf.data();
 
     serialize(pBuffer, i, dataSize);
@@ -112,7 +113,7 @@ std::size_t FileNode::Serialize(MarshallingContainer& buf) const
     serialize(pBuffer, i, inode);
     serialize(pBuffer, i, hashHigh);
     serialize(pBuffer, i, hashLow);
-    return sizeof(dataSize) + dataSize;
+    return totalSize;
 }
 
 std::size_t FileNode::Serialize(MarshallingContainer& buf, const FileNode& node)

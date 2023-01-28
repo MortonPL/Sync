@@ -6,7 +6,7 @@
 
 const std::string Blocker::SyncBlockedFile = ".SyncBLOCKED";
 
-bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFile)
+void Blocker::Block(const std::string& pathToBlock, const std::string& pathToFile)
 {
     std::string canonicalPath;
     try
@@ -15,7 +15,7 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
     }
     catch(const std::exception&)
     {
-        return false;
+        throw BlockFileException();
     }
 
     std::ifstream blockFileIStream(pathToFile);
@@ -35,20 +35,18 @@ bool Blocker::Block(const std::string& pathToBlock, const std::string& pathToFil
     blockFileIStream.close();
 
     if (matched)
-        return false;
+        throw AlreadyBlockedException();
     
     std::ofstream blockFileOStream(pathToFile, std::ios::app);
     blockFileOStream << canonicalPath << std::endl;
-
-    return true;
 }
 
-bool Blocker::Block(const std::string& pathToBlock)
+void Blocker::Block(const std::string& pathToBlock)
 {
-    return Blocker::Block(pathToBlock, Utils::GetRootPath() + Blocker::SyncBlockedFile);
+    Blocker::Block(pathToBlock, Utils::GetRootPath() + Blocker::SyncBlockedFile);
 }
 
-bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathToFile)
+void Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathToFile)
 {
     std::string canonicalPath;
     try
@@ -57,7 +55,7 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
     }
     catch(const std::exception&)
     {
-        return false;
+        throw BlockFileException();
     }
 
     const std::string tempFileName = pathToFile + ".tmp";
@@ -83,10 +81,9 @@ bool Blocker::Unblock(const std::string& pathToUnblock, const std::string& pathT
     blockFileOStream.close();
 
     std::filesystem::rename(tempFileName, pathToFile);
-    return true;
 }
 
-bool Blocker::Unblock(const std::string& pathToUnblock)
+void Blocker::Unblock(const std::string& pathToUnblock)
 {
-    return Blocker::Unblock(pathToUnblock, Utils::GetRootPath() + Blocker::SyncBlockedFile);
+    Blocker::Unblock(pathToUnblock, Utils::GetRootPath() + Blocker::SyncBlockedFile);
 }

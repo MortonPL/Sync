@@ -414,9 +414,14 @@ bool MainFrame::DoScan()
         auto db = HistoryFileNodeDBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
         db.SelectAll(historyNodes);
     }
-    catch(const std::exception& e)
+    catch (const DBConnectorStatic::DBException&)
     {
         GUIAnnouncer::LogPopup("Failed to read file history.", Announcer::Severity::Error);
+        return false;
+    }
+    catch (const std::exception&)
+    {
+        GUIAnnouncer::LogPopup("Failed to open file history.", Announcer::Severity::Error);
         return false;
     }
     LOG(INFO) << "Read file history.";
@@ -447,15 +452,7 @@ bool MainFrame::DoSync()
     {
         std::filesystem::current_path(std::filesystem::canonical(cfg.pathA));
         LOG(INFO) << "Blocking directory " << cfg.pathA;
-        if (!Blocker::Block(cfg.pathA))
-        {
-            GUIAnnouncer::LogPopup(
-                "Failed to sync files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
-                "directory is already being synchronized by another instance, or if the last \n"
-                "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
-                "nothing is being synchronized, delete " + Blocker::SyncBlockedFile + " manually.", Announcer::Severity::Error);
-            return false;
-        }
+        Blocker::Block(cfg.pathA);
 
         auto db = HistoryFileNodeDBConnector(Utils::UUIDToDBPath(cfg.uuid), SQLite::OPEN_READWRITE);
         if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
@@ -525,7 +522,22 @@ bool MainFrame::DoSync()
             }
         }
     }
-    catch(const std::exception& e)
+    catch (const Blocker::BlockFileException&)
+    {
+        GUIAnnouncer::LogPopup(
+            "Failed to sync files, because lock file " + Blocker::SyncBlockedFile + " couldn't be accessed.", Announcer::Severity::Error);
+        return false;
+    }
+    catch (const Blocker::AlreadyBlockedException&)
+    {
+        GUIAnnouncer::LogPopup(
+            "Failed to sync files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
+            "directory is already being synchronized by another instance, or if the last \n"
+            "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
+            "nothing is being synchronized, delete " + Blocker::SyncBlockedFile + " manually.", Announcer::Severity::Error);
+        return false;
+    }
+    catch (const std::exception& e)
     {
         GUIAnnouncer::LogPopup("Failed to sync. Error: " + std::string(e.what()), Announcer::Severity::Error);
         ssh.CallCLIUnblock(cfg.pathB);
@@ -577,6 +589,8 @@ void MainFrame::OnChangeConfig(wxCommandEvent&)
     ctrl.listMain->DeleteAllItems();
     pairedNodes.clear();
     selectedItems.clear();
+
+    this->GetStatusBar()->SetStatusText(Misc::stringToWx("Current configuration: " + Global::CurrentConfig().name));
 
     if (!DBConnectorStatic::EnsureCreatedHistory(Utils::UUIDToDBPath(Global::CurrentConfig().uuid)))
     {

@@ -78,7 +78,7 @@ bool DBConnectorStatic::EnsureCreatedHistory(const std::string path)
     };
 }
 
-bool ConfigurationDBConnector::Insert(const Configuration& config)
+void ConfigurationDBConnector::Insert(const Configuration& config)
 {
     const int uuidStringSize = 36;
     char uuidstr[uuidStringSize+1];
@@ -94,13 +94,11 @@ bool ConfigurationDBConnector::Insert(const Configuration& config)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to insert config. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool ConfigurationDBConnector::Update(const Configuration& config)
+void ConfigurationDBConnector::Update(const Configuration& config)
 {
     try
     {
@@ -114,13 +112,11 @@ bool ConfigurationDBConnector::Update(const Configuration& config)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to update config. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool ConfigurationDBConnector::Delete(const int id)
+void ConfigurationDBConnector::Delete(const int id)
 {
     try
     {
@@ -129,10 +125,8 @@ bool ConfigurationDBConnector::Delete(const int id)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to delete config. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
 void ConfigurationDBConnector::SelectAll(std::vector<Configuration>& configs)
@@ -148,10 +142,11 @@ void ConfigurationDBConnector::SelectAll(std::vector<Configuration>& configs)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to select configs. Reason: " << e.what();
+        throw DBConnectorStatic::DBException();
     }
 }
 
-bool HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
+void HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
 {
     try
     {
@@ -167,13 +162,11 @@ bool HistoryFileNodeDBConnector::Insert(const HistoryFileNode& file)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to insert file node. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool HistoryFileNodeDBConnector::Update(const HistoryFileNode& file)
+void HistoryFileNodeDBConnector::Update(const HistoryFileNode& file)
 {
     try
     {
@@ -189,13 +182,11 @@ bool HistoryFileNodeDBConnector::Update(const HistoryFileNode& file)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to update file node. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool HistoryFileNodeDBConnector::Delete(const std::string path)
+void HistoryFileNodeDBConnector::Delete(const std::string path)
 {
     try
     {
@@ -204,10 +195,8 @@ bool HistoryFileNodeDBConnector::Delete(const std::string path)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to delete file node. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
 void HistoryFileNodeDBConnector::SelectAll(std::forward_list<HistoryFileNode>& nodes)
@@ -235,10 +224,11 @@ void HistoryFileNodeDBConnector::SelectAll(std::forward_list<HistoryFileNode>& n
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to select file nodes. Reason: " << e.what();
+        throw DBConnectorStatic::DBException();
     }
 }
 
-bool ConflictRuleDBConnector::Insert(const ConflictRule& rule)
+void ConflictRuleDBConnector::Insert(const ConflictRule& rule)
 {
     try
     {
@@ -253,13 +243,11 @@ bool ConflictRuleDBConnector::Insert(const ConflictRule& rule)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to insert conflict rule. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool ConflictRuleDBConnector::Update(const ConflictRule& rule)
+void ConflictRuleDBConnector::Update(const ConflictRule& rule)
 {
     try
     {
@@ -272,13 +260,11 @@ bool ConflictRuleDBConnector::Update(const ConflictRule& rule)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to update conflict rule. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool ConflictRuleDBConnector::Delete(const int id)
+void ConflictRuleDBConnector::Delete(const int id)
 {
     try
     {
@@ -287,13 +273,11 @@ bool ConflictRuleDBConnector::Delete(const int id)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to delete conflict rule. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
-bool ConflictRuleDBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2)
+void ConflictRuleDBConnector::SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2)
 {
     try
     {
@@ -306,10 +290,8 @@ bool ConflictRuleDBConnector::SwapConflictRule(const ConflictRule& rule1, const 
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to swap conflict rules. Reason: " << e.what();
-        return false;
+        throw DBConnectorStatic::DBException();
     }
-
-    return true;
 }
 
 void ConflictRuleDBConnector::SelectAll(std::vector<ConflictRule>& nodes)
@@ -325,5 +307,6 @@ void ConflictRuleDBConnector::SelectAll(std::vector<ConflictRule>& nodes)
     catch(const std::exception& e)
     {
         LOG(ERROR) << "Failed to select conflict rules. Reason: " << e.what();
+        throw DBConnectorStatic::DBException();
     }
 }

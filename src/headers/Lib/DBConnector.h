@@ -17,6 +17,8 @@ public:
     static bool EnsureCreatedMain();
     static bool EnsureCreatedHistory(const std::string path);
     static const int NoID = -1;
+
+    class DBException: std::exception {};
 };
 
 template <typename TObject, typename TId, template<class, class> class TContainter>
@@ -26,9 +28,9 @@ public:
     DBConnector(std::string path, int mode=SQLite::OPEN_READONLY): db(Utils::GetDatabasePath() + path, mode) {};
     virtual ~DBConnector() {};
 
-    virtual bool Insert(const TObject& object) = 0;
-    virtual bool Update(const TObject& object) = 0;
-    virtual bool Delete(const TId id) = 0;
+    virtual void Insert(const TObject& object) = 0;
+    virtual void Update(const TObject& object) = 0;
+    virtual void Delete(const TId id) = 0;
     virtual void SelectAll(TContainter<TObject, std::allocator<TObject>>& objects) = 0;
 protected:
     SQLite::Database db;
@@ -39,9 +41,9 @@ class ConfigurationDBConnector: DBConnector<Configuration, int, std::vector>
 public:
     ConfigurationDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
 
-    bool Insert(const Configuration& config);
-    bool Update(const Configuration& config);
-    bool Delete(const int id);
+    void Insert(const Configuration& config);
+    void Update(const Configuration& config);
+    void Delete(const int id);
     void SelectAll(std::vector<Configuration>& configs);
 };
 
@@ -50,9 +52,9 @@ class HistoryFileNodeDBConnector: DBConnector<HistoryFileNode, std::string, std:
 public:
     HistoryFileNodeDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
 
-    bool Insert(const HistoryFileNode& fileNode);
-    bool Update(const HistoryFileNode& fileNode);
-    bool Delete(const std::string path);
+    void Insert(const HistoryFileNode& fileNode);
+    void Update(const HistoryFileNode& fileNode);
+    void Delete(const std::string path);
     void SelectAll(std::forward_list<HistoryFileNode>& fileNodes);
 };
 
@@ -61,12 +63,12 @@ class ConflictRuleDBConnector: DBConnector<ConflictRule, int, std::vector>
 public:
     ConflictRuleDBConnector(std::string path, int mode=SQLite::OPEN_READONLY): DBConnector(path, mode) {};
 
-    bool Insert(const ConflictRule& rule);
-    bool Update(const ConflictRule& rule);
-    bool Delete(const int id);
+    void Insert(const ConflictRule& rule);
+    void Update(const ConflictRule& rule);
+    void Delete(const int id);
     void SelectAll(std::vector<ConflictRule>& rules);
 
-    bool SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2);
+    void SwapConflictRule(const ConflictRule& rule1, const ConflictRule& rule2);
 };
 
 #endif

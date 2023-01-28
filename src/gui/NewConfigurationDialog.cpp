@@ -45,36 +45,45 @@ void NewConfigurationDialog::CheckIfOK()
 
 /******************************* EVENT HANDLERS ******************************/
 
+class EmptyPathException: std::exception{};
+
 void NewConfigurationDialog::OnOK(wxCommandEvent&)
 {
-    std::string pathA = Misc::wxToString(ctrl.dirRootA->GetPath());
-    std::string pathB = Misc::wxToString(ctrl.txtRootB->GetValue());
-    if (pathA.empty() || pathB.empty())
+    try
+    {
+        const std::string pathA = Misc::wxToString(ctrl.dirRootA->GetPath());
+        const std::string pathB = Misc::wxToString(ctrl.txtRootB->GetValue());
+        if (pathA.empty() || pathB.empty())
+            throw EmptyPathException();
+
+        Configuration config;
+        uuid_t uuid;
+        uuid_generate(uuid);
+
+        config = Configuration(
+            DBConnectorStatic::NoID,
+            Misc::wxToString(ctrl.txtConfigName->GetValue()),
+            uuid,
+            Utils::CorrectDirPath(pathA),
+            Utils::CorrectDirPath(pathB),
+            Misc::wxToString(ctrl.txtAddressB->GetValue()),
+            Misc::wxToString(ctrl.txtUserB->GetValue())
+        );
+
+        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
+        db.Insert(config);
+    }
+    catch(const DBConnectorStatic::DBException&)
+    {
+        GenericPopup("Failed to insert the new configuration.").ShowModal();
+        return;
+    }
+    catch(const EmptyPathException&)
     {
         GenericPopup("Root paths cannot be empty!").ShowModal();
         return;
     }
-
-    Configuration config;
-    uuid_t uuid;
-    uuid_generate(uuid);
-
-    config = Configuration(
-        DBConnectorStatic::NoID,
-        Misc::wxToString(ctrl.txtConfigName->GetValue()),
-        uuid,
-        Utils::CorrectDirPath(pathA),
-        Utils::CorrectDirPath(pathB),
-        Misc::wxToString(ctrl.txtAddressB->GetValue()),
-        Misc::wxToString(ctrl.txtUserB->GetValue())
-    );
-
-    try
-    {
-        ConfigurationDBConnector db(DBConnectorStatic::GetMainFileName(), SQLite::OPEN_READWRITE);
-        db.Insert(config);
-    }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         GenericPopup("Failed to open configuration database.").ShowModal();
         return;

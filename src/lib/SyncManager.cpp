@@ -346,21 +346,17 @@ int SyncManager::Sync(PairedNode* pNode, const std::string& remoteRoot, const st
         break;
     }
 
-    if (wasDeleted)
+    try
     {
-        if (!db.Delete(pNode->path))
-        {
-            pNode->progress = PairedNode::Progress::Failed;
-            return 2;
-        }
+        if (wasDeleted)
+            db.Delete(pNode->path);
+        else
+            db.Update(pNode->historyNode);
     }
-    else
+    catch(const DBConnectorStatic::DBException&)
     {
-        if (!db.Update(pNode->historyNode))
-        {
-            pNode->progress = PairedNode::Progress::Failed;
-            return 2;
-        }
+        pNode->progress = PairedNode::Progress::Failed;
+        return 2;
     }
 
     pNode->progress = PairedNode::Progress::Success;

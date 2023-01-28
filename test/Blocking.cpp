@@ -23,7 +23,16 @@ TEST_F(BlockingTest, BlockEmptyFile)
     std::ofstream{pathToBlock};
     std::ofstream{blockFile};
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
     std::filesystem::remove_all(pathToBlock);
@@ -36,7 +45,16 @@ TEST_F(BlockingTest, BlockNoFile)
     const std::filesystem::path blockFile{"block"};
     std::ofstream{pathToBlock};
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
     std::filesystem::remove_all(pathToBlock);
@@ -48,7 +66,16 @@ TEST_F(BlockingTest, BlockNotExistingPath)
     const std::filesystem::path blockFile{"block"};
     std::ofstream{blockFile};
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, false);
     std::filesystem::remove(blockFile);
@@ -63,7 +90,16 @@ TEST_F(BlockingTest, BlockNoCollision)
     std::filesystem::create_directories(otherPath);
     std::ofstream{blockFile} << std::filesystem::canonical(otherPath).string() << std::endl;
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
     std::filesystem::remove_all(pathToBlock);
@@ -78,7 +114,16 @@ TEST_F(BlockingTest, BlockCollision)
     std::filesystem::create_directories(pathToBlock);
     std::ofstream{blockFile} << std::filesystem::canonical(pathToBlock).string() << std::endl;
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, false);
     std::filesystem::remove_all(pathToBlock);
@@ -92,7 +137,16 @@ TEST_F(BlockingTest, BlockCollisionChild)
     std::filesystem::create_directories(pathToBlock/"dir2");
     std::ofstream{blockFile} << std::filesystem::canonical(pathToBlock/"dir2").string() << std::endl;
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, false);
     std::filesystem::remove_all(pathToBlock);
@@ -106,7 +160,16 @@ TEST_F(BlockingTest, BlockCollisionParent)
     std::filesystem::create_directories(pathToBlock);
     std::ofstream{blockFile} << std::filesystem::canonical("dir0").string() << std::endl;
 
-    bool success = Blocker::Block(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Block(pathToBlock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, false);
     std::filesystem::remove_all("dir0");
@@ -120,7 +183,16 @@ TEST_F(BlockingTest, UnblockEmptyFile)
     std::ofstream{pathToUnblock};
     std::ofstream{blockFile};
 
-    bool success = Blocker::Unblock(pathToUnblock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Unblock(pathToUnblock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
     std::filesystem::remove_all(pathToUnblock);
@@ -133,7 +205,16 @@ TEST_F(BlockingTest, UnblockNoFile)
     const std::filesystem::path blockFile{"block"};
     std::ofstream{pathToUnblock};
 
-    bool success = Blocker::Unblock(pathToUnblock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Unblock(pathToUnblock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
     std::filesystem::remove_all(pathToUnblock);
@@ -145,7 +226,16 @@ TEST_F(BlockingTest, UnblockNotExistingPath)
     const std::filesystem::path blockFile{"block"};
     std::ofstream{blockFile};
 
-    bool success = Blocker::Unblock(pathToUnblock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Unblock(pathToUnblock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, false);
     std::filesystem::remove(blockFile);
@@ -153,31 +243,49 @@ TEST_F(BlockingTest, UnblockNotExistingPath)
 
 TEST_F(BlockingTest, UnblockNoMatch)
 {
-    const std::filesystem::path pathToBlock{"dir"};
+    const std::filesystem::path pathToUnblock{"dir"};
     const std::filesystem::path otherPath{"other"};
     const std::filesystem::path blockFile{"block"};
-    std::filesystem::create_directories(pathToBlock);
+    std::filesystem::create_directories(pathToUnblock);
     std::filesystem::create_directories(otherPath);
     std::ofstream{blockFile} << std::filesystem::canonical(otherPath).string() << std::endl;
 
-    bool success = Blocker::Unblock(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Unblock(pathToUnblock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
-    std::filesystem::remove_all(pathToBlock);
+    std::filesystem::remove_all(pathToUnblock);
     std::filesystem::remove_all(otherPath);
     std::filesystem::remove(blockFile);
 }
 
 TEST_F(BlockingTest, UnblockMatch)
 {
-    const std::filesystem::path pathToBlock{"dir"};
+    const std::filesystem::path pathToUnblock{"dir"};
     const std::filesystem::path blockFile{"block"};
-    std::filesystem::create_directories(pathToBlock);
-    std::ofstream{blockFile} << std::filesystem::canonical(pathToBlock).string() << std::endl;
+    std::filesystem::create_directories(pathToUnblock);
+    std::ofstream{blockFile} << std::filesystem::canonical(pathToUnblock).string() << std::endl;
 
-    bool success = Blocker::Unblock(pathToBlock, blockFile);
+    bool success;
+    try
+    {
+        Blocker::Unblock(pathToUnblock, blockFile);
+        success = true;
+    }
+    catch(const Blocker::BlockerException&)
+    {
+        success = false;
+    }
 
     EXPECT_EQ(success, true);
-    std::filesystem::remove_all(pathToBlock);
+    std::filesystem::remove_all(pathToUnblock);
     std::filesystem::remove(blockFile);
 }
