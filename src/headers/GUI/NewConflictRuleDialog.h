@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_NEW_CONFLICT_RULE_DIALOG_H
+#define SRC_GUI_NEW_CONFLICT_RULE_DIALOG_H
 #include "wx.h"
 
 class NewConflictRuleDialog : public wxDialog
@@ -31,3 +32,5 @@ private:
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif

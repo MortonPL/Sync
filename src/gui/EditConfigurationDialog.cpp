@@ -45,11 +45,11 @@ EditConfigurationDialog::EditConfigurationDialog(Configuration& oldConfig, wxWin
 
 void EditConfigurationDialog::CheckIfOK()
 {
-    bool isOK = !Misc::wxToString(ctrl.txtConfigName->GetValue()).empty()
-                && !Misc::wxToString(ctrl.dirRootA->GetPath()).empty()
-                && !Misc::wxToString(ctrl.txtRootB->GetValue()).empty()
-                && !Misc::wxToString(ctrl.txtAddressB->GetValue()).empty()
-                && !Misc::wxToString(ctrl.txtUserB->GetValue()).empty();
+    const bool isOK = !Misc::wxToString(ctrl.txtConfigName->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.dirRootA->GetPath()).empty()
+                   && !Misc::wxToString(ctrl.txtRootB->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.txtAddressB->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.txtUserB->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 

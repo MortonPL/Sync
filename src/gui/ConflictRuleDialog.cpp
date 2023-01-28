@@ -215,7 +215,7 @@ void ConflictRuleDialog::OnDeleteRule(wxCommandEvent&)
 
 void ConflictRuleDialog::OnAuto(wxCommandEvent&)
 {
-    EndModal(CONFLICT_AUTO);
+    EndModal(ReturnCode::Auto);
 }
 
 void ConflictRuleDialog::OnOK(wxCommandEvent&)
@@ -225,5 +225,5 @@ void ConflictRuleDialog::OnOK(wxCommandEvent&)
 
 void ConflictRuleDialog::OnCancel(wxCommandEvent&)
 {
-    EndModal(CONFLICT_CANCEL);
+    EndModal(ReturnCode::Cancel);
 }

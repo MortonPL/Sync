@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_CHANGE_CONFIGURATION_DIALOG_H
+#define SRC_GUI_CHANGE_CONFIGURATION_DIALOG_H
 #include "wx.h"
 #include <vector>
 
@@ -33,13 +34,15 @@ private:
     void PopulateConfigDetails();
 
     // event handlers
-    void OnListBoxChange(wxCommandEvent &event);
-    void OnNewConfig(wxCommandEvent &event);
-    void OnEditConfig(wxCommandEvent &event);
-    void OnDeleteConfig(wxCommandEvent &event);
-    void OnOK(wxCommandEvent &event);
-    void OnCancel(wxCommandEvent &event);
+    void OnListBoxChange(wxCommandEvent& event);
+    void OnNewConfig(wxCommandEvent& event);
+    void OnEditConfig(wxCommandEvent& event);
+    void OnDeleteConfig(wxCommandEvent& event);
+    void OnOK(wxCommandEvent& event);
+    void OnCancel(wxCommandEvent& event);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif

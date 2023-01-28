@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_GENERIC_POPUP_H
+#define SRC_GUI_GENERIC_POPUP_H
 #include "wx.h"
 
 class GenericPopup : public wxDialog {
@@ -38,3 +39,5 @@ private:
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif

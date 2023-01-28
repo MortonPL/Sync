@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_EDIT_CONFIGURATION_DIALOG_H
+#define SRC_GUI_EDIT_CONFIGURATION_DIALOG_H
 #include "wx.h"
 
 #include "Domain/Configuration.h"
@@ -37,3 +38,5 @@ private:
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif

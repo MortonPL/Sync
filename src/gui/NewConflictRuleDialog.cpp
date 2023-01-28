@@ -31,9 +31,9 @@ NewConflictRuleDialog::NewConflictRuleDialog(wxWindow* pParent)
 
 void NewConflictRuleDialog::CheckIfOK()
 {
-    bool isOK = !Misc::wxToString(ctrl.txtName->GetValue()).empty()
-                && !Misc::wxToString(ctrl.txtRule->GetValue()).empty()
-                && !Misc::wxToString(ctrl.txtCommand->GetValue()).empty();
+    const bool isOK = !Misc::wxToString(ctrl.txtName->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.txtRule->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.txtCommand->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 

@@ -40,9 +40,9 @@ EditConflictRuleDialog::EditConflictRuleDialog(ConflictRule& oldRule, wxWindow* 
 
 void EditConflictRuleDialog::CheckIfOK()
 {
-    bool isOK = !Misc::wxToString(ctrl.txtName->GetValue()).empty()
-                && !Misc::wxToString(ctrl.txtRule->GetValue()).empty()
-                && !Misc::wxToString(ctrl.txtCommand->GetValue()).empty();
+    const bool isOK = !Misc::wxToString(ctrl.txtName->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.txtRule->GetValue()).empty()
+                   && !Misc::wxToString(ctrl.txtCommand->GetValue()).empty();
     ctrl.btnOK->Enable(isOK);
 }
 

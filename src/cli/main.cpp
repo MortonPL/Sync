@@ -201,13 +201,13 @@ void BlockDir(std::string path)
     {
         LOG(INFO) << "Blocking directory " << path;
         Blocker::Block(path);
-        bool blocked = true;
-        writeall(1, (char*)&blocked, sizeof(blocked));
+        bool success = true;
+        writeall(1, (char*)&success, sizeof(success));
     }
     catch (const Blocker::BlockerException&)
     {
-        bool blocked = false;
-        writeall(1, (char*)&blocked, sizeof(blocked));
+        bool success = false;
+        writeall(1, (char*)&success, sizeof(success));
     }
 }
 
@@ -217,13 +217,13 @@ void UnblockDir(std::string path)
     {
         LOG(INFO) << "Unblocking directory " << path;
         Blocker::Unblock(path);
-        bool unblocked = true;
-        writeall(1, (char*)&unblocked, sizeof(unblocked));
+        bool success = true;
+        writeall(1, (char*)&success, sizeof(success));
     }
     catch (const Blocker::BlockerException&)
     {
-        bool unblocked = false;
-        writeall(1, (char*)&unblocked, sizeof(unblocked));
+        bool success = false;
+        writeall(1, (char*)&success, sizeof(success));
     }
 }
 

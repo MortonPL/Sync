@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_NEW_CONFIGURATION_DIALOG_H
+#define SRC_GUI_NEW_CONFIGURATION_DIALOG_H
 #include "wx.h"
 
 class NewConfigurationDialog : public wxDialog
@@ -27,10 +28,12 @@ private:
     void CheckIfOK();
 
     // event handlers
-    void OnOK(wxCommandEvent &event);
-    void OnAnyChange(wxCommandEvent &event);
-    void OnAnyChange(wxFileDirPickerEvent &event);
+    void OnOK(wxCommandEvent& event);
+    void OnAnyChange(wxCommandEvent& event);
+    void OnAnyChange(wxFileDirPickerEvent& event);
 
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif

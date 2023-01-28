@@ -193,7 +193,6 @@ bool MainFrame::ShouldBeFiltered(PairedNode& pair)
     return false;
 }
 
-#define LTOA(l) wxString::Format(wxT("%ld"), l) // long to wxString
 void MainFrame::ShowDetails(long itemIndex)
 {
     auto writeNodeDetails = [this](const FileNode& pNode)
@@ -202,7 +201,7 @@ void MainFrame::ShowDetails(long itemIndex)
         {
             *ctrl.txtDetails << "Status: " << FileNode::StatusAsString.at(pNode.status) << '\n';
             *ctrl.txtDetails << "Modification time: " << Utils::TimestampToString(pNode.mtime) << '\n';
-            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
+            *ctrl.txtDetails << "Size: " << wxString::Format(wxT("%ld"), pNode.size) << '\n';
             *ctrl.txtDetails << "Hash: " << pNode.HashToString() << '\n';
         }
         else
@@ -217,7 +216,7 @@ void MainFrame::ShowDetails(long itemIndex)
         {
             *ctrl.txtDetails << "Local Mtime: " << Utils::TimestampToString(pNode.mtime) << '\n';
             *ctrl.txtDetails << "Remote Mtime: " << Utils::TimestampToString(pNode.remoteMtime) << '\n';
-            *ctrl.txtDetails << "Size: " << LTOA(pNode.size) << '\n';
+            *ctrl.txtDetails << "Size: " << wxString::Format(wxT("%ld"), pNode.size) << '\n';
             *ctrl.txtDetails << "Hash: " << pNode.HashToString() << '\n';
         }
         else
@@ -247,7 +246,6 @@ void MainFrame::ShowDetails(long itemIndex)
     *ctrl.txtDetails << "== HISTORY ==\n";
     writeHistoryNodeDetails(pPair->historyNode);
 }
-#undef LTOA
 
 void MainFrame::UpdateItem(PairedNode* pNode, long itemIndex)
 {
@@ -297,7 +295,7 @@ void MainFrame::ResolveConflict()
 {
     auto cfg = Global::CurrentConfig();
     int ruleId;
-    if ((ruleId = ConflictRuleDialog(conflictRules).ShowModal()) == CONFLICT_CANCEL)
+    if ((ruleId = ConflictRuleDialog(conflictRules).ShowModal()) == ConflictRuleDialog::ReturnCode::Cancel)
         return;
 
     if (!SSHConnectorWrap::Connect(ssh, cfg.pathBaddress, cfg.pathBuser))
@@ -327,7 +325,7 @@ void MainFrame::ResolveConflict()
     }
     std::string tempPath = Utils::GetTempPath(remoteHome);
 
-    if (ruleId != CONFLICT_AUTO)
+    if (ruleId != ConflictRuleDialog::ReturnCode::Auto)
     {
         for (auto index: selectedItems)
         {
@@ -492,10 +490,9 @@ bool MainFrame::DoSync()
         switch (ssh.CallCLIHomeAndBlock(cfg.pathB, remoteHome))
         {
         case CALLCLI_BLOCKED:
-            GUIAnnouncer::LogPopup("Remote is currently being synchronized with another instance.", Announcer::Severity::Error);
             Blocker::Unblock(cfg.pathA);
             std::filesystem::current_path(previousCWD);
-            return false;
+            throw Blocker::AlreadyBlockedException();
         default:
             GUIAnnouncer::LogPopup("Failed to receive remote home directory path.", Announcer::Severity::Error);
             Blocker::Unblock(cfg.pathA);
@@ -557,7 +554,7 @@ bool MainFrame::DoSync()
     catch (const Blocker::AlreadyBlockedException&)
     {
         GUIAnnouncer::LogPopup(
-            "Failed to sync files, because an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
+            "Failed to sync files, because on one of the machines an entry in " + Blocker::SyncBlockedFile + " was found.\nThis can happen if a "
             "directory is already being synchronized by another instance, or if the last \n"
             "synchronization suddenly failed with no time to clean up.\nIf you are sure that "
             "nothing is being synchronized, delete " + Blocker::SyncBlockedFile + " manually.", Announcer::Severity::Error);

@@ -214,11 +214,11 @@ int SSHConnector::CallCLIHomeAndBlock(std::string pathToCheck, std::string& resu
     ssh_channel_read(pChannel, buf.data(), len, 0);
     result = buf;
 
-    bool blocked;
-    ssh_channel_read(pChannel, &blocked, sizeof(blocked), 0);
+    bool success;
+    ssh_channel_read(pChannel, &success, sizeof(success), 0);
 
     FreeChannel(pChannel);
-    return blocked? CALLCLI_OK: CALLCLI_BLOCKED;
+    return success? CALLCLI_OK: CALLCLI_BLOCKED;
 }
 
 int SSHConnector::CallCLIHome(std::string& result)

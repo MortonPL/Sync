@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SRC_GUI_MAIN_FRAME_H
+#define SRC_GUI_MAIN_FRAME_H
 #include "wx.h"
 
 #include <list>
@@ -72,3 +73,5 @@ private:
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif

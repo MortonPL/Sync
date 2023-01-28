@@ -1,15 +1,20 @@
-#pragma once
+#ifndef SRC_GUI_CONFLICT_RULE_DIALOG_H
+#define SRC_GUI_CONFLICT_RULE_DIALOG_H
 #include "wx.h"
 #include <vector>
 
 #include "Domain/ConflictRule.h"
 
-#define CONFLICT_CANCEL -1
-#define CONFLICT_AUTO -2
 class ConflictRuleDialog : public wxDialog {
 public:
     ConflictRuleDialog(std::vector<ConflictRule>& rules, wxWindow* pParent=nullptr);
     ~ConflictRuleDialog(){}
+
+    enum ReturnCode: int
+    {
+        Cancel = -1,
+        Auto = -2,
+    };
 
 private:
     // control struct
@@ -51,3 +56,5 @@ private:
     // widget event table
     wxDECLARE_EVENT_TABLE();
 };
+
+#endif
